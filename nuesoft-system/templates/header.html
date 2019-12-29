@@ -1,0 +1,116 @@
+{% load staticfiles %}
+{#<script src="{% static "js/message/ws4redis.js" %}"></script>#}
+<script type="text/javascript">
+</script>
+
+<div id="navbar" class="navbar-pink" style="position: fixed;width: 100%;z-index: 111111;float: left;">
+    <script type="text/javascript">
+        try {
+            ace.settings.check('navbar', 'fixed')
+        } catch (e) {
+        }
+    </script>
+
+    <div class="navbar-container" id="navbar-container">
+        <button type="button" class="navbar-toggle menu-toggler pull-left" id="menu-toggler" data-target="#sidebar">
+            <span class="sr-only">Toggle sidebar</span>
+
+            <span class="icon-bar"></span>
+
+            <span class="icon-bar"></span>
+
+            <span class="icon-bar"></span>
+        </button>
+
+        <div class="navbar-header pull-left">
+            <a href="/home" class="navbar-brand">
+                <small>
+                    <img src="{% static 'images/cloud_logo@2x.png' %}" alt="" width="80em" style="display: none">
+                    IDC业务管理系统
+                </small>
+            </a>
+        </div>
+        <input id="msg_id" style="display: none;">
+        <div class="navbar-buttons navbar-header pull-right" role="navigation">
+            <ul class="nav ace-nav">
+
+                <li class="green" style="display: none" id="li-message">
+                    <a data-toggle="dropdown" class="dropdown-toggle" href="#">
+                        <i class="ace-icon fa fa-envelope icon-animated-vertical"></i>
+                        <span class="badge badge-success"></span>
+                    </a>
+
+                    <ul class="dropdown-menu-right dropdown-navbar dropdown-menu dropdown-caret dropdown-close">
+                        <li class="dropdown-header">
+                            <i class="ace-icon fa fa-envelope-o"></i>
+                            最新消息
+                        </li>
+
+                        <li class="dropdown-content">
+                            <ul class="dropdown-menu dropdown-navbar">
+                                <li>
+                                    <a href="#" class="clearfix" id="a-message-detail" name="a-message">
+                                        <img src="{% static 'avatars/avatar.png' %}" class="msg-photo"
+                                             alt="Alex's Avatar"/>
+                                                <span class="msg-body">
+                                                    <span class="msg-title" id="sp-subject">
+                                                        <span class="blue" id="sp-username"></span>
+                                                    </span>
+
+                                                    <span class="msg-time">
+                                                        <i class="ace-icon fa fa-clock-o"></i>
+                                                        <span id="sp-time"></span>
+                                                    </span>
+                                                </span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                    </ul>
+                </li>
+
+                <li class="light-blue">
+                    <a data-toggle="dropdown" href="#" class="dropdown-toggle">
+
+                        <img class="nav-user-photo" style="width: 40px;height: 40px"
+                             src={{ MEDIA_URL }}{{ IMG_URL }}  onerror="src='{% static "images/user.jpg" %}';"
+                             alt=" photo"/>
+
+                                <span>
+                                    {{ USERNAME }}
+                                </span>
+
+                        <i class="ace-icon fa fa-caret-down"></i>
+                    </a>
+                    <ul class="user-menu dropdown-menu-right dropdown-menu dropdown-yellow dropdown-caret dropdown-close">
+{#                        <li>#}
+{##}
+{#                            <a href="{% url 'sysadmin:user.changePwd' %}">#}
+{#                                <i class="ace-icon fa fa-cog"></i>#}
+{#                                密码修改#}
+{#                            </a>#}
+{#                        </li>#}
+
+{#                        <li>#}
+{#                            <a href="{% url 'sysadmin:user.userInfo' %}">#}
+{#                                <i class="ace-icon fa fa-user"></i>#}
+{#                                个人信息#}
+{#                            </a>#}
+{#                        </li>#}
+
+                        <li class="divider"></li>
+
+                        <li>
+                            <a href="/logout/">
+                                <i class="ace-icon fa fa-power-off"></i>
+                                退出登录
+                            </a>
+                        </li>
+                    </ul>
+
+                </li>
+            </ul>
+        </div>
+    </div><!-- /.navbar-container -->
+</div>

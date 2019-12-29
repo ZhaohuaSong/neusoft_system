@@ -1,0 +1,14 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
+from django.conf.urls import url
+from views_file import FileListView, UpLoadFileConfig, DeleteFileConfig, Next_Page, Last_Page
+
+urlpatterns = [
+    #文件管理中心
+    url(r'^filemanage/file/list$', FileListView.as_view(), name='file.list'),  # 文件及信息显示列表
+    url(r'^filemanage/file/upload', UpLoadFileConfig, name='file.upload'),  # 文件上传
+    url(r'^filemanage/file/delete', DeleteFileConfig.as_view(), name='file.delete'),  # 文件删除
+    url(r'^filemanage/file/next', Next_Page, name='file.next'), #下一页
+    url(r'^filemanage/file/last', Last_Page, name='file.last'), #上一页
+]

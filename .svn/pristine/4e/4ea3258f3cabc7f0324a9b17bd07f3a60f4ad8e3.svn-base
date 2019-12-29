@@ -1,0 +1,152 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2017/1/4 上午11:16
+# @Author  : czw@rich-f.com
+# @Site    : www.rich-f.com
+# @File    : dbconfig.py
+# @Software: PyCharm
+# @Function: 数据库通用类
+
+from sqlalchemy.engine import create_engine
+from sqlalchemy.exc import OperationalError
+from sqlalchemy import inspect
+import re
+
+class dbengine(object):
+
+    #初始赋值
+    def __init__(self,config):
+
+        self.host = config['host']
+        self.port = config['port']
+        self.user = config['user']
+        self.password = config['password']
+        self.dbtype = config['dbtype']
+        self.dbname = config['dbname']
+        self.myscheme=''
+
+    #根据数据库类型决定数据库引擎
+    def get_engine(self):
+        if str(self.dbtype) == 'MySQL':
+            self.myscheme = 'mysql+pymysql://' + self.user + ':' + self.password + '@' + self.host + ':' + self.port + '/' + self.dbname + '?charset=utf8'
+        elif str(self.dbtype) == 'Oracle':
+            self.myscheme='oracle://'+self.user+':'+self.password+'@'+self.host+':'+self.port+'/'+self.dbname
+        elif str(self.dbtype) == 'MSSQLSERVER':
+            self.myscheme = 'mssql+pymssql://' + self.user + ':' + self.password + '@' + self.host + ':' + self.port + '/' + self.dbname
+        engine = create_engine(self.myscheme, pool_size=10, max_overflow=-1, pool_recycle=1200,pool_timeout=5)
+        return engine
+
+    #根据数据库引擎取得数据库链接
+    def connect(self,engine):
+        try:
+            connection = engine.connect()
+        except Exception as e:
+            return str(e.message)
+
+        return connection
+
+    #测试数据库链接是否正常
+    def ping(self):
+        try:
+            connect= self.connect(self.get_engine())
+            return 0
+        except Exception as e:
+            return str(e.message)
+
+    def close(self):
+
+        self.connect(self.get_engine()).close()
+
+    #取得数据库的表
+    def get_tables(self):
+
+        tables=[]
+        try:
+            inspector = inspect(self.get_engine())
+            tables=inspector.get_table_names()
+        except Exception as e:
+            raise Exception('数据库错误：' + str(e))
+        return tables
+
+    #根据表取得数据库的字段
+    def get_columns_bytable(self,table_name):
+
+        columns=[]
+        try:
+            inspector = inspect(self.get_engine())
+
+            cols=inspector.get_columns(table_name)
+            for col in cols:
+                mycol={}
+                if  col.get('autoincrement',''):
+                    mycol['autoincrement']=col['autoincrement']
+                mycol['name']=col['name'] #字段名
+                '''
+                字段类型,把括号内内容替换成空，只留下括号外内容
+                例如VARCHAR(length=10)，只留下VARCHAR
+                '''
+                mycol['type']=re.sub(r'\((.+)\)','',str(col['type']))
+
+                '''
+                字段长度，先检索是否有多个数值"\d"数值"+"代表多个，然后组合
+                例如NUMBER(precision=6, scale=0, asdecimal=False)应该显示6,0
+                '''
+                type_length=re.findall(r'\d+',str(col['type']))
+
+                if type_length.__len__()==0:
+                    mycol['length']=""
+                elif type_length.__len__()==2:
+                    mycol['length'] = type_length[0]+","+type_length[1]
+                else:
+                    mycol['length'] = type_length[0]
+
+                columns.append(mycol)
+
+        except Exception as e:
+
+            raise Exception('数据库错误：'+str(e))
+
+        return columns
+
+
+
+
+from sqlalchemy import Table, Column, Integer, Unicode, MetaData, create_engine
+from sqlalchemy.orm import mapper, create_session
+
+
+
+
+def makeword(e,tablename,wordColumns):
+    class Word(object):pass
+    # wordColumns = ['english', 'korean', 'romanian']
+    print 'tablename:'+tablename
+    print 'wordColumms:'+str(wordColumns)
+    # print 'engine:'+str(engine)
+    metadata = MetaData(bind=e)
+    t = Table(tablename, metadata, Column('id', Integer, primary_key=True),
+        *(Column(wordCol, Unicode(255)) for wordCol in wordColumns))
+    metadata.create_all()
+    mapper(Word, t)
+    return  Word
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

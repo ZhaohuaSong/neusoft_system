@@ -1,0 +1,6 @@
+CREATE TABLE `central_node_ip_port` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '默认django使用的ID',
+  `central_node_ip` varchar(64) DEFAULT NULL COMMENT '中心节点ip',
+  `central_node_port` varchar(64) DEFAULT NULL COMMENT '中心节点端口',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=7250 DEFAULT CHARSET=utf8

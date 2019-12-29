@@ -1,0 +1,26 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
+import os
+import sys
+
+from multiprocessing import Pool
+
+def open_django(port):
+    os.system("python manage.py runserver 0.0.0.0:"+str(port))
+
+
+def open_socketserver():
+    os.system("python -m richDataX-system.richdataserver.receiveserver")
+
+if __name__ == '__main__':
+    print 'Parent process %s.' % os.getpid()
+    p = Pool()
+    try:
+        p.apply_async(open_django,args=(sys.argv[1:][0],))
+    except:
+        p.apply_async(open_django,args=(8000,))
+    p.apply_async(open_socketserver)
+    p.close();
+    p.join()
+

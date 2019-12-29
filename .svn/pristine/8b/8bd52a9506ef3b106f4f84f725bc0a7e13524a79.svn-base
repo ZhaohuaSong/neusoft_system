@@ -1,0 +1,149 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2016/12/29 下午6:24
+# @Author  : czw@rich-f.com
+# @Site    : www.rich-f.com
+# @File    : forms.py
+# @Software: PyCharm
+# @Function: 表单类
+
+from django import forms
+from models import SysDict, DbConfig
+import re
+import logging
+
+_logger = logging.getLogger('loggers')
+
+class DBConfigForm(forms.Form):
+    """
+    ===============================================================================
+    function：    数据配置表单
+    developer:    Rich.Chen
+    add-time      2016/12/29
+    Note:
+    ===============================================================================
+    """
+
+    appname = forms.CharField(
+        label='应用名称：',
+        required=True,
+        widget=forms.TextInput(
+            attrs={'class': 'col-xs-10 col-sm-5',
+                   'placeholder': u'应用名称',
+                   'name': 'appname',
+                   }
+        )
+    )
+
+    dbtype = forms.ChoiceField(
+        label='数据库类型：',
+        required=True,
+        widget=forms.Select(
+            attrs={
+                'id': 'form-field-select-1',
+                'placeholder': u'数据库类型',
+                'name': 'dbtype',
+                'class': 'select2  form-control',
+            }
+        )
+
+    )
+
+    dbhost = forms.GenericIPAddressField(
+        label='数据库IP地址：',
+        required=True,
+        widget=forms.TextInput(
+            attrs={'class': 'ip_address col-xs-10 col-sm-5',
+                   'placeholder': u'数据库IP地址',
+                   'name': 'dbhost',
+
+                   }
+        )
+    )
+
+    dbport = forms.CharField(
+        label='数据库端口：',
+        required=True,
+        widget=forms.TextInput(
+            attrs={'class': 'col-xs-10 col-sm-5',
+                   'placeholder': u'数据库端口',
+                   'name': 'dbport',
+                   }
+        )
+    )
+
+    dbname = forms.CharField(
+        label='数据库名：',
+        required=True,
+        widget=forms.TextInput(
+            attrs={'class': 'col-xs-10 col-sm-5',
+                   'placeholder': u'数据库名',
+                   'name': 'dbname',
+                   }
+        )
+    )
+
+    dbusername = forms.CharField(
+        label='数据库用户名：',
+        required=True,
+        widget=forms.TextInput(
+            attrs={'class': 'col-xs-10 col-sm-5',
+                   'placeholder': u'数据库用户名',
+                   'name': 'dbusername',
+                   }
+        )
+
+    )
+
+    dbpassword = forms.CharField(
+        label='数据库密码：',
+        required=True,
+        widget=forms.PasswordInput(
+            attrs={'class': 'col-xs-10 col-sm-5',
+                   'placeholder': u'数据库密码',
+                   'name': 'dbpassword',
+                   }
+        )
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(DBConfigForm, self).__init__(*args, **kwargs)
+        # 初始化数据库类型
+        choices = SysDict.objects.filter(dict_type='dbtype').values_list("dict_name", "dict_name")
+        choices = [('', '----------')] + list(choices)
+        self.fields['dbtype'].choices = choices
+
+
+    def clean_appname(self):
+        appname=self.cleaned_data['appname']
+        if appname:
+            if DbConfig.objects.filter(appname=appname).count() is not 0:
+                raise forms.ValidationError(u'这个应用名称已经登记')
+            else:
+                return appname
+        else:
+            pass
+
+    def clean_dbport(self):
+        dbport=self.cleaned_data['dbport']
+        pattern = re.compile("^([0-9]{1,4}|[1-5][0-9]{4}|6[0-5]{2}[0-3][0-5])$") #设置端口的正则验证
+        if dbport:
+            if pattern.match(dbport):
+                return dbport
+            else:
+                raise forms.ValidationError('请输入正确的端口！')
+        else:
+            pass
+
+
+
+
+
+
+
+
+
+
+
+
+

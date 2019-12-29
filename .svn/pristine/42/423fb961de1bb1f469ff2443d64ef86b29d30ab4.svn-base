@@ -1,0 +1,200 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2017/3/14
+# @Author  : wangyingqi
+# @Site    :
+# @File    : views_ter_apps.py
+# @Software: PyCharm
+# @Function: 终端管理视图模型，重写view
+
+from django.shortcuts import render
+from django.http import HttpResponseRedirect
+from django.core.urlresolvers import reverse
+from ..common.datatables.views import BaseDatatableView
+from django.views.generic import TemplateView
+from ..vanilla import CreateView, QUpdateView
+
+from django.http import JsonResponse
+from django.db.models import Q
+import datetime
+import json
+from gevent import socket
+import logging
+_logger = logging.getLogger('loggers')
+
+from models import Apps, TriggerType, ProtocolType, LocalApp
+
+from forms import FormApp
+
+# Create your views here.
+class TerListAppsView(TemplateView):
+    template_name = 'packmanage/terminal.apps.list.html'
+
+    def get(self, request, *args, **kwargs):
+        opt = request.GET.get('option', None)
+        if opt is not None and opt == u'check_ip':
+            id = request.GET.get('id')
+            try:
+                app = Apps.objects.get(id=id)
+            except:
+                context = {'code': '01', 'desc': u'该应用程序在不存在!'}
+                return JsonResponse(context)
+
+            ip = app.app_ip
+            port = app.app_port
+            return check_server(ip, port)
+
+        protocol_list = ProtocolType.objects.all().values_list('protocol_id', 'protocol_name')
+
+        context = self.get_context_data(**kwargs)
+        context['protocol_list'] = protocol_list
+        return self.render_to_response(context)
+        #return super(ListAppsView, self).get(request, *args, **kwargs)
+
+class TerJsonAppsView(BaseDatatableView):
+    model = Apps
+    columns = ['id', 'id', 'app_name', 'app_id', 'app_ip', 'app_port',  'app_state', 'id', 'id', ]
+    order_columns = ['id', 'id', 'app_name', 'app_id', 'app_ip', 'app_port', 'app_state', 'id', 'id', ]
+
+
+
+    #基类的基础查询条件
+    def format_base_search_Q(self, search):
+        q = Q()
+
+
+        if search == u'正常使用':
+            q |= Q(app_state=1)
+        elif search == u'已停用':
+            q |= Q(app_state=0)
+        return q
+
+def check_server(ip, port):
+    if isinstance(ip, unicode): ip = ip.encode("utf-8")
+    if isinstance(port, unicode): port = port.encode("utf-8")
+
+    sk = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sk.settimeout(10)
+
+    try:
+        sk.connect((ip, int(port)))
+        sk.sendall('test')
+        data = sk.recv(8192)
+        if 'ok' == data:
+            context = {'code': '00', 'desc': '终端运行状态良好!'}
+        else:
+            context = {'code': '01', 'desc': '终端运行失败!'}
+    except Exception as e:
+        context = {'code': '01', 'desc': '终端运行异常：%s!' % str(e)}
+    finally:
+        sk.close()
+        return JsonResponse(context)
+
+
+class TerCreateAppView(CreateView):
+    '''
+    创建视图
+    '''
+    form_class = FormApp
+    template_name = 'packmanage/packmanage.apps.form.html'
+
+    def get(self, request, *args, **kwargs):
+        opt = request.GET.get('option', None)
+        if opt is not None and opt == u'check_ip':
+            ip = request.GET.get('ip')
+            port = request.GET.get('port')
+            return check_server(ip, port)
+
+        return super(TerCreateAppView, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        self.user = request.user
+        return super(TerCreateAppView, self).post(request, *args, **kwargs)
+
+
+    #成功后跳转
+    def form_valid(self, form):
+        self.save(form)
+        return HttpResponseRedirect(reverse('packmanage:apps.list1'))
+
+    #保存
+    def save(self, form):
+        app_name  = form.cleaned_data['app_name']
+        app_id = form.cleaned_data['app_id']
+        app_ip    = form.cleaned_data['app_ip']
+        app_port  = form.cleaned_data['app_port']
+        app_note  = form.cleaned_data['remarks']
+        app_state = form.cleaned_data['app_state']
+
+        app = Apps()
+        app.app_name = app_name
+        app.app_id = app_id
+        app.app_ip = app_ip
+        app.app_port = app_port
+        app.app_state = app_state
+        app.create_by = self.user.username
+        app.create_date = datetime.datetime.now()
+        app.update_date = app.create_date
+        app.remarks = app_note
+        app.save()
+
+class TerEditAppView(QUpdateView):
+    '''
+    编辑视图
+    '''
+    model = Apps
+    form_class = FormApp
+    template_name = 'packmanage/packmanage.apps.form.html'
+
+
+    def get(self, request, *args, **kwargs):
+        opt = request.GET.get('option', None)
+        if opt is not None and opt == u'check_ip':
+            ip = request.GET.get('ip')
+            port = request.GET.get('port')
+            return check_server(ip, port)
+
+        return super(TerEditAppView, self).get(self, request, *args, **kwargs)
+
+    def get_success_url(self):
+        return reverse('packmanage:apps.list1')
+
+    def save(self, form):
+        app_name = form.cleaned_data['app_name']
+        app_ip = form.cleaned_data['app_ip']
+        app_id = form.cleaned_data['app_id']
+        app_port = form.cleaned_data['app_port']
+        app_note = form.cleaned_data['remarks']
+        app_state = form.cleaned_data['app_state']
+
+        app = self.object
+        app.app_name = app_name
+        app.app_id = app_id
+        app.app_ip   = app_ip
+        app.app_port = app_port
+        app.remarks = app_note
+        app.app_state = app_state
+        app.update_date = datetime.datetime.now()
+        app.save()
+
+def ter_apps_delete(request):
+    '''
+    批量删除
+    :param request:
+    :return:
+    '''
+    json_data = json.loads(request.GET.get('ids'))
+    list_id_del = json_data['ids']
+
+    sql = Q()
+
+    for id in list_id_del:
+        sql = sql | Q(id=id)
+
+    qs = Apps.objects.filter(sql)
+    if 0 != len(qs):
+        qs.delete()
+
+
+    name_dict = {'code': '00', 'desc': '删除成功!'}
+    return JsonResponse(name_dict)

@@ -1,0 +1,498 @@
+jQuery(function ($) {
+
+
+    /**********全局变量区域**************/
+    var g_datasrc_data; //数据源数据
+    var g_data_list;//
+    var g_data_list_keys;
+    var g_bFile;//是否文件数据源
+    var g_inParam=[];//输入参数——条件参数列表
+    var g_outParam;//输出参数名称列表
+    var g_datasrc_name;//数据源名称
+    var g_datasrc_id;
+    var g_datasrc_type;//数据源类型
+    var g_datasrc_type_name;//
+
+    var g_inDataSrc;//数据源
+    var g_outDataSrc;//数据源
+    /************************************/
+
+
+    $('.btn_add').click(function(){ 
+        var tb = $(this).closest("table");
+        add_tr(tb);
+    });
+
+    function add_tr(tb){
+        var tr=jQuery('<tr class="content">\
+                    <td><input  type="text"   class="field_name"  value=""  style="width:180px"></input></td>\
+                    <td><input  type="number" class="bit_index"  value="" style="width:120px" ></input></td>\
+                    <td><button type="button" class="btn btn-white btn-danger btn-sm"><i class="ace-icon fa fa-times red2"></i>删除</button></td></tr>');
+        tr.appendTo(tb); 
+   
+        tr.find("button").on("click", function(){
+                delete_tr($(this));
+             }); 
+    }
+ 
+    
+    $('.btn_delete').click(function(){ 
+        delete_tr($(this))
+    });
+
+    //删除一行
+    function delete_tr(btn){
+        
+        btn.closest('tr').remove();
+        rename_index();
+    }
+
+    //重新命名序号
+    function rename_index(){
+        var i=1; 
+        $('tr.content').each(function(){
+            var tr = $(this);
+
+            tr.find(".index").attr("value", i); 
+            i++;
+        }); 
+    }
+
+     
+    //函数结束
+
+    function get_in_param(){
+        var arr_data = {};
+        var i="0";
+
+        in_param_arr = new Array()
+        $('#protocol_in tr.content').each(function(){
+            var tr = $(this); 
+            var json_data = {};//一行格式数据 
+            json_data["field_name"] = tr.find("input.field_name").val();
+            json_data["bit_index"]  = tr.find("input.bit_index").val();  
+
+            in_param_arr.push(json_data["field_name"]);
+
+            arr_data[i] = json_data;
+            i=i+"0";
+        }); 
+
+        g_inParam = in_param_arr;
+
+        return arr_data
+    }
+
+    function get_out_param(){
+        var arr_data = {};
+        var i="0";
+        var out_param_arr = new Array()
+        $('#protocol_out tr.content').each(function(){
+            var tr = $(this); 
+            var json_data = {};//一行格式数据 
+            json_data["field_name"] = tr.find("input.field_name").val();
+            json_data["bit_index"]  = tr.find("input.bit_index").val();  
+
+            out_param_arr.push(json_data["field_name"]);
+            arr_data[i] = json_data;
+            i=i+"0";
+        }); 
+
+        g_outParam = out_param_arr;
+
+        return arr_data
+    }
+
+
+    //数据源下拉框选择事件
+    jQuery("#sel-datasrc").change(function(){ 
+        var dsrc_id = jQuery("#sel-datasrc  option:selected").attr("value");
+        g_datasrc_type=jQuery("#sel-datasrc  option:selected").attr("value");
+        g_datasrc_type_name=jQuery("#sel-datasrc  option:selected").text();
+
+
+        if(0==dsrc_id){//数据源为文件
+            jQuery(".o-db").addClass("hidden");
+            jQuery(".o-file").removeClass("hidden");
+            g_bFile=true; 
+        }
+        else if(1==dsrc_id){//数据源为DB
+            jQuery(".o-file").addClass("hidden");
+            jQuery(".o-db").removeClass("hidden");
+            g_bFile=false; 
+        }
+        else{
+            jQuery(".o-file").addClass("hidden");
+            jQuery(".o-db").addClass("hidden");
+        }
+    })
+
+
+    jQuery("#sel-file").change(function(){ 
+
+        var file_name = jQuery("#sel-file  option:selected").attr("value");
+        g_datasrc_name = file_name;
+        g_datasrc_id=  file_name;
+
+    
+        if(file_name!="-1"){
+            var url = window.location.href + "&option=get_file_cols";
+            url += "&file_name="; url += file_name;
+
+            $.ajax({
+                type: "GET",
+                url: url,
+                success: function (data) { 
+
+                    if (data["code"] == "00") {
+                        
+                        //cerate_src_sel(data['data']);
+                        g_data_list = data['data'];
+                        create_cols_file_table(data['data'])
+
+                        jQuery(".o-1-pre").removeClass("hidden"); 
+                    }
+                    else { 
+                         alert(data["desc"])
+                    } 
+                }
+            });
+        }
+        else{ 
+            jQuery(".o-1-pre").addClass("hidden"); 
+            jQuery("#tb_file tbody").empty(); 
+        }
+    })
+
+    jQuery("#sel-db").change(function(){ 
+
+        var file_name = jQuery("#sel-db  option:selected").attr("value");
+        g_datasrc_id = jQuery("#sel-db  option:selected").text();
+        g_datasrc_name = file_name
+    
+ 
+    
+        if(file_name!="-1"){
+            var url = window.location.href + "&option=get_db_cols";
+            url += "&file_name="; url += file_name;
+
+            $.ajax({
+                type: "GET",
+                url: url,
+                success: function (data) { 
+
+                    if (data["code"] == "00") {
+                        
+                        //cerate_src_sel(data['data']);
+                        g_data_list = data['data'];
+                        g_data_list_keys = data['keys']
+                        create_cols_file_table(data['data'])
+
+                        jQuery(".o-1-pre").removeClass("hidden"); 
+                    }
+                    else { 
+                         alert(data["desc"])
+                    } 
+                }
+            });
+        }
+        else{ 
+            jQuery(".o-1-pre").addClass("hidden"); 
+            jQuery("#tb_file tbody").empty(); 
+        }
+    })
+
+
+
+
+    //生成表格
+    function create_cols_file_table(data){
+        var tb = jQuery("#tb_data_src_colom tbody");
+        tb.empty() 
+
+        for(i=0; i<data.length; i++){
+
+            var index = i+1;
+            var sFormat="<tr><td>"+index+"</td><td>"+ data[i] +"</td></tr>"
+
+            var tr = jQuery(sFormat);
+            tr.appendTo(tb)
+        }
+ 
+        // for(i=0; i<data.length; i++){
+
+        //     var index = i+1;
+        //     var sFormat="<tr><td>"+index+"</td><td>"+ data[i] +"</td><td style='padding:3px'><select class='form-control1 src_sel_col' style='max-heigh:12px'><option value='-1'>----------</option></select></td></tr>"
+
+        //     var tr = jQuery(sFormat); 
+        //     tr.appendTo(tb);
+        // } 
+    }
+
+
+    $("#btn-go-step2").bind("click", function(){
+        jQuery("li[data-step=\"2\"]").addClass("active")
+
+        jQuery(".step_1").addClass("hidden")
+        jQuery(".step_2").removeClass("hidden") 
+    })
+
+    $("#btn-go-step3").bind("click", function(){
+        create_data_src_tb();
+        //create_cols_file_table(g_inParam);
+        jQuery("li[data-step=\"3\"]").addClass("active")
+        //create_cols_file_table(g_inParam);
+        jQuery(".step_2").addClass("hidden")
+        jQuery(".step_3").removeClass("hidden")
+    })
+
+    //创建数据源表格
+    function create_data_src_tb(){
+        get_in_param();
+        get_out_param();
+
+        var sOpt="<select style='width:100%'  class='src_sel_col in_sel_src' ><option value='-1' >----------</option>"
+        for(i=0; i<g_data_list.length; i++){
+            if(g_bFile)
+                sOpt += "<option value='" + i + "'>";
+            else
+                sOpt += "<option value='" + g_data_list_keys[i]+ "'>";
+
+
+            
+            sOpt += g_data_list[i];
+            sOpt +="</option>";
+        }
+        sOpt+="</select>"
+
+        var tb = jQuery("#src_protocol_in tbody");
+        tb.empty()
+        for(i=0; i<g_inParam.length; i++){ 
+            var sFormat="<tr><td><input type='text' style='width:180px' value='" + g_inParam[i] + "' ></input></td><td>" + sOpt +  "</td></tr>";
+
+
+            var tr = jQuery(sFormat);
+            tr.appendTo(tb)
+        }
+
+        var sOpt="<select style='width:100%'  class='src_sel_col out_sel_src' ><option value='-1' >----------</option>"
+        for(i=0; i<g_data_list.length; i++){ 
+            if(g_bFile)
+                sOpt += "<option value='" + i + "'>";
+            else
+                sOpt += "<option value='" + g_data_list_keys[i]+ "'>";
+
+            sOpt += g_data_list[i];
+            sOpt +="</option>";
+        }
+        sOpt+="</select>"
+
+        var tb = jQuery("#src_protocol_out tbody");
+        tb.empty()
+        for(i=0; i<g_outParam.length; i++){
+
+            var index = i+1;
+            var sFormat="<tr><td><input type='text' style='width:180px' value='" + g_outParam[i] + "' ></input></td><td>" + sOpt +  "</td></tr>";
+
+            var tr = jQuery(sFormat);
+            tr.appendTo(tb)
+        }
+    }
+
+    $("#btn-back-step1").bind("click", function(){
+       
+        jQuery("li[data-step=\"2\"]").removeClass("active")
+        jQuery(".step_1").removeClass("hidden")
+        jQuery(".step_2").addClass("hidden") 
+    })
+
+    $("#btn-back-step2").bind("click", function(){
+        jQuery("li[data-step=\"3\"]").removeClass("active")
+        jQuery(".step_2").removeClass("hidden")
+        jQuery(".step_3").addClass("hidden") 
+    })
+
+ 
+    //格式化数据源配置信息，返回json数据
+    function get_file_src_param(){
+
+        //1、获取输入参数
+     
+        var arr_in_v = new Array();
+        var arr_in_sel = jQuery("select.in_sel_src");//输入参数下拉框
+        var json_data_in = {}
+        arr_in_sel.each(function(index, sel){
+            var sel = $(this); 
+            var id = sel.find("option:selected").attr("value");
+            var v = sel.find("option:selected").text();
+
+            json_data_in[index] = id + '_' + v;
+            arr_in_v.push(json_data_in[index]);
+        });
+
+
+        g_inDataSrc = json_data_in;
+ 
+
+
+
+        //2、获取输出参数
+        var json_data_out = {}
+        var arr_out_v = new Array();
+        var arr_out_sel = jQuery("select.out_sel_src");//输出参数下拉框
+        arr_out_sel.each(function(index, sel){
+            var sel = $(this);
+            var id = sel.find("option:selected").attr("value");
+            var v = sel.find("option:selected").text();
+            json_data_out[index] = id+'_'+v;
+
+            arr_out_v.push(json_data_out[index]);
+        })
+        g_outDataSrc = json_data_out;
+   
+
+
+        //1. get protocol content
+        var protocol_data={};
+        protocol_data["in"] = get_in_param();
+        protocol_data["out"] = get_out_param(); 
+        protocol_data["operation"] = jQuery("#sel_protocol_operation").find("option:selected").attr("value");
+        jQuery("#protocol_opt_type").attr("value", jQuery("#sel_protocol_operation").find("option:selected").text())
+
+
+ 
+        //2. get in param data src
+        var in_data_src = {}
+        in_data_src["src_type"]  = g_datasrc_type;
+      
+        in_data_src["src_name"]  = g_datasrc_name;
+  
+        in_data_src["param_in"]  = g_inDataSrc; 
+        in_data_src["param_out"]  = g_outDataSrc; 
+  
+ 
+        //3. format post data
+        var json_data = {}
+        json_data["protocol_content"] = protocol_data
+        json_data["data_src"] = in_data_src
+        json_data["operation"] = jQuery("#sel_protocol_operation").find("option:selected").attr("value"); 
+
+        var postdata = JSON.stringify(json_data);
+    
+
+
+        return postdata;
+    }
+ 
+
+    $("#btn-save").bind("click", function(){
+
+
+        get_in_param();
+        get_out_param();
+        var postData=get_file_src_param();
+
+        // var json_data={};
+        // json_data["in"] = get_in_param();
+        // json_data["out"] = get_out_param(); 
+        // json_data["operation"] = jQuery("#sel_protocol_operation").find("option:selected").attr("value");
+        // var postdata = JSON.stringify(json_data);
+         
+
+     
+ 
+        var url = window.location.href;
+        if(g_bFile){//文件数据源配置 
+            url  = url+ "&g_datasrc_type=file";
+        }
+        else{//数据库数据源配置
+            // data = get_db_src_param();
+            // bFile = false;
+            // url  = url+ "&datasrc_type=db";
+        }
+
+         
+        $.post( url, postData, function(data, status){
+            if(status=="success"){            
+                if(data["code"]=="00"){ 
+                    alert_dialog(data["desc"])
+                }
+                else{
+                    alert_dialog(data["desc"])
+                }
+            }
+        })
+
+        
+    })
+
+    function go_step4(){
+        jQuery("li[data-step=\"4\"]").addClass("active") 
+        
+        var tb_in = jQuery("#in_table_show tbody");
+        tb_in.empty();
+        for(i=0; i<g_inParam.length; i++){
+            var index = i+1;
+            var sF = "<tr><td>" + index + "</td><td>" + g_inParam[i] + "</td><td>" + g_inDataSrc[i] + "</td></tr>";
+            jQuery(sF).appendTo(tb_in);
+        }
+
+        var tb_out = jQuery("#out_table_show tbody");
+        tb_out.empty();
+        for(i=0; i<g_outParam.length; i++){
+            var index = i+1;
+            var sF = "<tr><td>" + index + "</td><td>" + g_outParam[i] + "</td><td>" + g_outDataSrc[i] + "</td></tr>";
+            jQuery(sF).appendTo(tb_out);
+        }
+ 
+
+        jQuery("#lb_datasrc_type").text(g_datasrc_type_name);
+        jQuery("#lb_datasrc_name").text(g_datasrc_id);
+
+        jQuery("li[data-step=\"4\"]").addClass("active")
+        jQuery(".step_3").addClass("hidden")
+        jQuery(".step_4").removeClass("hidden")
+    }
+      
+    //重新配置 
+    $("#btn_reconfig").bind("click", function(){
+        var url = window.location.href + "&option=reconfig";
+
+        $.get( url, function(data, status){
+            if(status=="success"){              
+                if(data["code"]=="00"){ 
+                    //重新刷新当前页面
+                    window.location.reload();
+                }
+                else{
+                    alert_dialog(data["desc"])
+                }
+            }
+        })
+    })
+
+    //报文操作类型
+    jQuery("#sel_protocol_operation").change(function(){
+        var sel = $(this);
+        var v = sel.find("option:selected").attr("value");
+        if(v==0 || v==1){
+            jQuery(".out_div").addClass("hidden")
+            jQuery(".in_div").removeClass("hidden")
+            jQuery(".btn_save").removeClass("hidden")
+        }
+        else if (v==-1){
+            jQuery(".in_div").addClass("hidden")
+            jQuery(".out_div").addClass("hidden")
+            jQuery(".btn_save").addClass("hidden")
+        }
+        else{
+            jQuery(".out_div").removeClass("hidden")
+            jQuery(".in_div").removeClass("hidden")
+            jQuery(".btn_save").removeClass("hidden")
+        }
+         
+    })
+ 
+})
+
+

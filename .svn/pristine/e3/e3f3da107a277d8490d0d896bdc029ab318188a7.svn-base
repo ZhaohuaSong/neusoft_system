@@ -1,0 +1,114 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2017/2/17 14:41
+# @Author  : qiujunli
+# @Site    :
+# @File    : views_trigger.py
+# @Software: PyCharm
+# @Function: 触发器列表
+
+from django.views.generic import TemplateView
+from ..vanilla import CreateView, QUpdateView
+from django.http import JsonResponse
+from django.core.urlresolvers import reverse
+from django.http import HttpResponseRedirect
+from django.db.models import Q
+import datetime
+import json
+import logging
+_logger = logging.getLogger('loggers')
+from forms import FormTrigger
+
+from ..common.datatables.views import BaseDatatableView
+
+from models import Apps, Protocoltrigger, TriggerType, ProtocolType
+
+# Create your views here.
+
+class PageTriggerView(TemplateView):
+    template_name = 'packmanage/packmanage.trigger.list.html'
+
+
+class JsonTriggerView(BaseDatatableView):
+    model = Protocoltrigger
+    columns = ['id','id',  'name', 'trigger_type', 'app_id',  'protocol_id', 'datasrc_type', 'datasrc_id', 'id' ]
+    order_columns = ['id','id',  'name', 'trigger_type', 'app_id',  'protocol_id', 'datasrc_type', 'datasrc_id', 'id' ]
+
+    def get_json(self, response):
+        data_list = response['data']
+        for data in data_list:
+            try:
+                data[3] = TriggerType.objects.get(trigger_id=data[3]).trigger_name
+            except Exception as e:
+                pass
+
+            try:
+                data[4] = Apps.objects.get(app_id=data[4]).app_name
+            except Exception as e:
+                pass
+
+            try:
+                data[5] = ProtocolType.objects.get(protocol_id=data[5]).protocol_name
+            except Exception as e:
+                pass
+
+        return super(JsonTriggerView, self).get_json(response)
+
+
+class CreateTriggerView(CreateView):
+    '''
+    创建视图
+    '''
+    form_class = FormTrigger
+    template_name = 'packmanage/packmanage.trigger.form.html'
+
+    def get(self, request, *args, **kwargs):
+        # form = FormTrigger()
+        # context = self.get_context_data(form=form)
+        return super(CreateTriggerView, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+
+        return super(CreateTriggerView, self).post(request, *args, **kwargs)
+
+
+    #成功后跳转
+    def form_valid(self, form):
+        self.save(form)
+        return HttpResponseRedirect(reverse('packmanage:trigger.list'))
+
+    #保存
+    def save(self, form):
+        pass
+        trigger_name  = form.cleaned_data['trigger_name']
+        app_id = form.cleaned_data['app_name']
+        protocol_id    = form.cleaned_data['protocol_name']
+        trigger_type  = form.cleaned_data['trigger_type']
+
+        info = Protocoltrigger()
+        info.app_id = app_id
+        info.protocol_id = protocol_id
+        info.trigger_type = trigger_type
+        info.name = trigger_name
+        info.save()
+
+def trigger_delete(request):
+    '''
+    批量删除
+    :param request:
+    :return:
+    '''
+    json_data = json.loads(request.GET.get('ids'))
+    list_id_del = json_data['ids']
+
+    sql = Q()
+
+    for id in list_id_del:
+        sql = sql | Q(id=id)
+
+    qs = Protocoltrigger.objects.filter(sql)
+    if 0 != len(qs):
+        qs.delete()
+
+    name_dict = {'code': '00', 'desc': '删除成功!'}
+    return JsonResponse(name_dict)

@@ -1,0 +1,587 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+from django.views.generic import TemplateView
+from ..common.datatables.views import BaseDatatableView
+from django.db.models import Q
+from django.http import JsonResponse, HttpResponse
+from django.shortcuts import render_to_response
+from django.template import RequestContext
+import json
+from models_resource_catalog import OrgInfo, ResourceList, ResourceDetails, ResourceMiddleWare, CentralNodeIPPort
+from ..vanilla import CreateView, UpdateView
+from forms import OrgListForm, OrgEditForm, DOrgListForm, generate_resource_id
+from django.http import HttpResponseRedirect
+from django.views.decorators.csrf import csrf_exempt
+from django.template.response import TemplateResponse
+from django.core.urlresolvers import reverse
+from datetime import datetime
+import urllib2
+import urllib
+
+
+class OrgList(TemplateView):
+    template_name = 'source_catalog/org.list.html'
+
+
+class DOrgList(TemplateView):
+    template_name = 'source_catalog/org.detail.list.html'
+
+
+class OrgJson(BaseDatatableView):
+    '''
+    Json 数据格式(表信息显示)
+    '''
+    model = ResourceList
+    columns = ['id', 'id', 'resource_name', 'category_name', 'power', 'update', 'resource_type', 'registration_time',
+               'org_name', 'post_status', 'audit_status']
+    order_columns = ['id', 'id', 'resource_name', 'category_name', 'power', 'update', 'resource_type',
+                     'registration_time', 'org_name', 'post_status', 'audit_status']
+
+    def get_initial_queryset(self):
+        # 如果数据有错误，则过滤数据
+        try:
+            save_son_data()
+        except:
+            pass
+        data = self.model.objects.filter(create_by=self.request.user.id)
+        return data
+
+    def filter_queryset(self, qs):
+        # 部分条目查询
+        if not self.pre_camel_case_notation:
+            search = self._querydict.get('search[value]', None)
+            q = Q()
+            if 0 != len(search):
+                q = q | Q(resource_id__contains=search)
+                q = q | Q(resource_name__contains=search)
+                q = q | Q(org_name__contains=search)
+                q = q | filterResourceMiddleWare(search, ResourceMiddleWare, 0)
+                if search == '数据库':
+                    search = '0'
+                elif search == '文件':
+                    search = '1'
+                q = q | Q(resource_type__contains=search)
+            qs = qs.filter(q)
+        return qs
+
+    def prepare_results(self, qs):
+        json_data = []
+        for item in qs:
+            audit_status = ''
+            if item.audit_status == '0':
+                audit_status = '待审核'
+            elif item.audit_status == '1':
+                audit_status = '审核中'
+            elif item.audit_status == '2':
+                audit_status = '已审核'
+
+            resource_type = ''
+            if item.resource_type == '0':
+                resource_type = '数据库'
+            elif item.resource_type == '1':
+                resource_type = '文件'
+
+            post_status = ''
+            if item.post_status == '2':
+                post_status = '已发布'
+            elif item.post_status == '1':
+                post_status = '已停用'
+
+            json_data.append([
+                item.id,
+                item.id,
+                item.resource_id,
+                item.resource_name,
+                item.org_name,
+                getmiddleWare(item.category_name),
+                getmiddleWare(item.power),
+                getmiddleWare(item.update),
+                resource_type,
+                item.registration_time.strftime("%Y-%m-%d"),
+                post_status,
+                audit_status,
+            ])
+        return json_data
+
+
+def getmiddleWare(value):
+    # 获取相关属性名
+    try:
+        resourcemiddleWare = ResourceMiddleWare.objects.get(mid_id=value)
+        return resourcemiddleWare.mid_name
+    except:
+        return ''
+
+
+def filterResourceMiddleWare(select_val, object_model, type):
+    # 查询数据领域
+
+    q_value = Q()
+    q = Q()
+    if type == 0:
+        q_value = q_value | Q(mid_name__contains=str(select_val))
+    idArray = object_model.objects.all().filter(q_value)
+    for object in idArray:
+        q = q | Q(category_name=object.mid_id) | Q(power=object.mid_id) | Q(update=object.mid_id)
+    return q
+
+
+class OrgDetailJson(BaseDatatableView):
+    '''
+    Json 数据格式(字段信息显示)
+    '''
+    model = ResourceDetails
+    columns = ['id', 'id', 'field_name', 'field_name_resolution', 'search', 'result', 'modify', 'add',
+               'delete', ]
+    order_columns = ['id', 'id', 'field_name', 'field_name_resolution', 'search', 'result', 'modify', 'add',
+                     'delete', ]
+
+    def get_initial_queryset(self):
+        initial_resource_id = self.request.GET.get('resource_id','')
+        # 如果数据有错误，则过滤数据
+        if initial_resource_id == generate_resource_id():
+            data = self.model.objects.filter(resource_id=generate_resource_id())
+        else:
+            data = self.model.objects.filter(resource_id=initial_resource_id)
+        return data
+
+    def prepare_results(self, qs):
+        json_data = []
+        for item in qs:
+            json_data.append([
+                item.id,
+                item.id,
+                item.resource_id,
+                item.field_name,
+                item.field_name_resolution,
+                getmiddleWare(item.search),
+                getmiddleWare(item.result),
+                getmiddleWare(item.modify),
+                getmiddleWare(item.add),
+                getmiddleWare(item.delete),
+                item.search,
+                item.result,
+                item.modify,
+                item.add,
+                item.delete
+            ])
+        return json_data
+
+
+@csrf_exempt
+def org_add(request):
+    """注册资源目录(表信息)"""
+    if request.method == "POST":
+        form = OrgListForm(request.POST)
+        if form.is_valid():
+            resource_id = request.POST.get('resource_id', '')
+            resource_name = request.POST.get('resource_name', '')
+            category_name = request.POST.get('category_name', '')
+            power = request.POST.get('power', '')
+            update = request.POST.get('update', '')
+            resource_type = request.POST.get('resource_type', '')
+            registration_time = datetime.now()
+
+            try:
+                orginfo = OrgInfo.objects.first()
+                org_name = orginfo.org_name
+                org_address = orginfo.org_address
+            except:
+                org_name = ''
+                org_address = ''
+
+            resource_list = ResourceList.objects.create(
+                resource_id=resource_id, resource_name=resource_name,
+                category_name=category_name, resource_type=resource_type, post_status='2',
+                registration_time=registration_time, org_name=org_name, org_address=org_address, audit_status='0',
+                create_by=request.user.id, power=power, update=update)
+
+            re_dict = urllib.urlencode(
+                {'resource_id': resource_id, 'resource_name': resource_name, 'category_name': category_name,
+                 'power': power, 'update': update, 'resource_type': resource_type, 'post_status': '2',
+                 'registration_time': registration_time, 'org_name': org_name, 'org_address': org_address,
+                 'audit_status': '0', 'create_by': request.user.id})
+            try:
+                save_central_re_data(re_dict)
+                resource_list.save()
+            except:
+                resource_list.save()
+            return HttpResponseRedirect(reverse('source_catalog:org.list'))
+
+    else:
+        form = OrgListForm()
+    kwvars = {
+        'form': form,
+        'request': request,
+        'category_name': getmid_name('category_name'),
+        'power': getmid_name('power'),
+        'update': getmid_name('update'),
+        'search': getmid_name('search'),
+        'result': getmid_name('result'),
+        'modify': getmid_name('modify'),
+        'add': getmid_name('add'),
+        'delete': getmid_name('delete'),
+        'resource_id': generate_resource_id()
+    }
+
+    return TemplateResponse(request=request, template='source_catalog/org.add.html', context=kwvars)
+
+
+@csrf_exempt
+def org_details_add(request):
+    """注册资源目录(字段信息)"""
+    if request.method == "POST":
+        form = DOrgListForm(request.POST)
+        if form.is_valid():
+            resource_id = request.POST.get('resource_id', '')
+            field_name = request.POST.get('field_name', '')
+            field_name_resolution = request.POST.get('field_name_resolution', '')
+            search = request.POST.get('search', '')
+            result = request.POST.get('result', '')
+            modify = request.POST.get('modify', '')
+            add = request.POST.get('add', '')
+            delete = request.POST.get('delete', '')
+            registration_time = datetime.now()
+
+            try:
+                orginfo = OrgInfo.objects.first()
+                org_name = orginfo.org_name
+            except:
+                org_name = ''
+
+            resource_details = ResourceDetails.objects.create(
+                resource_id=resource_id, field_name=field_name,
+                field_name_resolution=field_name_resolution, org_name=org_name, search=search, result=result,
+                modify=modify, add=add, delete=delete, post_time=registration_time)
+            de_dict = urllib.urlencode(
+                {'resource_id': resource_id, 'field_name': field_name, 'field_name_resolution': field_name_resolution,
+                 'org_name': org_name, 'search': search, 'result': result, 'modify': modify,
+                 'add': add, 'delete': delete, 'post_time': registration_time, })
+
+            try:
+                central_org_detail_data(de_dict)
+                resource_details.save()
+            except:
+                resource_details.save()
+            context = {'code': '00', 'desc': '添加成功，请点击确定键!'}
+            return HttpResponse(json.dumps(context))
+
+    else:
+        form = DOrgListForm()
+
+    kwvars = {
+        'form': form,
+        'request': request,
+    }
+
+    return render_to_response('source_catalog/org.detail.list.html', kwvars, RequestContext(request))
+
+
+@csrf_exempt
+def org_edit(request, resource_id):
+    """修改资源目录"""
+    resource_list = ResourceList.objects.get(resource_id=resource_id)
+    if request.method == "POST":
+        form = OrgEditForm(resource_list, request.POST)
+        if form.is_valid():
+            resource_id = request.POST.get('resource_id', '')
+            resource_name = request.POST.get('resource_name', '')
+            category_name = request.POST.get('category_name', '')
+            resource_type = request.POST.get('resource_type', '')
+            post_status = request.POST.get('post_status', '')
+            power = request.POST.get('power', '')
+            update = request.POST.get('update', '')
+            resource_list.resource_id = resource_id
+            resource_list.resource_name = resource_name
+            resource_list.category_name = category_name
+            resource_list.resource_type = resource_type
+            resource_list.post_status = post_status
+            resource_list.power = power
+            resource_list.update = update
+            id = str(resource_list.id)
+            re_dict = urllib.urlencode(
+                {'id': id, 'resource_id': resource_id, 'resource_name': resource_name, 'category_name': category_name,
+                 'power': power, 'update': update, 'resource_type': resource_type, 'post_status': post_status,
+                 })
+            try:
+                save_central_re_data(re_dict)
+                resource_list.save()
+            except:
+                resource_list.save()
+            return HttpResponseRedirect(reverse('source_catalog:org.list'))
+
+    else:
+        form = OrgEditForm(resource_list, None)
+
+    kwvars = {
+        'form': form,
+        'request': request,
+        'resource_list': resource_list,
+        'category_name': getmid_name('category_name'),
+        'search': getmid_name('search'),
+        'result': getmid_name('result'),
+        'modify': getmid_name('modify'),
+        'add': getmid_name('add'),
+        'delete': getmid_name('delete'),
+        'power': getmid_name('power'),
+        'update': getmid_name('update'),
+        'id': json.dumps(resource_list.category_name),
+        'id6': json.dumps(resource_list.power),
+        'id7': json.dumps(resource_list.update),
+        'resource_id': resource_list.resource_id
+    }
+
+    return TemplateResponse(request=request, template='source_catalog/org.edit.html', context=kwvars)
+
+
+@csrf_exempt
+def org_details_edit(request):
+    """修改资源目录字段信息"""
+    if request.method == "POST":
+        id = request.POST.get('id', '')
+        resource_details = ResourceDetails.objects.get(id=id)
+        old_name = resource_details.field_name
+        resource_details.resource_id = request.POST.get('resource_id1', '')
+        resource_details.field_name = request.POST.get('field_name1', '')
+        resource_details.field_name_resolution = request.POST.get('field_name_resolution1', '')
+        resource_details.search = request.POST.get('search1', '')
+        resource_details.result = request.POST.get('result1', '')
+        resource_details.modify = request.POST.get('modify1', '')
+        resource_details.add = request.POST.get('add1', '')
+        resource_details.delete = request.POST.get('delete1', '')
+        de_dict = urllib.urlencode(
+            {'resource_id': resource_details.resource_id, 'field_name': resource_details.field_name,
+             'field_name_resolution': resource_details.field_name_resolution,
+             'search': resource_details.search, 'result': resource_details.result, 'modify': resource_details.modify,
+             'add': resource_details.add, 'delete': resource_details.delete, 'old_name': old_name})
+        try:
+            central_org_detail_data(de_dict)
+            resource_details.save()
+        except:
+            resource_details.save()
+        name_dict = {'code': '00', 'desc': '修改成功，请点击确定键!'}
+        return JsonResponse(name_dict)
+
+
+def org_delete(request):
+    """批量删除"""
+    json_data = json.loads(request.GET.get('ids'))
+    list_id_del = json_data['ids']
+    sql = Q()
+    for id in list_id_del:
+        sql = sql | Q(id=id)
+        list = ResourceList.objects.get(sql).resource_id
+        ResourceDetails.objects.filter(resource_id=list).delete()
+        ResourceList.objects.filter(sql).delete()
+    name_dict = {'code': '00', 'desc': '删除成功!'}
+    return JsonResponse(name_dict)
+
+
+def org_detail_delete(request):
+    """批量删除字段信息"""
+    json_data = json.loads(request.GET.get('ids'))
+    list_id_del = json_data['ids']
+    sql = Q()
+    for id in list_id_del:
+        sql = sql | Q(id=id)
+        ResourceDetails.objects.filter(sql).delete()
+    name_dict = {'code': '00', 'desc': '删除成功!'}
+    return JsonResponse(name_dict)
+
+
+def getmid_name(value):
+    query_list = ResourceMiddleWare.objects.filter(mid_type=value)
+    result = []
+    for obj in query_list:
+        content = []
+        content.append(obj.mid_id)
+        content.append(obj.mid_name)
+        result.append(content)
+
+    return json.dumps(result)
+
+
+def edit_org_details_add(request, ID):
+    """编辑模式下添加资源目录(字段信息)"""
+    return org_details_add(request)
+
+
+def edit_org_details_edit(request, ID):
+    """编辑模式下编辑资源目录(字段信息)"""
+    return org_details_edit(request)
+
+
+def edit_org_details_delete(request, ID):
+    """编辑模式下批量删除资源目录(字段信息)"""
+    return org_detail_delete(request)
+
+
+def central_org_detail_data(dict):
+    """存入中心节点json数据(字段信息)"""
+    print '-------子节点保存到中心节点数据-------'.decode('utf-8')
+    ip = CentralNodeIPPort.objects.all()
+    ip_port = ''
+    for c in ip:
+        central_node_ip = c.central_node_ip
+        central_node_port = c.central_node_port
+        ip_port = 'http://' + central_node_ip + ':' + central_node_port
+    urllib2.urlopen(ip_port + '/catalog/org/field/central_data', dict)
+
+
+@csrf_exempt
+def save_central_org_detail_data(request):
+    """保存中心节点数据(字段信息)"""
+    data = []
+    resource_id = request.POST.get('resource_id', '')
+    field_name = request.POST.get('field_name', '')
+    field_name_resolution = request.POST.get('field_name_resolution', '')
+    search = request.POST.get('search', '')
+    result = request.POST.get('result', '')
+    modify = request.POST.get('modify', '')
+    add = request.POST.get('add', '')
+    delete = request.POST.get('delete', '')
+    try:
+        old_name = request.POST.get('old_name', '')
+        re_de = ResourceDetails.objects.filter(resource_id=resource_id).get(field_name=old_name)
+        re_de.resource_id = resource_id
+        re_de.field_name = field_name
+        re_de.field_name_resolution = field_name_resolution
+        re_de.search = search
+        re_de.result = result
+        re_de.modify = modify
+        re_de.add = add
+        re_de.delete = delete
+        re_de.save()
+    except:
+        org_name = request.POST.get('org_name', '')
+        post_time = request.POST.get('post_time', '')
+        re_de = ResourceDetails.objects.create(
+            resource_id=resource_id, field_name=field_name,
+            field_name_resolution=field_name_resolution, org_name=org_name, search=search,
+            result=result, modify=modify, add=add,
+            delete=delete,
+            post_time=post_time)
+        re_de.save()
+    return HttpResponse(data)
+
+
+def save_central_re_data(dict):
+    '''
+    ============================================================================
+    developer:  wangyingqi
+    add-time:   2017.4.11
+    note:       链接中心节点的接口
+    ============================================================================
+    '''
+    print '-------子节点保存到中心节点数据-------'.decode('utf-8')
+    ip = CentralNodeIPPort.objects.all()
+    ip_port = ''
+    for c in ip:
+        central_node_ip = c.central_node_ip
+        central_node_port = c.central_node_port
+        ip_port = 'http://' + central_node_ip + ':' + central_node_port
+    urllib2.urlopen(ip_port + '/catalog/org/central_data', dict)
+
+
+@csrf_exempt
+def central_re_data(request):
+    '''
+    ============================================================================
+    developer:  wangyingqi
+    add-time:   2017.4.11
+    note:       存入中心节点数据(表/数据库信息)
+    ============================================================================
+    '''
+    data = []
+    try:
+        request.POST.get('id', '')
+        resource_id = request.POST.get('resource_id', '')
+        resource_name = request.POST.get('resource_name', '')
+        category_name = request.POST.get('category_name', '')
+        power = request.POST.get('power', '')
+        update = request.POST.get('update', '')
+        resource_type = request.POST.get('resource_type', '')
+        post_status = request.POST.get('post_status', '')
+        resource_list = ResourceList.objects.get(resource_id=resource_id)
+        resource_list.resource_id = resource_id
+        resource_list.resource_name = resource_name
+        resource_list.category_name = category_name
+        resource_list.power = power
+        resource_list.update = update
+        resource_list.resource_type = resource_type
+        resource_list.post_status = post_status
+        resource_list.save()
+    except:
+        resource_id = request.POST.get('resource_id', '')
+        resource_name = request.POST.get('resource_name', '')
+        category_name = request.POST.get('category_name', '')
+        power = request.POST.get('power', '')
+        update = request.POST.get('update', '')
+        resource_type = request.POST.get('resource_type', '')
+        post_status = request.POST.get('post_status', '')
+        registration_time = request.POST.get('registration_time', '')
+        org_name = request.POST.get('org_name', '')
+        org_address = request.POST.get('org_address', '')
+        audit_status = request.POST.get('audit_status', '')
+        create_by = request.POST.get('create_by', '')
+        resource_list = ResourceList.objects.create(
+            resource_id=resource_id, resource_name=resource_name,
+            category_name=category_name, resource_type=resource_type, post_status=post_status,
+            registration_time=registration_time, org_name=org_name, org_address=org_address,
+            audit_status=audit_status,
+            create_by=create_by, power=power, update=update)
+        resource_list.save()
+    return HttpResponse(data)
+
+
+@csrf_exempt
+def get_central_re_data(request):
+    '''
+    ============================================================================
+    developer:  wangyingqi
+    add-time:   2017.4.14
+    note:       从中心节点获取审核状态
+    ============================================================================
+    '''
+    list = []
+    data = []
+    org_info = ResourceList.objects.all()
+    for info in org_info:
+        dict = {}
+        dict['resource_id'] = info.resource_id
+        dict['audit_status'] = info.audit_status
+        list.append(dict)
+    data.append(list)
+    data = json.dumps(data)
+    print '-------中心节点返回终端注册数据-------'.decode('utf-8')
+    return HttpResponse(data)
+
+
+@csrf_exempt
+def save_son_data():
+    '''
+    ============================================================================
+    developer:  wangyingqi
+    add-time:   2017.4.14
+    note:       请求中心节点数据并返回
+    ============================================================================
+    '''
+    print '-------子节点请求中心节点数据-------'.decode('utf-8')
+    ip = CentralNodeIPPort.objects.all()
+    ip_port = ''
+    for c in ip:
+        central_node_ip = c.central_node_ip
+        central_node_port = c.central_node_port
+        ip_port = 'http://' + central_node_ip + ':' + central_node_port
+    response = urllib2.urlopen(ip_port + '/catalog/org/get_central_data')
+    central_data = response.read()
+    central_data = json.loads(central_data)
+    for i in range(len(central_data[0])):
+        cen = central_data[0][i]
+        resource_id = cen['resource_id']
+        try:
+            re = ResourceList.objects.get(resource_id=resource_id)
+            re.audit_status = cen['audit_status']
+            re.save()
+        except:
+            continue

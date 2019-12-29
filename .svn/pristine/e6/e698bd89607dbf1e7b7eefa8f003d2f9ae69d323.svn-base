@@ -1,0 +1,14 @@
+from django.apps import AppConfig
+
+
+class DbadminConfig(AppConfig):
+    name = 'richDataX-system.dbadmin'
+
+    verbose_name = "dbadmin"
+
+    def ready(self):
+        """Override this to put in:
+            Users system checks
+            Users signal registration
+        """
+        pass

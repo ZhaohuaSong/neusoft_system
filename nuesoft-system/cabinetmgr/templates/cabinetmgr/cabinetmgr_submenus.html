@@ -1,0 +1,221 @@
+{% load staticfiles i18n compress %}
+{% load permission_extras %}
+    <!--机房空间资源理开始-->
+        {% if user|has_permission:"/cabinetmgr/mgr/" %}
+            {% if 'host' in request.path %}
+                <li class="active open">
+                    {% elif 'permission' in request.path %}
+                <li class="active open">
+                    {% else %}
+                <li class="">
+            {% endif %}
+        <a href="#" class="dropdown-toggle">
+            <i class="fa fa-briefcase"></i>
+            <span class="menu-text">
+                            {{ value }}机房管理
+                            </span>
+
+            <b class="menu-icon fa fa-caret-right"></b>
+        </a>
+
+        <b class="arrow"></b>
+        <ul class="submenu">
+            {% if user|has_permission:"/graph/list" %}
+                {% if 'graph' in request.path %}
+                    <li class="active">
+                        {% else %}
+                    <li class="">
+                {% endif %}
+{#            <a href="{% url 'cabinetmgr:graph.list' %}">#}
+            <a href="/cabinetmgr/graph/list/{{ key }}" >
+                <i class="menu-icon fa fa-caret-right"></i>
+                机房平面图
+            </a>
+            <b class="arrow"></b>
+            </li>
+            {% endif %}
+
+            <b class="arrow"></b>
+        </ul>
+
+        <b class="arrow"></b>
+        <ul class="submenu">
+            {% if user|has_permission:"/industryparksource/list" %}
+                {% if 'industryparksource' in request.path %}
+                    <li class="active">
+                        {% else %}
+                    <li class="">
+                {% endif %}
+{#            <a href="{% url 'cabinetmgr:industryparksource.list' %}">#}
+            <a href="/cabinetmgr/industryparksource/list/{{ key }}" >
+                <i class="menu-icon fa fa-caret-right"></i>
+                一级空间机楼资源
+            </a>
+            <b class="arrow"></b>
+            </li>
+            {% endif %}
+
+            {% if user|has_permission:"/deviceroom/list" %}
+                {% if 'deviceroom' in request.path %}
+                    <li class="active">
+                        {% else %}
+                    <li class="">
+                {% endif %}
+{#            <a href="{% url 'cabinetmgr:deviceroom.list' %}">#}
+            <a href="/cabinetmgr/deviceroom/list/{{ key }}" >
+                <i class="menu-icon fa fa-caret-right"></i>
+                二级空间机柜资源
+            </a>
+            <b class="arrow"></b>
+            </li>
+            {% endif %}
+
+            {% if user|has_permission:"/idcclient/list" %}
+                {% if 'idcclient' in request.path %}
+                    <li class="active">
+                        {% else %}
+                    <li class="">
+                {% endif %}
+{#            <a href="{% url 'cabinetmgr:idcclient.list' %}">#}
+            <a href="/cabinetmgr/idcclient/list/{{ key }}" >
+                <i class="menu-icon fa fa-caret-right"></i>
+                工单客户管理
+            </a>
+            <b class="arrow"></b>
+            </li>
+            {% endif %}
+            {% if user|has_permission:"/electricbox/list" %}
+                {% if 'electricbox' in request.path %}
+                    <li class="active">
+                        {% else %}
+                    <li class="">
+                {% endif %}
+{#            <a href="{% url 'cabinetmgr:electricbox.list' %}">#}
+            <a href="/cabinetmgr/electricbox/list/{{ key }}" >
+                <i class="menu-icon fa fa-caret-right"></i>
+                机柜列表
+            </a>
+            <b class="arrow"></b>
+            </li>
+            {% endif %}
+            {% if user|has_permission:"/overrating/list" %}
+                {% if 'overrating' in request.path %}
+                    <li class="active">
+                        {% else %}
+                    <li class="">
+                {% endif %}
+{#            <a href="{% url 'cabinetmgr:overrating.list' %}">#}
+            <a href="/cabinetmgr/overrating/list/{{ key }}" >
+                <i class="menu-icon fa fa-caret-right"></i>
+                机柜功率
+            </a>
+            <b class="arrow"></b>
+            </li>
+            {% endif %}
+{#            {% if user|has_permission:"/ipmgr/list" %}#}
+                {% if 'ipmgr' in request.path %}
+                    <li class="active">
+                        {% else %}
+                    <li class="">
+                {% endif %}
+{#            <a href="{% url 'cabinetmgr:idcclient.list' %}">#}
+            <a href="/cabinetmgr/ipmgr/list/{{ key }}" >
+                <i class="menu-icon fa fa-caret-right"></i>
+                园区ip管理
+            </a>
+            <b class="arrow"></b>
+            </li>
+{#            {% endif %}#}
+            {% if user|has_permission:"/ipinsertmodelmsg/list" %}
+                {% if 'ipinsertmodelmsg' in request.path %}
+                    <li class="active">
+                        {% else %}
+                    <li class="">
+                {% endif %}
+{#            <a href="{% url 'cabinetmgr:ipinsertmodelmsg.list' %}">#}
+            <a href="/cabinetmgr/ipinsertmodelmsg/list/{{ key }}" >
+                <i class="menu-icon fa fa-caret-right"></i>
+                ip导入模板信息
+            </a>
+            <b class="arrow"></b>
+            </li>
+            {% endif %}
+            {% if user|has_permission:"/ipbackupmodelmsg/list" %}
+                {% if 'ipbackupmodelmsg' in request.path %}
+                    <li class="active">
+                        {% else %}
+                    <li class="">
+                {% endif %}
+{#            <a href="{% url 'cabinetmgr:ipbackupmodelmsg.list' %}">#}
+            <a href="/cabinetmgr/ipbackupmodelmsg/list/{{ key }}" >
+                <i class="menu-icon fa fa-caret-right"></i>
+                ip备案模板信息
+            </a>
+            <b class="arrow"></b>
+            </li>
+            {% endif %}
+            {% if user|has_permission:"/iplist/list" %}
+                {% if 'iplist' in request.path %}
+                    <li class="active">
+                        {% else %}
+                    <li class="">
+                {% endif %}
+{#            <a href="{% url 'cabinetmgr:iplist.list' %}">#}
+            <a href="/cabinetmgr/iplist/list/{{ key }}" >
+                <i class="menu-icon fa fa-caret-right"></i>
+                ip导入模板
+            </a>
+            <b class="arrow"></b>
+            </li>
+            {% endif %}
+            {% if user|has_permission:"/ipbackuplist/list" %}
+                {% if 'ipbackuplist' in request.path %}
+                    <li class="active">
+                        {% else %}
+                    <li class="">
+                {% endif %}
+{#            <a href="{% url 'cabinetmgr:ipbackuplist.list' %}">#}
+            <a href="/cabinetmgr/ipbackuplist/list/{{ key }}" >
+                <i class="menu-icon fa fa-caret-right"></i>
+                ip备案模板
+            </a>
+            <b class="arrow"></b>
+            </li>
+            {% endif %}
+
+            {% if user|has_permission:"/idcworkorderplatform/list" %}
+                {% if 'idcworkorderplatform' in request.path %}
+                    <li id="idcworkorderplatform" class="active">
+                        {% else %}
+                    <li class="">
+                {% endif %}
+{#            <a href="{% url "cabinetmgr:idcworkorderplatform.list" 1 %}" >#}
+                <a href="/cabinetmgr/idcworkorderplatform/list/{{ key }}" >
+                <i class="menu-icon fa fa-caret-right"></i>
+                idc工单管理
+            </a>
+            <b class="arrow"></b>
+            </li>
+            {% endif %}
+            {% if user|has_permission:"/idcworkordervertify/list" %}
+                {% if 'idcworkordervertify' in request.path %}
+                    <li class="active">
+                        {% else %}
+                    <li class="">
+                {% endif %}
+{#            <a href="{% url 'cabinetmgr:idcworkordervertify.list' %}">#}
+            <a href="/cabinetmgr/idcworkordervertify/list/{{ key }}" >
+                <i class="menu-icon fa fa-caret-right"></i>
+                idc工单审核
+            </a>
+            <b class="arrow"></b>
+            </li>
+            {% endif %}
+
+            <b class="arrow"></b>
+        </ul>
+
+        <b class="arrow"></b>
+        </li>
+        {% endif %}
+        <!--拨测结束-->

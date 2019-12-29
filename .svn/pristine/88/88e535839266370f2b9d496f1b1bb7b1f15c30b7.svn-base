@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% block title %}
+        <title>富融大数据云平台-数据交换中心</title>
+    {% endblock %}
+</head>
+<body>
+{% block headermenu %}
+    {% include "header.html" %}
+{% endblock %}
+
+{% block leftmenu %}
+    {% include "menu.html" %}
+{% endblock %}
+
+{% block fooder %}
+    {% include "fooder.html" %}
+{% endblock %}
+
+</body>
+</html>

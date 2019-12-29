@@ -1,0 +1,13 @@
+from __future__ import unicode_literals
+from django.apps import AppConfig
+
+class CatalogConfig(AppConfig):
+    name = 'richDataX-system.source_catalog'
+    verbose_name = 'catalog'
+
+    def ready(self):
+        """Override this to put in:
+            Users system checks
+            Users signal registration
+        """
+        pass

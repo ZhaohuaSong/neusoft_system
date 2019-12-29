@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% block title %}
+        <title>广州移动IDC业务管理系统</title>
+    {% endblock %}
+
+</head>
+<body>
+{% block headermenu %}
+    {% include "header.html" %}
+{% endblock %}
+
+{% block leftmenu %}
+    {% include "menu.html" %}
+{% endblock %}
+
+{% block fooder %}
+    {% include "fooder.html" %}
+{% endblock %}
+
+</body>
+</html>

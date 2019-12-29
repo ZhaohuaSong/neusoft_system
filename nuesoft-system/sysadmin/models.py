@@ -1,0 +1,319 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+import logging
+from django.db import models
+from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin
+
+# Create your models here.
+
+_logger = logging.getLogger('loggers')
+
+
+class PermissionList(models.Model):
+    """
+      ===============================================================================
+      function：    权限Model
+      ===============================================================================
+    """
+    TYPE = (
+        (1, u'默认权限'),
+        (0, u'限制权限'),
+    )
+    id = models.CharField(max_length=64, primary_key=True, unique=True)
+    name = models.CharField(max_length=64)
+    url  = models.CharField(max_length=255)
+    type = models.IntegerField(choices=TYPE)
+    parent_id = models.CharField(max_length=200, blank=True, null=True)
+    parent_ids = models.CharField(max_length=200, blank=True, null=True)
+    def __unicode__(self):
+        return '%s(%s)' % (self.name, self.url)
+
+    class Meta:
+        db_table = 'permissionlist'
+
+
+class RoleList(models.Model):
+    """
+      ===============================================================================
+      function：    角色Model
+      Note:         和permisslist是多对多关系
+      ===============================================================================
+    """
+    name = models.CharField(max_length=64)
+    permission = models.ManyToManyField(PermissionList, blank=True)
+
+    def __unicode__(self):
+        return self.name
+
+    class Meta:
+        db_table = 'rolelist'
+
+
+class UserManager(BaseUserManager):
+    """
+      ===============================================================================
+      function：    自定义用户管理
+      Note:         继承了Django的用户管理
+      ===============================================================================
+    """
+
+    def create_user(self, email, username, password=None, type=None, **kwargs):
+        if not email:
+            raise ValueError(u'用户必须要有邮箱')
+
+        user = self.model(
+            email=UserManager.normalize_email(email),
+            username=username,
+        )
+        user.set_password(password)
+        if kwargs:
+            if kwargs.get('sex', None): user.sex = kwargs['sex']
+            if kwargs.get('mobile', None): user.mobile = kwargs['mobile']
+            if kwargs.get('is_active', None): user.is_active = kwargs['is_active']
+            if kwargs.get('is_admin', None): user.is_admin = kwargs['is_admin']
+            if kwargs.get('sys_org_id', None): user.sys_org_id = kwargs['sys_org_id']
+            if kwargs.get('url', None): user.url = kwargs['url']
+            if kwargs.get('desc', None): user.desc = kwargs['desc']
+            if kwargs.get('avatar', None): user.avatar = kwargs['avatar']
+            if kwargs.get('role_id', None): user.role_id = kwargs['role_id']
+            if kwargs.get('industry_id', None): user.industry_id = kwargs['industry_id']
+
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, username, password):
+        user = self.create_user(email,
+                                password=password,
+                                username=username,
+                                )
+        user.is_superuser = True
+        user.save(using=self._db)
+        return user
+
+
+class SysOrg(models.Model):
+    id = models.CharField(max_length=255, primary_key=True, unique=True)
+    parent_id = models.CharField(max_length=64)  # 父级商户
+    parent_ids = models.CharField(max_length=200)  # 祖父级商户
+    org_name = models.CharField(max_length=100)  # 商户名称
+    org_label = models.CharField(max_length=100)  # 小票打印名称
+    org_type = models.CharField(max_length=100, blank=True, null=True)
+    org_grade = models.CharField(max_length=100, blank=True, null=True)
+    province = models.CharField(max_length=10, blank=True, null=True)  # 商户所在省
+    city = models.CharField(max_length=10, blank=True, null=True)  # 商户所在市
+    district = models.CharField(max_length=10, blank=True, null=True)  # 商户所在区
+    address = models.CharField(max_length=100, blank=True, null=True)  # 商户地址
+    zipcode = models.CharField(max_length=6, blank=True, null=True)  # 商户邮编
+    master = models.CharField(max_length=20, blank=True, null=True)  # 商户法人姓名
+    contact = models.CharField(max_length=20, blank=True, null=True)  # 商户联系人
+    contact_mobile = models.CharField(max_length=100, blank=True, null=True)  # 商户联系人移动电话
+    tel = models.CharField(max_length=100, blank=True, null=True)  # 商户固定电话
+    fax = models.CharField(max_length=100, blank=True, null=True)  # 商户传真
+    mail = models.CharField(max_length=100, blank=True, null=True)  # 商户Email
+    weixin = models.CharField(max_length=100, blank=True, null=True)  # 商户微信号
+    create_by = models.CharField(max_length=100, blank=True, null=True)
+    mid = models.CharField(max_length=255, blank=True, null=True)  # mid
+    create_date = models.DateTimeField(blank=True, null=True)
+    update_by = models.CharField(max_length=100, blank=True, null=True)
+    update_date = models.DateTimeField(blank=True, null=True)
+    del_flag = models.CharField(max_length=1)
+    salesman = models.CharField(max_length=20, blank=True, null=True)  # 销售人员
+    website = models.CharField(max_length=100, blank=True, null=True)  # 商户网址
+    remarks = models.CharField(max_length=255, blank=True, null=True)  # 备注
+
+    def __unicode__(self):
+        return self.org_name
+
+    class Meta:
+        managed = False
+        db_table = 'sys_org'
+
+
+class SysUser(AbstractBaseUser):
+    """
+      ===============================================================================
+      function：    扩展用户管理
+      Note:         加上自己需要的用户字段
+      ===============================================================================
+    """
+
+    ADMIN_CHOICE = (
+        (True, u'是'),
+        (False, u'不是'),
+    )
+
+    ACTIVE_CHOICE = (
+        (True, u'在用'),
+        (False, u'停用'),
+    )
+
+    email = models.EmailField(verbose_name='Email', max_length=255, db_index=True, unique=True)  # 用户邮箱
+    username = models.CharField(max_length=50, db_index=True)  # 用户登录名
+    first_name = models.CharField(max_length=50, db_index=True)  # 姓
+    last_name = models.CharField(max_length=50, db_index=True)  # 名
+    is_active = models.BooleanField(default=True, choices=ACTIVE_CHOICE)  # 活跃用户
+    is_admin = models.BooleanField(default=False, choices=ADMIN_CHOICE)  # 公司管理员
+    is_superuser = models.BooleanField(default=False)  # 超级管理员
+    sys_org = models.ForeignKey(SysOrg, null=True, blank=True)  # 机构对象
+    sex = models.IntegerField(default=0)  # sex 0是男,1是女
+    mobile = models.CharField(max_length=50, null=True, blank=True)  # 移动电话
+    chat_type = models.CharField(max_length=100, blank=True, null=True)  # 即时信息类别
+    chat_id = models.CharField(max_length=50, null=True, blank=True)  # 即时信息账号
+    desc = models.CharField(max_length=2000, null=True, blank=True)  # 个人信息简介
+    avatar = models.ImageField(upload_to='avatar/', default='avatar/1.jpg')
+    role = models.ForeignKey(RoleList, null=True, blank=True)  # 角色对象
+    industry_id = models.IntegerField(max_length=20, blank=True, null=True)
+    objects = UserManager()
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username']
+
+    def get_full_name(self):
+        # The user is identified by their email address
+        return self.email
+
+    def get_short_name(self):
+        # The user is identified by their email address
+        return self.email
+
+    def __unicode__(self):
+        return self.email
+
+    def has_perm(self, perm, obj=None):
+        "Does the user have a specific permission?"
+        # Simplest possible answer: Yes, always
+        if self.is_active and self.is_superuser:
+            return True
+
+    def has_module_perms(self, app_label):
+        "Does the user have permissions to view the app `app_label`?"
+        # Simplest possible answer: Yes, always
+        return True
+
+    @property
+    def is_staff(self):
+        "Is the user a member of staff?"
+        # Simplest possible answer: All admins are staff
+        return self.is_admin
+
+    class Meta:
+        db_table = 'sys_user'
+
+
+class CustomAuth(object):
+    """
+      ===============================================================================
+      function：    自定义过滤和权限认证
+      Note:         在settings.py的文件上加入
+                    AUTH_USER_MODEL = 'sysadmin.MyUser'
+                    AUTHENTICATION_BACKENDS = ('django.contrib.auth.backends.ModelBackend',
+                    'sysadmin.models.CustomAuth')
+      ===============================================================================
+    """
+
+    def authenticate(self, email=None, mobile=None, username=None, password=None):
+        try:
+            if email != None:
+
+                user = SysUser.objects.get(email=email)
+            elif mobile != None:
+                user = SysUser.objects.get(mobile=mobile)
+            else:
+                user = SysUser.objects.get(username=username)
+
+            if user.check_password(password):
+                return user
+        except SysUser.DoesNotExist:
+            return None
+
+    def get_user(self, user_id):
+        try:
+            user = SysUser.objects.get(pk=user_id)
+
+            if user.is_active:
+                return user
+            return None
+        except SysUser.DoesNotExist:
+            return None
+
+
+class SysArea(models.Model):
+    """
+        ===============================================================================
+        function：    国家/省/市/区表
+        Note:
+        ===============================================================================
+    """
+    category = models.CharField(max_length=20, blank=True, null=True)  # 类别代码
+    code = models.CharField(max_length=12, blank=True, null=True)  # 编码码
+    super_code = models.CharField(max_length=12, blank=True, null=True)  # 上级编码
+    name = models.CharField(max_length=20, blank=True, null=True)  # 名称
+    status = models.CharField(max_length=2, blank=True, null=True)  # 状态 0-未开通 1-开通
+    hot = models.CharField(max_length=2, blank=True, null=True)  # '是否热门 0-否 1-是'
+    initial = models.CharField(max_length=10, blank=True, null=True)  # '首字母'
+    longitude = models.DecimalField(max_digits=10, decimal_places=6, blank=True, null=True)  # '经度'
+    latitude = models.DecimalField(max_digits=10, decimal_places=6, blank=True, null=True)  # '纬度'
+    description = models.CharField(max_length=255, blank=True, null=True)  # '描述'
+    create_by = models.CharField(max_length=20, blank=True, null=True)  # 创建人
+    update_by = models.CharField(max_length=20, blank=True, null=True)  # 修改人
+    create_time = models.DateTimeField(blank=True, null=True)  # 创建时间
+    update_time = models.DateTimeField(blank=True, null=True)  # 修改时间
+
+    def __unicode__(self):
+        return self.name
+
+    class Meta:
+        # managed = False
+        db_table = 'sys_area'
+
+
+class SysDict(models.Model):
+    """
+      ===============================================================================
+      function：    统一字典表
+      Note:
+      ===============================================================================
+    """
+    dict_name = models.CharField(max_length=100)  # 名称
+    dict_id = models.CharField(max_length=100)  # 代码
+    dict_type = models.CharField(max_length=100)  # 字典表类型
+    description = models.CharField(max_length=100)  # 注释
+    sort = models.IntegerField()  # 排序
+    create_by = models.CharField(max_length=64, blank=True, null=True)  # 创建人
+    create_date = models.DateTimeField(blank=True, null=True)  # 创建时间
+    update_by = models.CharField(max_length=64, blank=True, null=True)  # 修改人
+    update_date = models.DateTimeField(blank=True, null=True)  # 修改时间
+    remarks = models.CharField(max_length=255, blank=True, null=True)  # 备注
+    del_flag = models.CharField(max_length=1)  # 删除标志
+
+    def __unicode__(self):
+        return u'%s' % (self.dict_name)
+
+    class Meta:
+        db_table = 'sys_dict'
+
+
+class SysLog(models.Model):
+    """
+      ===============================================================================
+      function：    系统操作日志记录
+      Note:
+      ===============================================================================
+    """
+    user_name = models.CharField(max_length=64, verbose_name='用户名', blank=True, null=True)  # 用户名
+    user_mobile = models.CharField(max_length=64, verbose_name='用户手机号', blank=True, null=True)  # 用户手机号
+    user_role_name = models.CharField(max_length=32, verbose_name='用户角色名称', blank=True, null=True)  # 用户角色名称
+    sys_org_name = models.CharField(max_length=64, verbose_name='所属机构', blank=True, null=True)  # 所属机构
+    handle_url = models.CharField(max_length=512, verbose_name='操作资源url', blank=True, null=True)  # 操作资源url
+    handle_params = models.TextField(verbose_name='操作参数', blank=True, null=True)  # 操作参数
+    sys_timestamp = models.CharField(max_length=32, blank=True, null=True, verbose_name='操作时间')  # 操作时间
+    ip_address = models.CharField(max_length=64, verbose_name='ip地址', blank=True, null=True)  # ip地址
+    mac_address = models.CharField(max_length=256, verbose_name='mac地址', blank=True, null=True)  # mac地址
+
+    def __unicode__(self):
+        return u'%s' % (self.user_name)
+
+    class Meta:
+        db_table = 'sys_log'
+
+

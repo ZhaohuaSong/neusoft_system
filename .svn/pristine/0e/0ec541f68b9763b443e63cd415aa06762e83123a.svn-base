@@ -1,0 +1,50 @@
+jQuery(function ($) {
+    $.each(search_list, function (i) {
+        var $html = "<option value=\"" + search_list[i][0] + "\">" + search_list[i][1] + "</option>"
+        $('#id_search1').append($html)
+    })
+    $("#id_search1").change(function () {
+        ktn = $(this).val()
+        $("#search1").val(ktn)
+    });
+
+
+    $.each(result_list, function (i) {
+        var $html = "<option value=\"" + result_list[i][0] + "\">" + result_list[i][1] + "</option>"
+        $('#id_result1').append($html)
+    })
+    $("#id_result1").change(function () {
+        ktn = $(this).val()
+        $("#result1").val(ktn)
+    });
+
+
+    $.each(modify_list, function (i) {
+        var $html = "<option value=\"" + modify_list[i][0] + "\">" + modify_list[i][1] + "</option>"
+        $('#id_modify1').append($html)
+    })
+    $("#id_modify1").change(function () {
+        ktn = $(this).val()
+        $("#modify1").val(ktn)
+    });
+
+
+    $.each(add_list, function (i) {
+        var $html = "<option value=\"" + add_list[i][0] + "\">" + add_list[i][1] + "</option>"
+        $('#id_add1').append($html)
+    })
+    $("#id_add1").change(function () {
+        ktn = $(this).val()
+        $("#add1").val(ktn)
+    });
+
+
+    $.each(delete_list, function (i) {
+        var $html = "<option value=\"" + delete_list[i][0] + "\">" + delete_list[i][1] + "</option>"
+        $('#id_delete1').append($html)
+    })
+    $("#id_delete1").change(function () {
+        ktn = $(this).val()
+        $("#delete1").val(ktn)
+    });
+})

@@ -1,0 +1,52 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+import os,sys
+sys.path.append(os.path.dirname(os.path.abspath("__file__")))
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.local')
+import django
+django.setup()
+
+from django.apps import apps
+SendMsg = apps.get_model(app_label='richdataserver', model_name='SendMsg')
+ReceiveMsg = apps.get_model(app_label='richdataserver', model_name='ReceiveMsg')
+from redismodels import SendMsgRs,ReceiveMsgRs
+
+
+
+
+def redis_to_mysql():
+    """
+    redis数据备份
+    :return:
+    """
+    try:
+        for smrs in SendMsgRs.objects.all():
+             sendmsg = SendMsg()
+             sendmsg.app_id = smrs.app_id
+             sendmsg.protocol_id = smrs.protocol_id
+             sendmsg.content = smrs.content
+             sendmsg.back_content = smrs.back_content
+             sendmsg.type = smrs.type
+             sendmsg.status = smrs.status
+             sendmsg.send_time = smrs.send_time
+             sendmsg.return_time = smrs.return_time
+             sendmsg.server_address = smrs.server_address
+             sendmsg.server_port = smrs.server_port
+             sendmsg.save()
+        for rers in ReceiveMsgRs.objects.all():
+             remsg = ReceiveMsg()
+             remsg.app_id = rers.app_id
+             remsg.protocol_id = rers.protocol_id
+             remsg.content = rers.content
+             remsg.back_content = rers.back_content
+             remsg.type = rers.type
+             remsg.status = rers.status
+             remsg.send_time = rers.receive_time
+             remsg.server_address = rers.server_address
+             remsg.server_port = rers.server_port
+             remsg.save()
+        print 'save success......'
+    except:
+
+          print 'backup error.......'
+

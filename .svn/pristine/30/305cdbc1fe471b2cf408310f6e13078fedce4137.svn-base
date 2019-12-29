@@ -1,0 +1,341 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# update:2017-3-24 by ljh
+
+from django.db.models.query_utils import Q
+from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
+import json
+from django.views.generic import TemplateView
+from ..common.datatables.views import BaseDatatableView
+from models_resource_catalog import ResourceList, ResourceDetails, ResourceFieldList, ResourceMiddleWare, CentralNodeIPPort
+import urllib2
+import datetime
+class ResourceCatalogList(TemplateView):
+    template_name = 'source_catalog/resource_catalog.list.html'
+
+class ResourceCatalogJson(BaseDatatableView):
+    model = ResourceList
+    columns = ['id', 'id', 'resource_id', 'resource_name', 'category_name', 'power', 'update', 'resource_type', 'registration_time', 'org_name', 'org_address', 'id']
+    order_columns = ['id', 'id', 'resource_id', 'resource_name', 'category_name', 'power', 'update', 'resource_type', 'registration_time', 'org_name', 'org_address']
+    def get_json(self, response):
+        data_list = response['data']
+        for data in data_list:
+            if isinstance(data[8], datetime.datetime):
+                data[8]=data[8].strftime("%Y-%m-%d")
+            try:
+                data[4] = ResourceMiddleWare.objects.get(mid_id=data[4]).mid_name
+                data[5] = ResourceMiddleWare.objects.get(mid_id=data[5]).mid_name
+                data[6] = ResourceMiddleWare.objects.get(mid_id=data[6]).mid_name
+            except:
+                pass
+
+        return super(ResourceCatalogJson, self).get_json(response)
+    def filter_queryset(self, qs,):
+        resource_id  = self._querydict.get('resource_id')
+        field_id = self._querydict.get('field_id')
+        resource_id_search  = self._querydict.get('resource_id_search')
+        field_id_search = self._querydict.get('field_id_search')
+        search = self._querydict.get('search[value]', None)
+        # print resource_id
+        # print field_id
+        # print resource_id_search
+        # print field_id_search
+        # print search
+
+        if len(resource_id) == 0 and len(field_id) == 0:
+            return super(ResourceCatalogJson, self).filter_queryset(qs).exclude(category_name=None)
+        elif resource_id == '-11':
+            return super(ResourceCatalogJson, self).filter_queryset(qs)
+        elif len(resource_id) != 0:
+            parent_id = ResourceList.objects.get(resource_id=resource_id).parent_id
+            if parent_id == '0' :
+                return super(ResourceCatalogJson, self).filter_queryset(qs).filter(Q(parent_id=resource_id) & Q(post_status='2'))
+            else :
+                return super(ResourceCatalogJson, self).filter_queryset(qs).filter(Q(resource_id=resource_id))
+        elif len(field_id) != 0:
+            field_parent_id = ResourceFieldList.objects.get(field_id=field_id).field_parent_id
+            if field_parent_id == '0':
+                return super(ResourceCatalogJson, self).filter_queryset(qs).filter(Q(category_name=field_id) & Q(post_status='2'))
+            else :
+                return super(ResourceCatalogJson, self).filter_queryset(qs).filter(Q(resource_id=field_id))
+
+def save_central_data():
+    '''
+    ============================================================================
+    developer:  ljh
+    add-time:   2017.3.27
+    note:       请求中心节点数据
+    ============================================================================
+    '''
+    print '-------子节点请求资源目录数据-------'.decode('utf-8')
+    ip = CentralNodeIPPort.objects.all()
+    ip_port = ''
+    for c in ip :
+        central_node_ip = c.central_node_ip
+        central_node_port = c.central_node_port
+        ip_port = 'http://' + central_node_ip + ':' + central_node_port
+    response = urllib2.urlopen(ip_port+'/catalog/resourcecatalog/central_data')
+    central_data = response.read()
+    central_data = json.loads(central_data)
+    ResourceList.objects.all().delete()
+    ResourceDetails.objects.all().delete()
+    ResourceMiddleWare.objects.all().delete()
+    ResourceFieldList.objects.all().delete()
+    for i in range(len(central_data)):
+        for j in range(len(central_data[i])):
+            cen1 = central_data[i][j]
+            resource_list = ResourceList()
+            resource_details = ResourceDetails()
+            resource_middleware = ResourceMiddleWare()
+            resource_field_list = ResourceFieldList()
+            if i == 0 :
+                resource_list.id = cen1['id']
+                resource_list.resource_id = cen1['resource_id']
+                resource_list.resource_name = cen1['resource_name']
+                resource_list.field_id = cen1['field_id']
+                resource_list.field = cen1['field']
+                resource_list.category_name = cen1['category_name']
+                resource_list.title_type = cen1['title_type']
+                resource_list.power = cen1['power']
+                resource_list.update = cen1['update']
+                resource_list.resource_type = cen1['resource_type']
+                resource_list.post_status = cen1['post_status']
+                try:
+                    c = datetime.datetime.strptime(cen1['registration_time'], "%Y-%m-%d %H:%M:%S")
+                    resource_list.registration_time = c
+                except:
+                    pass
+                resource_list.org_name = cen1['org_name']
+                resource_list.org_address = cen1['org_address']
+                resource_list.audit_status = cen1['audit_status']
+                resource_list.parent_id = cen1['parent_id']
+                resource_list.field_parent_id = cen1['field_parent_id']
+                resource_list.create_by = cen1['create_by']
+                resource_list.save()
+                sys_org_list = ResourceList.objects.all()
+            elif i == 1 :
+                resource_details.id = cen1['id']
+                resource_details.resource_id = cen1['resource_id']
+                resource_details.field_name = cen1['field_name']
+                resource_details.field_name_resolution = cen1['field_name_resolution']
+                resource_details.field_name_attribute = cen1['field_name_attribute']
+                resource_details.search = cen1['search']
+                resource_details.result = cen1['result']
+                resource_details.modify = cen1['modify']
+                resource_details.add = cen1['add']
+                resource_details.delete = cen1['delete']
+                try:
+                    c = datetime.datetime.strptime(cen1['post_time'], "%Y-%m-%d %H:%M:%S")
+                    resource_details.post_time = c
+                except:
+                    pass
+                resource_details.org_name = cen1['org_name']
+                resource_details.save()
+            elif i == 3 :
+                resource_middleware.id = cen1['id']
+                resource_middleware.mid_name = cen1['mid_name']
+                resource_middleware.mid_id = cen1['mid_id']
+                resource_middleware.mid_type = cen1['mid_type']
+                resource_middleware.save()
+            elif i == 2 :
+                resource_field_list.id = cen1['id']
+                resource_field_list.field_id = cen1['field_id']
+                resource_field_list.field = cen1['field']
+                resource_field_list.post_status = cen1['post_status']
+                resource_field_list.field_parent_id = cen1['field_parent_id']
+                resource_field_list.save()
+
+def ResourceCatalogTreeview(request):
+    save_central_data()
+    if request.method == 'GET':
+        vo = TreeRespVO()
+        sys_org_list = ResourceList.objects.all()
+        tree_nodes = get_tree_nodes_ds(sys_org_list, "0")  # 获取树形结构
+        vo.setData(tree_nodes);
+        data = json.dumps(vo.__dict__)
+        jsondata = json.loads(data)
+        print '-------生成部门分类资源目录成功-------'.decode('utf-8')
+    return HttpResponse(json.dumps(jsondata['data']))
+def get_tree_nodes_ds(list, pid):
+    '''
+    生成数据源 Q
+    :param list:
+    :return:
+    '''
+    nodeList = []
+    for sys_org in list:
+        if str(sys_org.parent_id) == pid:
+            tree_node = TreeNode()
+            if sys_org.post_status == '2':
+                tree_node.resource_id = sys_org.resource_id
+                tree_node.pid = sys_org.parent_id
+                tree_node.name = sys_org.resource_name
+                child_list = get_tree_nodes_ds(list, str(sys_org.resource_id))
+                tree_node.children = child_list
+                nodeList.append(tree_node.dict())
+    return nodeList
+class TreeNode:
+    def __int__(self, resource_id=None, pid=None, children=None):
+        self.resource_id = resource_id
+        self.pid = pid
+        self.children = children
+        self.name = ""
+    def dict(self):
+        return {'resource_id': self.resource_id, 'name': self.name, 'pid': self.pid, 'children': self.children,}
+class TreeRespVO:
+    data = object
+
+    def __init__(self, data=None):
+        self.data = data
+
+    def setData(self, parm):
+        self.data = parm
+
+
+
+def ResourceCatalogTreeview2(request):
+    # save_central_data()
+    if request.method == 'GET':
+        vo = TreeRespVO()
+        sys_org_list = ResourceFieldList.objects.all()
+        tree_nodes = get_tree_nodes_ds2(sys_org_list, "0")  # 获取树形结构
+        vo.setData(tree_nodes);
+        data = json.dumps(vo.__dict__)
+        jsondata = json.loads(data)
+        print '-------生成领域分类资源目录成功-------'.decode('utf-8')
+    return HttpResponse(json.dumps(jsondata['data']))
+def get_tree_nodes_ds2(list, pid):
+    '''
+    生成数据源 Q
+    :param list:
+    :return:
+    '''
+    nodeList = []
+    for sys_org in list:
+        if str(sys_org.field_parent_id) == pid:
+            tree_node = TreeNode2()
+            if sys_org.post_status == '2':
+                tree_node.field_id = sys_org.field_id
+                tree_node.pid = sys_org.field_parent_id
+                tree_node.name = sys_org.field
+                child_list = get_tree_nodes_ds2(list, str(sys_org.field_id))
+                tree_node.children = child_list
+                nodeList.append(tree_node.dict())
+    return nodeList
+class TreeNode2:
+    def __int__(self, field_id=None, pid=None, children=None):
+        self.field_id = field_id
+        self.pid = pid
+        self.children = children
+        self.name = ""
+    def dict(self):
+        return {'field_id': self.field_id, 'name': self.name, 'pid': self.pid, 'children': self.children,}
+
+def central_data(request):
+    '''
+    ============================================================================
+    developer:  ljh
+    add-time:   2017.3.27
+    note:       中心节点返回json数据
+    ============================================================================
+    '''
+    if request.method == 'GET':
+        resource_list = ResourceList.objects.all()
+        resource_details = ResourceDetails.objects.all()
+        resource_field_list = ResourceFieldList.objects.all()
+        resource_middleware = ResourceMiddleWare.objects.all()
+        list = []
+        details = []
+        field = []
+        middleware = []
+        data = []
+        for re in resource_list:
+            dict = {}
+            dict['id'] = re.id
+            dict['resource_id'] = re.resource_id
+            dict['resource_name'] = re.resource_name
+            dict['field_id'] = re.field_id
+            dict['field'] = re.field
+            dict['category_name'] = re.category_name
+            dict['title_type'] = re.title_type
+            dict['power'] = re.power
+            dict['update'] = re.update
+            dict['resource_type'] = re.resource_type
+            dict['post_status'] = re.post_status
+            dict['registration_time'] = str(re.registration_time)
+            dict['org_name'] = re.org_name
+            dict['org_address'] = re.org_address
+            dict['audit_status'] = re.audit_status
+            dict['parent_id'] = re.parent_id
+            dict['field_parent_id'] = re.field_parent_id
+            dict['create_by'] = re.create_by
+            list.append(dict)
+
+        for de in resource_details:
+            dict = {}
+            dict['id'] = de.id
+            dict['resource_id'] = de.resource_id
+            dict['field_name'] = de.field_name
+            dict['field_name_resolution'] = de.field_name_resolution
+            dict['field_name_attribute'] = de.field_name_attribute
+            dict['search'] = de.search
+            dict['result'] = de.result
+            dict['modify'] = de.modify
+            dict['add'] = de.add
+            dict['delete'] = de.delete
+            dict['post_time'] = str(de.post_time)
+            dict['org_name'] = de.org_name
+            details.append(dict)
+
+        for re in resource_field_list:
+            dict = {}
+            dict['id'] = re.id
+            dict['field_id'] = re.field_id
+            dict['field'] = re.field
+            dict['post_status'] = re.post_status
+            dict['field_parent_id'] = re.field_parent_id
+            field.append(dict)
+
+        for re in resource_middleware:
+            dict = {}
+            dict['id'] = re.id
+            dict['mid_name'] = re.mid_name
+            dict['mid_id'] = re.mid_id
+            dict['mid_type'] = re.mid_type
+            middleware.append(dict)
+
+        data.append(list)
+        data.append(details)
+        data.append(field)
+        data.append(middleware)
+        data = json.dumps(data)
+        print '-------中心节点返回资源目录数据-------'.decode('utf-8')
+    return HttpResponse(data)
+
+def resource_delete(request):
+    '''
+    批量删除
+    :param request:
+    :return:
+    '''
+    json_data = json.loads(request.GET.get('ids'))
+
+    list_id_del = json_data['ids']
+    list = []
+    for list_id in list_id_del :
+        list_id = ResourceList.objects.get(id=str(list_id)).resource_id
+        list.append(list_id)
+    sql=Q()
+    sql_field_list = Q()
+    for field_id in list :
+        sql_field_list = sql_field_list | Q(field_id=field_id)
+    for id in list_id_del:
+        sql = sql | Q(id=id)
+
+    ResourceFieldList.objects.filter(sql_field_list).delete()
+    ResourceList.objects.filter(sql).delete()
+
+    name_dict = {'code': '00', 'desc': '删除成功'}
+    return JsonResponse(name_dict)
+
+

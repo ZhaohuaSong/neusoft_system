@@ -1,0 +1,50 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 16/7/20 14:25
+# @Author  : Aries
+# @Site    : ws-ex.com
+# @File    : randomString.py
+# @Software: PyCharm
+# @Function: 随机字符串生成类
+
+from random import Random
+import datetime
+
+
+class randomString(object):
+
+    def __init__(self, randomlength=8):
+        self.randomlength = randomlength;
+
+    def random_str(self):
+        str = ''
+        chars = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz0123456789'
+        length = len(chars) - 1
+        random = Random()
+        for i in range(self.randomlength):
+            str += chars[random.randint(0, length)]
+        return str
+
+#
+class TrandomString(object):
+
+    def __init__(self, randomlength=8):
+        self.randomlength = randomlength;
+
+    def random_str(self):
+        str = ''
+        chars = 'ABCDEF0123456'
+        length = len(chars) - 1
+        random = Random()
+        for i in range(self.randomlength):
+            str += chars[random.randint(0, length)]
+        return str
+
+#id编号生成策略
+class IdString(object):
+    def __init__(self,mark):
+        self.mark =mark
+
+    def genernateno(self):
+        self.mark  = self.mark+datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+        return self.mark

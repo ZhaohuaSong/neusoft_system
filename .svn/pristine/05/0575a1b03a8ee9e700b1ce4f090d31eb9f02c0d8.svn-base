@@ -1,0 +1,163 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2017/1/9 下午17:43
+# @Author  : qiujunli
+# @Site    :
+# @File    : views_protocol_remote_config_content.py
+# @Software: PyCharm
+# @Function: 远程报文协议配置规则内容
+
+from django.shortcuts import render
+from django.http import HttpResponseRedirect
+from django.core.urlresolvers import reverse
+from ..common.datatables.views import BaseDatatableView
+from django.views.generic import TemplateView
+from django.http import JsonResponse
+from django.db.models import Q
+import datetime
+import json
+import logging
+_logger = logging.getLogger('loggers')
+
+from remote_protocol_response import *
+
+from models import RemoteProtocol, Apps, AppsProtocol, ProtocolType
+# Create your views here.
+
+class ListRemoteProtocolTypeContent(TemplateView):
+    template_name = 'packmanage/packmanage.protocolremoteconfig.content.html'
+
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data(**kwargs)
+        id = request.GET.get('id', None)
+        if id:
+            try:
+                protocol = RemoteProtocol.objects.get(id=id)
+            except:
+                raise Exception("协议规则已经不存在！")
+
+            try:
+                app = Apps.objects.get(app_id=protocol.app_id)
+            except:
+                raise Exception("远程适配器在本地服务器不存在。请先在【适配器管理】中执行【添加】功能！")
+
+        context['app'] = app #来自适配器
+        context['protocol'] = protocol #协议基本信息
+        try:
+            context['protocol_content_in'] = self.get_protocol_content_in(protocol.protocol_content)
+            context['protocol_content_out'] = self.get_protocol_content_out(protocol.protocol_content)
+        except:
+            pass
+        return self.render_to_response(context)
+
+        # 获取协议内容
+
+    def get_protocol_content_in(self, protocol_content):
+        if protocol_content is None or len(protocol_content) == 0:
+            return []
+        dict_protocol = json.loads(protocol_content)
+        return list(dict_protocol['in'].values())
+
+    def get_protocol_content_out(self, protocol_content):
+        if protocol_content is None or len(protocol_content) == 0:
+            return []
+        dict_protocol = json.loads(protocol_content)
+        return list(dict_protocol['out'].values())
+
+def refuse(request):
+    '''
+    批量拒绝配置申请
+    :param refuse:
+    :return:
+    '''
+    id = json.loads(request.GET.get('id'))
+    #####################################
+    #先发送给远程适配器处理结果，然后再更新本地状态
+
+    try:
+        info = RemoteProtocol.objects.get(id=id)
+    except:
+        return JsonResponse({'code': '01', 'desc': '该规则已经不存在!'})
+
+    if info.protocol_state !=0:
+        return JsonResponse({'code': '01', 'desc': '该操作只能针对【等待处理】的项目!'})
+
+    # 2、链接远程适配器通讯，告诉它本地已经接受请求，收到返回消息后再更新本地信息
+    try:
+        app = Apps.objects.get(app_id=info.app_id)
+    except:
+        return JsonResponse({'code': '01', 'desc': '远程适配器在本地服务器不存在。请先在【适配器管理】中执行【添加】功能！'})
+
+    try:
+        RemoteProtoclResponse().response(app, info, False)
+    except Exception as e:
+        return JsonResponse({'code': '01', 'desc': '远程适配器发送响应出错：' + str(e)})
+
+    info.operate_date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    info.operate_by = request.user.username
+    info.protocol_state = 2
+    info.save()
+
+    return JsonResponse({'code': '00', 'desc': '操作成功!'})
+
+def accept(request):
+    '''
+    批量接受配置申请
+    :param accept:
+    :return:
+    '''
+    id = json.loads(request.GET.get('id'))
+
+    #1、安全性检测
+    try:
+        info = RemoteProtocol.objects.get(id=id)
+    except:
+        return JsonResponse({'code': '01', 'desc': '该规则已经不存在!'})
+
+    if info.protocol_state != 0:
+        return JsonResponse({'code': '01', 'desc': '该操作只能针对【等待处理】的项目!'})
+
+    #2、链接远程适配器通讯，告诉它本地已经接受请求，收到返回消息后再更新本地信息
+    try:
+        app = Apps.objects.get(app_id=info.app_id)
+    except:
+        return JsonResponse({'code': '01', 'desc': '远程适配器在本地服务器不存在。请先在【适配器管理】中执行【添加】功能！'})
+
+    ip = app.app_ip
+    port = app.app_port
+
+    try:
+        RemoteProtoclResponse().response(app, info, True)
+    except Exception as e:
+        return JsonResponse({'code': '01', 'desc': '远程适配器发送响应出错：'+str(e)})
+
+    #3、更新本地服务器
+    #3.1、更新规则请求表的状态
+    info.operate_date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    info.operate_by = request.user.username
+    info.protocol_state = 1
+    info.save()
+    #3.2、向本地规则表中添加该规则
+    bCreate = True
+    try:#先去检测本地是否有——即，远程适配器对旧的规则进行修改
+        data = ProtocolType.objects.get(protocol_id=info.protocol_id)
+        bCreate = False
+    except:
+        data = ProtocolType()
+
+    data.protocol_id =  info.protocol_id
+    data.protocol_name = info.protocol_name
+    data.protocol_state = 1#正常使用
+    data.protocol_content = info.protocol_content
+    data.create_by = request.user.username
+    data.app_id = info.app_id
+    if bCreate:
+        data.create_date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    data.update_date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    data.bremoteconfig = 1
+    data.save()
+
+    #3.3、向适配器中添加该规则
+
+    return JsonResponse({'code': '00', 'desc': '操作成功!'})
+

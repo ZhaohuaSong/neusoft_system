@@ -1,0 +1,43 @@
+jQuery(function ($) {
+
+//
+    $("#btn-refuse").bind("click",
+        function () { 
+                    $.ajax({
+                                    type: "GET",
+                                    url: "refuse?id="+protocol_id, 
+                                    success: function (data) {
+                                        
+                                        if(data["code"]=="00"){ 
+                                            var lb = $("#lb_state");
+                                            lb.text("已拒绝");
+                                            lb.addClass("red");
+                                            alert_dialog(data["desc"])  
+                                        }
+                                        else{
+                                            alert_dialog(data["desc"])
+                                        }
+                                    }
+                                }); 
+        });
+
+    $("#btn-accept").bind("click",
+        function () { 
+                    $.ajax({
+                                    type: "GET",
+                                    url: "accept?id="+protocol_id,  
+                                    success: function (data) {
+                                        
+                                        if(data["code"]=="00"){ 
+                                            var lb = $("#lb_state");
+                                            lb.text("已接受")
+                                            lb.addClass("green");
+                                            alert_dialog(data["desc"]) 
+                                        }
+                                        else{
+                                            alert_dialog(data["desc"])
+                                        }
+                                    }
+                                });
+        });
+})

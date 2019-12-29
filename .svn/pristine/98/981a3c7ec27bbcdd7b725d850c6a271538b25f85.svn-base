@@ -1,0 +1,27 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from gevent import socket
+
+
+
+
+
+class PackData(object):
+    def __init__(self):
+        self.address = ("0.0.0.0", 7000)
+        self.message=''
+
+
+    def send_message(self):
+        print 'test send ............'
+        sock = socket.socket(type=socket.SOCK_DGRAM)
+        sock.connect(self.address)
+        sock.send(self.message.encode())
+        data, address = sock.recvfrom(8192)
+        sock.close()
+        return data,address
+
+    # def rece_message(self):
+    #     return self.in_message
+

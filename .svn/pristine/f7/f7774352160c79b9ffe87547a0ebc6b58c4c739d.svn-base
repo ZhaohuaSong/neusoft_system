@@ -1,0 +1,60 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+from protocol import ProtocoFactory
+from ...common.iso.iso_8583 import *
+from ...common.iso.iso_tool import *
+
+#QiuJL 2017.1.6 报文功能逻辑接口
+class PackInterface:
+    def __init__(self):
+        self.protocofactory = ProtocoFactory()
+        self.iso = ISO8583()
+
+    def init(self,assic_iso, bHex=True):
+        '''
+        解包
+        :assic_iso 报文内容
+        :bHex 是否是hex格式报文，数据库存储以及网络传输都是如此
+        :return: 返回自身
+        '''
+
+        if bHex:
+            assic_iso = format_str_to_assic(assic_iso)
+
+        self.iso.setNetworkISO(assic_iso)
+        return self
+
+    def get_pack_content(self):
+        '''
+        :return: 返回 list[list],[{'bit':'65','name':姓名', 'value':'李四'], {'bit':'66','name':性别', 'value':'男'], {'bit':'67','name':身份证', 'value':'87687866766']]
+        '''
+        try:
+            protocol_id = self.iso.get_TPDU()
+            msgtype = self.iso.get_msg_type()
+
+            bit_info_list = self.protocofactory.init(protocol_id, msgtype).get_bit_info()
+            list_dic = []
+            for info in bit_info_list:
+                bit_index = int(info[0])
+                value = self.iso.getBitAssicValue(bit_index)
+                dic={'bit':bit_index, 'name':info[1], 'value':value }
+                list_dic.append(dic)
+            return list_dic
+        except Exception as e:
+            raise  Exception('解析报文异常:'+str(e))
+
+
+    def get_protocol_id(self):
+        '''
+        获取协议ID
+        :return:
+        '''
+        return self.iso.get_TPDU()
+
+    def is_request(self):
+        '''
+        是否是请求报文
+        :return:
+        '''
+        msgtype = self.iso.get_msg_type()
+        return '00'==msgtype

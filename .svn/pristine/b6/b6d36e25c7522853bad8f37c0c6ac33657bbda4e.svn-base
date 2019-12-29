@@ -1,0 +1,38 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from django.core.cache import cache
+import json
+
+import redis
+# redis_args = {
+#             'host': '121.14.17.105',
+#             'port': 6379,
+#             'db': 6,
+#             # 'password': 'taiyi',
+#             }
+# pool = redis.ConnectionPool(host=redis_args['host'], port=redis_args['port'], db=redis_args['db'], password=redis_args['password'])
+r = redis.StrictRedis(host='127.0.0.1')
+
+# p = r.connection_pool
+
+
+
+class MsgClient(object):
+
+    def __init__(self):
+
+        self.db='test'
+
+    def read_from_cache(self, user_name):
+        key = 'user_id_of_'+user_name
+        value = r.get(key)
+        if value == None:
+            data = None
+        else:
+            data = json.loads(value)
+        return data
+    #write cache user id
+    def write_to_cache(self, user_name):
+        key = 'user_id_of_'+user_name
+        r.set(key, json.dumps(user_name))

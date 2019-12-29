@@ -1,0 +1,160 @@
+{% extends "mainbase.html" %}
+{% load staticfiles %}
+{% load i18n staticfiles %}
+{% load url from future %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% block scripts %}
+
+    <script src="{% static "js/jquery.bootstrap-duallistbox.min.js" %}"></script>
+    <script src="{% static "js/jquery.raty.min.js" %}"></script>
+    <script src="{% static "js/bootstrap-multiselect.min.js" %}"></script>
+    <script src="{% static "js/select2.min.js" %}"></script>
+    <script src="{% static "js/jquery-typeahead.js" %}"></script>
+    <script src="{% static "js/selectbox/selectbox.js" %}"></script>
+    <!-- page specific plugin scripts -->
+    <link href="{% static 'css/bootstrap-duallistbox.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/bootstrap-multiselect.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/select2.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/ace-skins.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/ace-rtl.min.css' %}" rel="stylesheet">
+
+
+        <script src="{% static "js/packmanage/packmanage.remote.protocoltype.datasrc.js" %}"></script>
+        <script type="text/javascript">
+            jQuery(function ($) {
+                $("#btn-back").bind("click",
+                        function () {
+                            window.location.href = "{% url 'packmanage:remoteprotocoltype.list' %}"
+                        });
+            })
+        </script>
+
+        <style type="text/css">
+            /*table#table_protocol
+            {
+                margin-left:auto; margin-right:auto
+            }*/
+
+            table.tb tr td {
+                padding: 1px;
+                padding-left: 5px;
+            }
+        </style>
+    {% endblock %}
+</head>
+<body class="no-skin">
+{% block content %}
+    <div class="main-content">
+        <div class="breadcrumbs" id="breadcrumbs">
+            <ul class="breadcrumb">
+                <li>
+                    <i class="ace-icon fa fa-home home-icon"></i>
+                    <a href="#">首页</a>
+                </li>
+                <li>
+                    <a href="#">适配器通讯管理</a>
+                </li>
+                <li>
+                    <a href="{% url 'packmanage:remoteprotocoltype.list' %}">响应报文协议管理</a>
+                </li>
+                <li class="active">协议数据源配置({{ protocol_name }})</li>
+            </ul><!-- /.breadcrumb -->
+        </div>
+
+        <div class="page-content">
+            <div class="page-header " style="border-bottom:1px dashed #DEDEDE">
+                协议名称：<span class="blue">{{ protocol_name }}</span>&nbsp;&nbsp;&nbsp;&nbsp;
+                协议ID：<span id="lb_mid" class="blue">{{ protocol_id }}</span> &nbsp;&nbsp;&nbsp;&nbsp;
+
+                创建者：<span id="lb_tid" class="blue">{{ protocol_creater }}</span>&nbsp;&nbsp;&nbsp;&nbsp;
+
+                使用状态：
+                {% if 1 == protocol_state %}<span class="green">正常使用</span>{% elif 0 == protocol_state %}
+                    <span class="red">已停用</span>
+                {% else %} <span class="red">已停用</span> {% endif %}
+
+                <br/>
+
+            </div><!-- /.page-header -->
+            <div style="padding-bottom:30px">
+                <ul class="steps">
+                                                        <li data-step="1" class="active">
+                                                            <span class="step">1</span>
+                                                            <span class="title">数据源信息</span>
+                                                        </li>
+
+                                                        <li data-step="2" {% if is_over == 1 %}class="active"{% endif %}>
+                                                            <span class="step">2</span>
+                                                            <span class="title">数据源配置</span>
+                                                        </li>
+
+                                                        <li data-step="3" {% if is_over == 1 %}class="active"{% endif %}>
+                                                            <span class="step">3</span>
+                                                            <span class="title">完成</span>
+                                                        </li>
+                </ul>
+            </div>
+            <div class="row">
+                <div class="col-xs-12"  style="margin-bottom:80px;">
+                    {% include "packmanage/datasrc_step_1.html" %}
+                    {% include "packmanage/datasrc_step_2.html" %}
+                    {% include "packmanage/datasrc_step_3.html" %}
+                </div><!-- /.col -->
+            </div><!-- /.row -->
+            <div class="row hidden">
+                <div class="col-xs-6 ">
+                    <strong class="background-blue">输入参数</strong>
+                    <table class="tb" id="protocol_in">
+                        <tr>
+                            <td><input type='text' disabled value='报文参数' style="width:180px"></input></td>
+                            <td><input type='text' disabled value='数据源参数' style="width:180px;"></input></td>
+                            <td style="width:75px;">
+
+
+
+                            </td>
+                        </tr>
+                        {% for data in protocol_content_in %}
+                            <tr class="content">
+                                <td><input type="text" class="field_name" value="{{ data.field_name }}"
+                                           style="width:180px"></input></td>
+                                <td><input type="text" class="bit_index" value=""
+                                           style="width:180px"></input></td>
+
+                            </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+                <div class="col-xs-6">
+                    <strong class="background-blue">输出参数</strong>
+                    <table class="tb" id="protocol_out">
+                        <tr>
+                            <td><input type='text' disabled value='报文参数' style="width:180px"></input></td>
+                            <td><input type='text' disabled value='数据源参数' style="width:180px;"></input></td>
+                            <td style="width:75px;">
+                            </div>
+                        </tr>
+                        {% for data in protocol_content_out %}
+                            <tr class="content">
+                                <td><input type="text" class="field_name" value="{{ data.field_name }}"
+                                           style="width:180px"></input></td>
+                                <td><input type="text" class="bit_index" value=""
+                                           style="width:180px"></input></td>
+
+                            </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+            </div>
+
+
+
+        </div>
+    </div>
+    {% include "message.html" %}
+{% endblock %}
+<!-- /.main-content -->
+</body>
+</html>

@@ -1,0 +1,169 @@
+{% extends "mainbase.html" %}
+{% load staticfiles %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% block scripts %}
+
+        <script src="{% static "js/sysadmin/sysadmin-user.js" %}"></script>
+    {% endblock %}
+
+</head>
+<body class="no-skin">
+{% block content %}
+    <div class="main-content">
+        <div class="breadcrumbs" id="breadcrumbs">
+            <script type="text/javascript">
+                try {
+                    ace.settings.check('breadcrumbs', 'fixed')
+                } catch (e) {
+                }
+                jQuery(function ($) {
+                    $("#btn-back").bind("click",
+                            function () {
+                                window.location.href = "{% url 'sysadmin:user.list' %}"
+                            });
+                })
+
+
+{#                var url_org_list  = "{% url 'sysadmin:user.org.list' %}"#}
+{#                var json_data = {{ json_data_list_org|safe }};#}
+
+            </script>
+
+            <ul class="breadcrumb">
+                <li>
+                    <i class="ace-icon fa fa-home home-icon"></i>
+                    <a href="#">首页</a>
+                </li>
+
+                <li><a href="#">系统管理</a></li>
+                <li><a href="{% url 'sysadmin:user.list' %}">用户管理</a></li>
+                <li class="active">新增用户</li>
+            </ul><!-- /.breadcrumb -->
+        </div>
+
+        <div class="page-content">
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="widget-box col-xs-12">
+                        <div class="widget-header widget-header-blue widget-header-flat">
+                            <h4 class="widget-title lighter">新增用户</h4>
+
+                        </div>
+                        <div class="space-20"></div>
+
+                        <form onsubmit="return OnSubmitCheckUserForm(this)" class="form-horizontal" role="form"
+                              action="" method="post">
+                            {% csrf_token %}
+                            <div class="form-group ">
+{#                                <label class="col-sm-3 control-label no-padding-right"></label>#}
+{#                                <div class="col-sm-9">#}
+{#                                    <span class="label  label-grey arrowed-right label-xlg ">顶级/二级/三级/其他</span>#}
+{#                                </div>#}
+{##}
+{#                                <label class="col-sm-3 control-label no-padding-right">所属机构</label>#}
+{#                                <div class="col-sm-9">#}
+{#                                    <div id="click_sellect_item">#}
+{#                                    </div>#}
+{#                                    <div class="form-group has-error">#}
+{#                                        <div class="help-block col-xs-12 col-sm-reset ">{{ form.sys_org_id.errors }} </div>#}
+{#                                    </div>#}
+{#                                </div>#}
+
+                                <label class="col-sm-3 control-label no-padding-right"> {{ form.username.label }} </label>
+                                <div class="col-sm-9">
+                                    {{ form.username }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.username.errors }} </div>
+                                    </div>
+                                </div>
+
+                                <label class="col-sm-3 control-label no-padding-right">  {{ form.email.label }}  </label>
+                                <div class="col-sm-9">
+                                    {{ form.email }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.email.errors }} </div>
+                                    </div>
+                                </div>
+                                <label class="col-sm-3 control-label no-padding-right">  {{ form.industry.label }}  </label>
+                                <div class="col-sm-9">
+                                    {{ form.industry }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.industry.errors }} </div>
+                                    </div>
+                                </div>
+
+                                <label class="col-sm-3 control-label no-padding-right"> 手机号码 </label>
+
+                                <div class="col-sm-9">
+                                    {{ form.phone }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.phone.errors }} </div>
+                                    </div>
+                                </div>
+
+                                <label class="col-sm-3 control-label no-padding-right">  {{ form.sex.label }}  </label>
+
+                                <div class="col-sm-9">
+                                    {{ form.sex }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.sex.errors }} </div>
+                                    </div>
+                                </div>
+
+                                <label class="col-sm-3 control-label no-padding-right">  {{ form.pwd1.label }}  </label>
+
+                                <div class="col-sm-9">
+                                    {{form.pwd1}}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.pwd1.errors }} </div>
+                                    </div>
+                                </div>
+
+                                <label class="col-sm-3 control-label no-padding-right"> 密码确认 </label>
+
+                                <div class="col-sm-9">
+                                    {{form.pwd2}}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.pwd2.errors }} </div>
+                                    </div>
+                                </div>
+
+
+                                <label class="col-sm-3 control-label no-padding-right">  {{ form.role_id.label }}  </label>
+
+                                <div class="col-sm-9">
+                                    {{ form.role_id }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.role_id.errors }} </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-sm-9" style="display: none">
+                                    {{ form.sys_org_id }}
+                                    <div class="form-group has-error">
+
+                                    </div>
+
+                                </div>
+                            </div>
+                            <div class="space-10"></div>
+                            <hr/>
+                            <div class="space-10"></div>
+                            {% include "form_buttons.html" %}<!-- /.form_buttons -->
+                            <div class="space-10"></div>
+
+                        </form>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="{% static 'js/sysadmin/user.add.js' %}"></script>
+
+{% endblock %}
+<!-- /.main-content -->
+</body>
+</html>

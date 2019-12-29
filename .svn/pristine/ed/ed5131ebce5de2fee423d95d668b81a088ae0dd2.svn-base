@@ -1,0 +1,121 @@
+{% extends "mainbase.html" %}
+{% load staticfiles %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% block title %}
+        <title>恒鑫大数据云平台-数据交换中心</title>
+        <style>
+            .bor {
+                float: left;
+                list-style: none;
+                width: 15%;
+                height: 20%;
+                border-radius: 2px;
+                margin-left: 10px;
+                border: 2px solid #F7F7F7;
+                text-align: center;
+                padding: 5px
+            }
+        </style>
+        <script type="text/javascript">
+            jQuery(function ($) {
+                $("#btn-back").bind("click",
+                        function () {
+                            window.location.href = "{% url 'sysadmin:user.list' %}"
+                        });
+            })
+        </script>
+    {% endblock %}
+
+</head>
+<body class="no-skin">
+{% block content %}
+    <div class="main-content">
+        <div class="breadcrumbs" id="breadcrumbs">
+            <script type="text/javascript">
+                try {
+                    ace.settings.check('breadcrumbs', 'fixed')
+                } catch (e) {
+                }
+            </script>
+
+
+            <ul class="breadcrumb">
+                <li>
+                    <i class="ace-icon fa fa-home home-icon"></i>
+                    <a href="#">首页</a>
+                </li>
+
+                <li><a href="#">系统管理</a></li>
+                <li><a href="{% url 'sysadmin:user.list' %}">用户管理</a></li>
+                <li class="active">新增用户</li>
+            </ul><!-- /.breadcrumb -->
+        </div>
+
+        <div class="page-content">
+            <div class="row">
+                <div class="col-xs-12">
+                    <div>
+                        <!-- 账户修改 -->
+                        <div class="row">
+                            <div class="col-xs-12">
+                                <div class="widget-box col-xs-12">
+                                    <div class="widget-header widget-header-blue widget-header-flat">
+                                        <h4 class="widget-title lighter">修改密码</h4>
+                                    </div>
+                                    <div class="space-5"></div>
+                                    <form style="padding: 2%" class="form-horizontal" method="post"
+                                          enctype="multipart/form-data">
+                                        {% csrf_token %}
+                                        <div class="form-group">
+
+                                            <label class="col-sm-3 control-label no-padding-right"> {{ form.oldpwd.label }} </label>
+
+                                            <div class="col-sm-9">
+                                                {{ form.email}}
+                                                <div class="form-group has-error">
+                                                    <div class="help-block col-xs-12 col-sm-reset inline">{{ form.oldpwd.errors }} </div>
+                                                </div>
+                                            </div>
+
+
+                                            <label class="col-sm-3 control-label no-padding-right">  {{ form.password1.label }}  </label>
+
+                                            <div class="col-sm-9">
+                                                {{ form.password1 }}
+                                                <div class="form-group has-error">
+                                                    <div class="help-block col-xs-12 col-sm-reset inline">{{ form.password1.errors }} </div>
+                                                </div>
+                                            </div>
+                                            <label class="col-sm-3 control-label no-padding-right"> {{ form.password2.label }} </label>
+
+                                            <div class="col-sm-9">
+                                                {{ form.password2 }}
+                                                <div class="form-group has-error">
+                                                    <div class="help-block col-xs-12 col-sm-reset inline">{{ form.password2.errors }} </div>
+                                                </div>
+                                            </div>
+
+
+                                        </div>
+                                        <hr style="margin-top: 10px; margin-bottom: 10px;">
+                                        <div class="space-5"></div>
+                                        {% include "form_buttons.html" %}<!-- /.form_buttons -->
+                                        <div style="height: 10px;"></div>
+                                    </form>
+                                </div><!-- /.col -->
+                            </div><!-- /.row -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+{% endblock %}
+<!-- /.main-content -->
+</body>
+</html>
+

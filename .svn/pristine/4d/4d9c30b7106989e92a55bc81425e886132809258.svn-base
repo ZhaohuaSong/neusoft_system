@@ -1,0 +1,184 @@
+/**
+ * Created by taiyi on 2017/3/1.
+ */
+function cloneObj(obj){
+    var clone_obj = ($(obj).parent().clone(true))
+    $(clone_obj).find("input[value='+']").remove()
+    $(clone_obj).append('<input type="button" value="-" style="width:25.66px" id="del_filter" onclick="del_filter(this)">')
+    $(obj).parent().after(clone_obj)
+}
+
+
+function queryalldata(dbname,sqlcontent){
+          $.ajax({
+            url:SQL_QUERY,
+            type: 'POST',
+            data:{'dbname':dbname,'sql':sqlcontent,'pageindex':$("#pageindex").val(),'pagesize':$("#pagesize").val()},
+            success: function (data) {
+                $("#dynamic-sql-list").css('display','block')
+                $(".th_name_sql").remove()
+                $("#table_datas_sql").html('')
+               $(".field_select").html('')
+                $(".field_select_params").html('')
+                //$("#filter_body").find('input[value="-"]').parent().remove()
+                var arr=[]
+                var total = data['total']
+                var pagesize = $("#pagesize").val()
+                var allpage = Math.ceil(eval(total)/eval(pagesize))
+                $("#allpage").val(allpage)
+                $.each(data['result'],function(i,item){
+
+                    if (i==0){
+                       $.each(item,function(key,value){
+                        $("#table_th_sql").before('<th class="th_name_sql">'+key+'</th>')
+                        arr.push(key)
+                        $(".field_select").append('<option value='+key+'>'+key+'</option>')
+                        $(".field_select_params").append('<option value='+key+'>'+key+'</option>')
+                    })
+                    }
+                    var tds = ''
+                         for(var j = 0 ; j<arr.length; j++){
+                            tds = tds+ '<td>'+item[arr[j]]+'</td>'
+                         }
+                    $("#table_datas_sql").append(
+                            '<tr>' +
+                             tds+
+                            '</tr>'
+
+                         )
+                })
+                $("#queryflag").val('success')
+            }
+        })
+
+    }
+
+function save_query_sql(){
+        var sqlcontent = $.trim($("#sqltext").val())
+        if ($.trim(sqlcontent)==""){
+            alert("请输入sql查询语句")
+            return
+        }
+
+        var conditions = $(".conditions_params")
+
+        var jsonobj =""
+        for(var i=0;i<conditions.length;i++){
+             jsonobj =jsonobj+
+            '{"field_name":"'+$(conditions[i]).find(".field_select_params option:selected").val()+'",'+
+            '"field_opt":"'+$(conditions[i]).find(".field_opt_params option:selected").val()+'",'+
+            '"field_link":"'+$(conditions[i]).find(".field_link_params option:selected").val()+'",'+
+            '"field_type":"'+$(conditions[i]).find(".field_type_params option:selected").val()+'",'+
+            '"field_memo":"'+$(conditions[i]).find(".field_memo_params").val()+'"},'
+        }
+        var conditions_arr ="["+jsonobj+"]"
+        $.ajax({
+            url:SQL_ADD_PARAMS,
+            type:"POST",
+            data:{'sqlnameid':$("#sqlnameid").val(),'sqlcontent':sqlcontent,'sql_params':conditions_arr},
+            success:function(data){
+                var result = jQuery.parseJSON(data)
+                if (result['code']=='00'){
+                    alert('保存成功')
+                    window.location.href=QUERYSERVICE_SETTING_URL+"?id="+$("#sqlnameid").val()
+                }else {
+                    alert('保存失败')
+                }
+            }
+        })
+    }
+
+//业务数据综合查询
+function sql_query_data() {
+        var sqlcontent =  $.trim($("#sqltext").val())
+        var dbname = $("#dbname").val()
+        queryalldata(dbname,sqlcontent)
+    }
+
+$(function(){
+    var sqlcontent =  $.trim($("#sqltext").val())
+    if (sqlcontent!=''){
+        $("#sqlquery").trigger('click')
+    }
+
+
+    $("#queryfilterbtn").click(function(){
+        $("#curd_opt").val('R')
+        if ($("#queryflag").val()=="success"){
+            $(this).attr("data-target","#filterModal")
+        }else{
+            alert("查询失败，进行业务请求预览!")
+        }
+    })
+
+
+
+    //业务请求预览
+    $("#sqlfilter").click(function(){
+        var dbname =$("#dbname").val()
+        var sqltext = 'select * from ('+$.trim($("#sqltext").val())+') tmp'
+          var conditionobjs = $(".conditions")
+          var condition = ''
+          for (var i=0;i<conditionobjs.length;i++){
+              condition = condition+'tmp.'+$(conditionobjs[i]).find('.field_select option:selected').val()+" "
+                  +$(conditionobjs[i]).find('.field_where option:selected').val()+" "
+                  +"'"+$(conditionobjs[i]).find('.whatcontent').val()+"' "
+                  +$(conditionobjs[i]).find('.condition option:selected').val() +" "
+          }
+          if (!$.trim(condition)==''){
+              sqltext = sqltext + ' where '+condition
+          }
+        queryalldata(dbname,sqltext)
+    })
+
+    $("#setqueryparamsbtn").click(function(){
+        $("#curd_opt").val('R')
+        if ($("#queryflag").val()=="success"){
+            $(this).attr("data-target","#setQueryParamsModal")
+        }else{
+            alert("查询失败，无法进行参数设置!")
+        }
+    })
+
+    $("#add_filter_params").click(function(){
+        cloneObj(this)
+    })
+
+    $("#add_filter").click(function(){
+        cloneObj(this)
+    })
+
+
+    //上一页
+    $("#prev_page").click(function(){
+     var current_page =  $("#pageindex").val()
+     if (current_page=='1'){
+         return
+     }else{
+         $("#pageindex").val(eval(current_page)-1)
+         var dbname = $("#dbname").val()
+        var sqltext = 'select * from ('+$.trim($("#sqltext").val())+') tmp'
+        queryalldata(dbname,sqltext)
+
+     }
+  })
+
+  //下一页
+  $("#next_page").click(function(){
+     var current_page =  $("#pageindex").val()
+
+     if (current_page>=eval($("#allpage").val())){
+         current_page = $("#allpage").val()
+     }else{
+         $("#pageindex").val(eval(current_page)+1)
+         var dbname = $("#dbname").val()
+        var sqltext = 'select * from ('+$.trim($("#sqltext").val())+') tmp'
+        queryalldata(dbname,sqltext)
+
+     }
+  })
+
+  $("#back").click(function(){
+      window.location.href=QUERYSERVICE_LIST_URL
+  })
+})

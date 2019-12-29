@@ -1,0 +1,80 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2017/1/9 下午17:43
+# @Author  : qiujunli
+# @Site    :
+# @File    : views_protocol_remote_config.py
+# @Software: PyCharm
+# @Function: 远程报文协议配置求情
+
+from django.shortcuts import render
+from django.http import HttpResponseRedirect
+from django.core.urlresolvers import reverse
+from ..common.datatables.views import BaseDatatableView
+from django.views.generic import TemplateView
+from django.http import JsonResponse
+from django.db.models import Q
+import datetime
+import json
+import logging
+_logger = logging.getLogger('loggers')
+
+from models import RemoteProtocol, Apps, AppsProtocol, ProtocolType
+# Create your views here.
+
+class ListProtocolTypeConfigView(TemplateView):
+    template_name = 'packmanage/packmanage.protocolremoteconfig.list.html'
+
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data(**kwargs)
+        option = request.GET.get('option', None)
+        if option and option==u'get_protocol_number':
+            number = RemoteProtocol.objects.filter(protocol_state=0).count()
+            if number==0:
+                number=''
+            return JsonResponse({'code': '00', 'remote_protocol_number': number})
+
+        return self.render_to_response(context)
+
+class JsonProtocolTypeConfigView(BaseDatatableView):
+    model = RemoteProtocol
+    columns = ['id','id',  'app_id',  'protocol_name', 'protocol_id', 'create_date', 'operate_date','protocol_state', 'id', ]
+    order_columns = ['id','id',  'app_id',  'protocol_name', 'protocol_id', 'create_date', 'operate_date','protocol_state', 'id', ]
+
+    def get_json(self, response):
+        data_list = response['data']
+        for data in data_list:
+            try:
+                pass
+                data[1] =  data[1] + ' - ' + Apps.objects.get(app_id=data[1]).app_name
+            except:
+                pass
+        return super(JsonProtocolTypeConfigView, self).get_json(response)
+
+    # def filter_queryset(self, qs):
+    #     print '============================================================='
+    #     qs = super(JsonProtocolTypeConfigView, self).filter_queryset(qs)
+    #     return qs.order_by('protocol_state')
+
+
+def remote_protocol_delete(request):
+    '''
+    批量删除
+    :param request:
+    :return:
+    '''
+    json_data = json.loads(request.GET.get('ids'))
+    list_id_del = json_data['ids']
+
+    sql = Q()
+
+    for id in list_id_del:
+        sql = sql | Q(id=id)
+
+    qs = RemoteProtocol.objects.filter(sql)
+    if 0 != len(qs):
+        qs.delete()
+
+
+    name_dict = {'code': '00', 'desc': '删除成功!'}
+    return JsonResponse(name_dict)

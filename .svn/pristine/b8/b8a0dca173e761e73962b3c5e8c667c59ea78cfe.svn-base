@@ -1,0 +1,169 @@
+{% extends "mainbase.html" %}
+{% load staticfiles %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% block title %}
+        <title>富融全渠道支付平台</title>
+        <style>
+            .bor {
+                float: left;
+                list-style: none;
+                width: 15%;
+                height: 20%;
+                border-radius: 2px;
+                margin-left: 10px;
+                border: 2px solid #F7F7F7;
+                text-align: center;
+                padding: 5px
+            }
+        </style>
+        <script type="text/javascript">
+            jQuery(function ($) {
+                $("#btn-back").bind("click",
+                        function () {
+                            window.location.href = "{% url 'sysadmin:user.list' %}"
+                        });
+            })
+        </script>
+    {% endblock %}
+
+</head>
+<body class="no-skin">
+{% block content %}
+    <div class="main-content">
+        <div class="breadcrumbs" id="breadcrumbs">
+            <script type="text/javascript">
+                try {
+                    ace.settings.check('breadcrumbs', 'fixed')
+                } catch (e) {
+                }
+            </script>
+
+
+            <ul class="breadcrumb">
+                <li>
+                    <i class="ace-icon fa fa-home home-icon"></i>
+                    <a href="#">首页</a>
+                </li>
+
+                <li><a href="#">系统管理</a></li>
+                <li><a href="{% url 'sysadmin:user.list' %}">用户管理</a></li>
+                <li class="active">新增用户</li>
+            </ul><!-- /.breadcrumb -->
+        </div>
+
+        <div class="page-content">
+            <div class="page-header">
+            </div><!-- /.page-header -->
+            <div class="row">
+                <div class="col-xs-12">
+                    <div>
+
+                        <!-- 账户修改 -->
+                        <div class="row">
+                            <div class="col-xs-12">
+                                <div class="widget-box col-xs-12">
+                                    <div class="widget-header widget-header-blue widget-header-flat">
+                                        <h4 class="widget-title lighter">个人信息</h4>
+                                    </div>
+                                    <div class="space-20"></div>
+                                    <div style="margin-left: 24%">
+                                        <div style="width: 100%;display: inline-block;  margin:0 auto;">
+                                            <ul>
+                                                <li class="bor"><a href="#"><i
+                                                        class="ace-icon glyphicon glyphicon-user bigger-250"
+                                                        aria-hidden="true"></i>
+                                                    <span class="sr-only">Example of </span><br/>公司名称<br/>{{ sysOrgName }}
+                                                </a>
+                                                </li>
+                                                <li class="bor"><a href="#"><i class="fa fa-envelope bigger-250"
+                                                                               aria-hidden="true"></i>
+                                                    <span class="sr-only">Example of </span><br/>用户邮箱<br/>{{ us.email }}
+                                                </a>
+                                                </li>
+                                                <li class="bor"><a href="#"><i
+                                                        class="ace-icon glyphicon glyphicon-time bigger-250"
+                                                        aria-hidden="true"></i>
+                                                    <span class="sr-only">Example of </span><br/>上次登录时间<br/>{{ us.last_login }}
+                                                </a>
+                                                </li>
+
+                                            </ul>
+                                        </div>
+
+                                    </div>
+                                    <div class="space-5"></div>
+                                    <form style="padding: 2%" class="form-horizontal" method="post"
+                                          enctype="multipart/form-data">
+                                        {% csrf_token %}
+                                        <div class="form-group">
+                                            <label class="col-sm-3 control-label no-padding-right">头像设置</label>
+                                            <div class="col-sm-9">
+
+                                                <a href="{% url 'sysadmin:user.setAvatar' %}" title="点击修改头像">
+                                                    <img src="{{ MEDIA_URL }}{{ us.avatar }}" width="150"
+                                                         height="150"  onerror="src='{% static "images/user.jpg" %}';"/>
+                                                </a>
+                                            </div>
+
+                                            <label class="col-sm-3 control-label no-padding-right"> {{ form.username.label }} </label>
+
+                                            <div class="col-sm-9">
+                                                {{ form.username }}
+                                                <div class="form-group has-error">
+                                                    <div class="help-block col-xs-12 col-sm-reset inline">{{ form.username.errors }} </div>
+                                                </div>
+                                            </div>
+
+
+                                            <label class="col-sm-3 control-label no-padding-right">  {{ form.phone.label }}  </label>
+
+                                            <div class="col-sm-9">
+                                                {{ form.phone }}
+                                                <div class="form-group has-error">
+                                                    <div class="help-block col-xs-12 col-sm-reset inline">{{ form.phone.errors }} </div>
+                                                </div>
+                                            </div>
+                                            <label class="col-sm-3 control-label no-padding-right"> {{ form.sex.label }} </label>
+
+                                            <div class="col-sm-9">
+                                                {{ form.sex }}
+                                                <div class="form-group has-error">
+                                                    <div class="help-block col-xs-12 col-sm-reset inline">{{ form.sex.errors }} </div>
+                                                </div>
+                                            </div>
+
+                                            <label class="col-sm-3 control-label no-padding-right">  {{ form.desc.label }}  </label>
+
+                                            <div class="col-sm-9">
+                                                {{ form.desc }}
+                                                <div class="form-group has-error">
+                                                    <div class="help-block col-xs-12 col-sm-reset inline">{{ form.desc.errors }} </div>
+                                                </div>
+                                            </div>
+
+
+                                        </div>
+                                        <hr style="margin-top: 10px; margin-bottom: 10px;">
+                                        <div class="space-5"></div>
+                                        {% include "form_buttons.html" %}<!-- /.form_buttons -->
+                                        <div style="height: 10px;"></div>
+                                    </form>
+                                </div><!-- /.col -->
+                            </div><!-- /.row -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+<script type="text/javascript">
+    $("#btn-back").hide();
+</script>
+{% endblock %}
+
+<!-- /.main-content -->
+</body>
+</html>

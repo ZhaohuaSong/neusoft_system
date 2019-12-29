@@ -1,0 +1,56 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2016/1/13 15:08
+# @Author  : qiujunli
+# @Site    :
+# @File    : iso_recever.py
+# @Software: PyCharm
+# @Function: 报文接收入口
+
+from handle.instance_factory import *
+from iso_interface import *
+class ISORecever:
+    def __init__(self):
+        self.instance = None
+
+    def data_received(self, iso_net):
+        '''
+        接受网络传输过来的8583报文
+        :param iso_net:
+        :return:
+        '''
+
+        iIso = ISOInterface(iso_net=iso_net)
+        msg_type = iIso.get_msg_type()
+
+        #处理请求报文
+        #iso_request = iIso.get_iso_8583()
+        #self.__handle_request(iso_request)
+
+        #响应具体的逻辑
+        self.instance = InstanceFactory().get_instance(msg_type)
+        iso_response = self.instance.handle(iIso.get_iso_8583())
+        if iso_response is True:
+            return True
+        else:
+            #print '========response==========='
+            #iso_response.showBitsAndValues()
+            return iso_response.getNetworkISO()
+
+        #处理返回的响应报文
+        #self.__handle_response(iso_response)
+        #return iso_response.getNetworkISO()
+
+    def get_query_data(self):
+        '''
+        查询专用接口
+        :return: 返回响应字节流列表以及True or False表示是否读取完成
+        '''
+
+        response_8583_list, ret = self.instance.get_query_page_data()
+        response_list = []
+        for response_8583 in response_8583_list:
+            response_list.append(response_8583.getNetworkISO())
+            #response_8583.showBitsAndValues()
+
+        return response_list, ret

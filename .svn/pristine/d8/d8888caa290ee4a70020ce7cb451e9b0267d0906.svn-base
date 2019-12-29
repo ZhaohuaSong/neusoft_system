@@ -1,0 +1,402 @@
+{% extends "mainbase.html" %}
+{% load staticfiles %}
+{% load i18n staticfiles %}
+{% load url from future %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta charset="UTF-8">
+    {% block title %}
+        <!-- page specific plugin scripts -->
+
+        <script src="{% static "js/bootstrap-treeview.min.js" %}"></script>
+        <script type="text/javascript">
+
+            var defaultData ={{ treedata|safe }} //树形列表数据
+
+
+            var DBTables_LIST_URL = '{% url 'dbadmin:dbconfig.datasourcelist'%}';
+
+            var SQL_QUERY = '{% url 'dbadmin:api'%}'
+
+            var SQL_ADD = '{% url 'dbadmin:sql.add'%}'
+
+            var SQL_LIST = '{% url 'dbadmin:sql.list'%}'
+
+            var SQL_DETAIL = '{% url 'dbadmin:sql.detail'%}'
+
+
+
+        </script>
+
+        <script src="{% static "js/dbadmin/dbsource.list.js" %}"></script>
+
+    {% endblock %}
+
+</head>
+<body class="no-skin">
+
+{% block content %}
+
+    <div class="main-content">
+        <input type="hidden" value="" id="dbname2">
+        <input type="hidden" value="" id="sqltext2">
+        <input type="hidden" value="" id="curd_opt">
+        <div class="breadcrumbs" id="breadcrumbs">
+            <script type="text/javascript">
+                try {
+                    ace.settings.check('breadcrumbs', 'fixed')
+                } catch (e) {
+                }
+
+                $(function(){
+                   var add_url = '{% url 'dbadmin:dynamic.add'%}'
+                   $.fn.serializeObject = function()
+                        {
+                           var o = {};
+                           var a = this.serializeArray();
+                           $.each(a, function() {
+                               if (o[this.name]) {
+                                   if (!o[this.name].push) {
+                                       o[this.name] = [o[this.name]];
+                                   }
+                                   o[this.name].push(this.value || '');
+                               } else {
+                                   o[this.name] = this.value || '';
+                               }
+                           });
+                           return o;
+                        };
+                    $("#datasubmit").click(function () {
+                       var frmdata =$("#addfrm").serializeObject()
+                        $.ajax({
+                            url:add_url,
+                            type:'POST',
+                            data:frmdata,
+                            success:function(result){
+                                var res = jQuery.parseJSON(result)
+                                if (res.code=='00'){
+                                    $("#message-body").html('保存成功')
+                                     $('#myModal').modal({keyboard: true})
+
+                                }else{
+                                     $("#message-body").html('保存失败')
+                                     $('#myModal').modal({keyboard: true})
+                                }
+
+                            }
+                        })
+                })
+                    $("#edit").click(function(){
+                        add();
+                        $("#form_title").text('编辑数据')
+                        $.ajax({
+                            url:'/dbadmin/dynamic/'+$("input[name='databasename']").val()+'/'+$("input[name='table_name']").val()
+                                 +'/detail/'+$("#thdata").children('th').eq(1).text()+'/'+$("input[name='radio_id']:checked").parent().next().text(),
+                            success:function(data){
+                                var obj = jQuery.parseJSON(data)
+                                $.each(obj['result'][0],function(k,v){
+                                    $("input[name="+k+"]").val(v)
+                                })
+
+                            }
+                        })
+
+                    })
+                })
+
+
+            </script>
+            <ul class="breadcrumb">
+                <li>
+                    <i class="ace-icon fa fa-home home-icon"></i>
+                    <a href="/home">首页</a>
+                </li>
+                <li>
+                    <a href="#">数据库配置中心</a>
+                </li>
+                <li class="active">数据源管理</li>
+            </ul><!-- /.breadcrumb -->
+        </div>
+
+        <div class="page-content">
+  {% if message %}
+       <div id="myAlert" class="alert alert-warning" style="padding-left:100px;">
+                            <strong>提示：{{ message }}</strong>
+                        </div>
+        {% endif %}
+            <div class="row">
+                <!--树形菜单开始-->
+                <div class="col-xs-12">
+                <div style="float: left; padding-left:0px; margin-top: 10px;" class="col-xs-3">
+                    <div class="widget-main padding-0">
+                        <div class="col-sm-12" style="padding-right:0px">
+
+
+                            <div class="widget-box widget-color-blue2">
+                                <div class="widget-header">
+                                    <h4 class="widget-title lighter smaller">请选择数据源</h4>
+                                </div>
+
+                                <div class="widget-body">
+                                    <div class="widget-main padding-8">
+                                        <div id="treeview1" class=""></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!--树形菜单结束-->
+
+
+
+                <!--数据表格开始-->
+
+
+                <div style="padding: 0px" class="col-xs-9">
+
+
+                    <div class="table-header"> <!--table-header -->
+                        数据库表管理
+                    </div>
+            <div class="tab-content">
+                <div class="tabbable tabs-top">
+
+
+                    <ul class="nav nav-tabs"  >
+												<li class="active">
+													<a data-toggle="tab" href="#yl" onclick="view()">表字段
+													</a>
+												</li>
+                                                <li>
+													<a data-toggle="tab" href="#dl" onclick="javascript:show()">表数据
+													</a>
+												</li>
+                                                <li>
+													<a data-toggle="tab" href="#cl" onclick="show_url()">查看url
+													</a>
+												</li>
+                                                <li>
+													<a data-toggle="tab" href="#ol"  onclick="show_out_sql()">业务数据
+													</a>
+												</li>
+                    </ul>
+                    <div class="tab-content">
+                    <div id="yl" class="tab-pane  active" style="padding-bottom:20px">
+                     <table id="dynamic-table" class="table table-striped table-bordered table-hover"><!--table -->
+                            <thead>
+                            <tr>
+
+                                <th>字段名称</th>
+                                <th>字段类型</th>
+                                <th>字段长度</th>
+                            </tr>
+                            </thead>
+                            <tbody id="dbcontent">
+
+                            </tbody>
+                        </table><!--table -->
+                        <div><input type="button" data-toggle="modal" id="add_service" value="设置新增业务">&nbsp;<input type="button" id="edit_service" data-toggle="modal" value="设置编辑业务">&nbsp;<input type="button" id="del_service" data-toggle="modal" value="设置删除业务"> </div>
+                        </div>
+
+                    <div id="cl" class="tab-pane" style="padding-bottom:20px">
+                     <table id="dynamic-url" class="table table-striped table-bordered table-hover"><!--table -->
+                            <thead>
+                            <tr>
+
+                                <th>url</th>
+                                <th>描述</th>
+                            </tr>
+                            </thead>
+                            <tbody id="urlcontent">
+
+                            </tbody>
+                        </table><!--table -->
+                        </div>
+                    <div id="ol" class="tab-pane" style="padding-bottom:20px">
+                     <table id="dynamic-sql-data" class="table table-striped table-bordered table-hover"><!--table -->
+                            <thead>
+                            <tr>
+                                <th>所属数据库</th>
+                                <th>业务描述</th>
+                                <th>操作</th>
+                            </tr>
+                            </thead>
+                            <tbody id="sqldata">
+
+                            </tbody>
+                        </table><!--table -->
+
+                        </div>
+
+
+                    <!--新增或编辑页面及单表数据列表-->
+                    <div id="dl" class="tab-pane" style="padding-bottom:20px">
+                    <!--新增或编辑页面-->
+                    <div class="page-content" style="display: none" id="add_data">
+                        <div class="row">
+                            <div class="col-xs-12"  style="margin-bottom:80px;">
+                                <div class="widget-box col-xs-12">
+                                    <div class="widget-header widget-header-blue widget-header-flat">
+                                        <h4 class="widget-title lighter" id="form_title">新增数据</h4>
+                                    </div>
+                                    <div class="space-20"></div>
+
+                                    <form class="form-horizontal" role="form" id="addfrm"  method="post">
+                                        {% csrf_token %}
+                                        <div id="add_form">
+
+                                        </div>
+                                        <hr/>
+                                        <div class="space-10"></div>
+                                        <div class="col-xs-12 clearfix " style="text-align:center; margin-bottom: 10px">
+                                            <button class="btn btn-info sumbmit_input" type="button" style="margin-right: 10px;" id="datasubmit">
+                                                <i class="ace-icon fa fa-check bigger-110"></i>
+                                                提 交
+                                            </button>
+                                            <button  id="btn-back" class="btn"  type="button" style="margin-left: 10px;" onclick="show()">
+                                                <i class="ace-icon fa fa-undo bigger-110"></i>
+                                                取 消
+                                            </button>
+                                        </div><!-- /.form_buttons -->
+                                        <div class="space-30"></div>
+                                    </form>
+                                </div>
+                            </div><!-- /.col -->
+                        </div><!-- /.row -->
+                        </div>
+
+                    <!--单表列表数据-->
+                     <table id="dynamic-table-list" class="table table-striped table-bordered table-hover">
+                         <!--table -->
+                         <div id="tool_bar"><input type="button" value="新增" onclick="javascript:add()">&nbsp;<input type="button" value="修改" id="edit"> </div><br/>
+                         <thead>
+                            <tr id="thdata">
+                                <th class="hidden-480 center" width='45px' >
+                                    <label class="pos-rel">
+
+                                        <span class="lbl"></span>
+                                    </label>
+                                </th>
+                                <input type="hidden" id="table_th">
+
+                            </tr>
+                            </thead>
+                            <tbody id="table_datas">
+
+                            </tbody>
+                        </table><!--table -->
+                        </div>
+                    </div>
+                </div>
+                </div>
+                </div>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+
+    <!--保存成功与否弹出框-->
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true" onclick="show()">
+                        &times;
+                    </button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        系统消息
+                    </h4>
+                </div>
+                <div class="modal-body" id="message-body">
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal" onclick="show()">关闭
+                    </button>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal -->
+    </div>
+
+
+
+    <!--新增，修改，删除 业务弹出框-->
+    <div class="modal fade" id="cudModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" >
+        <div class="modal-dialog" style="width: 800px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true" >
+                        &times;
+                    </button>
+                    <h4 class="modal-title" id="cudModalLabel">
+                        业务参数设置
+                    </h4>
+                </div>
+                <div class="modal-body" id="cud_body">
+                    <input type="hidden" value="" id="sys_table_name">
+                    <input type="hidden" value="" id="cud_dbname">
+                    <div style="margin-bottom: 15px"><label>业务描述:</label><input type="text" value="" id="cud_sql_name" size="30px"> </div>
+                    <div style="margin-bottom: 2px" class="cudparams">
+                        <select class="cud_field_name"></select>
+                        <input type="text" value="" class="cud_field_memo" style="height:30px" placeholder="字段描述" >
+                        <select class="cud_field_type">
+                            <option value="">--请选择类型--</option>
+                            <option value="1">--输入/查询--</option>
+                            <option value="2">--输出/变更--</option>
+                        </select>
+                        <input type="button" value="+" id="add_cud">
+                    </div>&nbsp;
+                    <div id="remark"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary"   id="cudsave" onclick="cudsqlsave()">保存
+                    </button>
+
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal -->
+
+
+
+    </div>
+
+    <!--业务详情弹出框-->
+    <div class="modal fade" id="detailModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" >
+        <div class="modal-dialog" style="width: 800px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true" >
+                        &times;
+                    </button>
+                    <h4 class="modal-title" id="detailModalLabel">
+                        业务参数详情
+                    </h4>
+                </div>
+                <div class="modal-body" id="detail_body">
+                    <div style="margin-bottom: 15px"><label>业务描述:</label><span id="sql_name_detail"></span> </div>
+                    <div style="margin-bottom: 15px"><label>sql或表详情:</label><span id="sql_content_detail"></span> </div>
+                    <div style="margin-bottom: 2px">参数详情:</div>
+                    <div style="margin-bottom: 2px" id="field_name_details">
+                    </div>&nbsp;
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal" >关闭
+                    </button>
+
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal -->
+
+
+
+    </div>
+
+{% endblock %}
+
+</body>
+</html>

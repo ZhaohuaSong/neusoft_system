@@ -1,0 +1,47 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+import datetime
+import copy
+from ...api.iso_interface import ISOInterface
+from ....common.iso.iso_response_code import *
+#from ...models import RemoteProtocol
+
+from django.apps import apps
+RemoteProtocol = apps.get_model(app_label='packmanage', model_name='RemoteProtocol')
+
+class ConfigProtocolRequest:
+    '''
+    协议配置请求
+    '''
+    def handle(self, iso_8583):
+        '''
+        处理
+        :param iso_8583:
+        :return:
+        '''
+        #1、获取信息
+        i8583 = ISOInterface(iso_8583=iso_8583)
+        protocol_id = i8583.get_protocol_id()
+
+        protocol_name = i8583.get_protocol_name()
+
+        protocol_content = i8583.get_protocol_content()
+        app_id = i8583.get_app_id()#发送请求的适配器编号
+
+        #2、保存数据库
+        info  = RemoteProtocol()
+        info.protocol_id = protocol_id
+        info.protocol_name = protocol_name
+        info.app_id = app_id
+        info.protocol_state = 0
+        info.protocol_content = protocol_content
+        info.create_date      = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        info.save()
+
+
+
+        #3、返回给请求端的报文内容
+        iso_response = copy.deepcopy(i8583.get_iso_8583())
+        i8583 = ISOInterface(iso_8583=iso_response)
+        i8583.set_response_code(CODE_SUCCESS)
+        return i8583.get_iso_8583()

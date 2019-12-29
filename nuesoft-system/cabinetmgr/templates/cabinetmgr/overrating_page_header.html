@@ -1,0 +1,80 @@
+<!-- -->
+<div  id="ace-settings-box">
+    <button class="btn btn-info btn-sm tooltip-info" id="btn-client">
+        客户
+    </button>
+    <select id="clientId" name="AreaId" size="1" class="sel"  style="width:300px;">
+    </select>
+    <button class="btn btn-info btn-sm tooltip-info" id="btn-building">
+        机楼
+    </button>
+    <select id="buildingId" name="AreaId" size="1" class="sel"  style="width:300px;" onchange="setroom(this)">
+        <option value="building">请选择机楼</option>
+    </select>
+    <button class="btn btn-info btn-sm tooltip-info" id="btn-room">
+        机房
+    </button>
+    <select id="roomId" name="AreaId" size="1" class="sel"  style="width:300px;">
+        <option value="room">请选择机房</option>
+    </select>
+</div>
+<script>
+    $("#btn-client").attr("disabled", 'disabled');
+    $("#btn-building").attr("disabled", 'disabled');
+    $("#btn-room").attr("disabled", 'disabled');
+    var building_id = {{ building_id | safe }};
+    var building_name = {{ building_name | safe }};
+    var option_dom = '';
+    for (i=0; i<building_id.length; i++) {
+        option_dom += "<option value=" + building_id[i] + '>' + building_name[i] + "</option>";
+
+    }
+    $('#buildingId').append(option_dom);
+    var building_room_dict = eval({{ building_room_dict | safe }});
+
+    function setroom (obj) {
+        var val = obj.value;
+        var room_option = '';
+
+        if (val !== 'building') {
+            for (i = 0; i < building_room_dict[val].length; i++) {
+                room_option += "<option value=" + building_room_dict[val][i][0] + '>' + building_room_dict[val][i][1] + "</option>";
+            }
+            $("#roomId").empty();
+            $("#roomId").append("<option value=room>请选择机房</option>")
+            $('#roomId').append(room_option);
+        } else {
+            $("#roomId").empty();
+            $("#roomId").append("<option value=room>" + '请选择机房' + "</option>")
+        }
+    }
+</script>
+<div  id="ace-settings-box">
+    <div class="pull-left width-100">
+        <div style="width:100%; border-bottom:1px #dedede dashed; float:left">
+
+            <div class="input-group col-sm-3" style="margin-top: 10px; float: right;">
+
+                <input class="form-control" id="in-search" name="keywords" placeholder="输入要查询的内容" type="text" >
+                <div class="input-group-btn" style="padding-left: 10px">
+                    <button class="btn btn-info btn-sm tooltip-info" id="btn-search">
+                        查询月份
+                    </button>
+                </div>
+            </div>
+            <button class="btn btn-info btn-sm tooltip-info" id="btn-add" style="float:left; margin:10px 3px 10px 3px;">
+                用电数据录入
+            </button>
+
+{#            <button class="btn btn-success btn-sm popover-success" id="btn-update" style="float:left; margin:10px 3px 10px 3px;">#}
+{#                编辑#}
+{#            </button>#}
+{#            <button class="btn btn-danger btn-sm tooltip-error" id="btn-delete" style="float:left; margin:10px 3px 10px 3px;">#}
+{#                删除#}
+{#            </button>#}
+        </div>
+
+    </div><!-- /.pull-left -->
+
+    <!-- /.pull-left -->
+</div><!-- /.ace-settings-box -->

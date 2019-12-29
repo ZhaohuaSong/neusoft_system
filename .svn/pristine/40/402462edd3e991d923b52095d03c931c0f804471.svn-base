@@ -1,0 +1,150 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2017/1/3 下午6:09
+# @Author  : czw@rich-f.com
+# @Site    :
+# @File    : testdb.py
+# @Software: PyCharm
+# @Function:
+
+from dbconfig import dbengine
+from sqlalchemy.engine import create_engine
+from sqlalchemy import MetaData,inspect
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+
+if __name__ == '__main__':
+
+
+    myconfig = {
+        'host': '127.0.0.1',
+        'port': '3306',
+        'user': 'root',
+        'password': '123456',
+        'dbname': 'richdatax',
+        'dbtype': 'MySQL',
+
+    }
+
+
+    '''
+    myconfig = {
+        'host': '192.168.0.201',
+        'port': '1521',
+        'user': 'hr',
+        'password': 'hr',
+        'dbname': 'orcl',
+        'dbtype': 'Oracle',
+
+    }
+    '''
+
+
+
+
+    '''
+    engine = create_engine('mysql+mysqldb://root:123456@localhost/richdatax')
+
+    #Base = declarative_base()
+
+    #print Base.__name__
+
+    metadata = MetaData(engine)
+
+    connection = engine.connect()
+
+    result = connection.execute("select 1")
+
+    row = result.fetchone()
+
+    print row[0]
+
+    print type(result)
+
+    for row in result:
+        print row
+
+    connection.close()
+    '''
+
+    '''
+    DBSession = sessionmaker(bind=engine)
+
+    print DBSession
+
+    q = engine.execute('SHOW DATABASES')
+    print
+    inspector = inspect(engine)
+
+    for table_name in inspector.get_table_names():
+
+        print table_name
+
+        for column in inspector.get_columns(table_name):
+            print("Column: %s" % column['name'])
+
+    meta = MetaData(bind=engine, reflect=True)
+    print meta.tables
+    '''
+
+
+
+
+    db=dbengine(myconfig)
+
+    print db.get_tables()
+
+    #print db.get_columns_bytable('dbconfig')
+
+    for column in db.get_columns_bytable('django_session'):
+
+       print column
+
+
+    #print db.ping()
+
+
+
+    '''
+    print "**",inspector.get_table_names()
+
+    for table_name in inspector.get_table_names():
+
+        print table_name
+
+        for column in inspector.get_columns(table_name):
+            print("Column: %s" % column['name'])
+    '''
+
+    #url(r'dbadmin/dbconfig/datasourcelist$', DBTable_View.as_view(), name='dbconfig.datasourcelist'),
+
+
+
+
+
+    db.close()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,500 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2017/2/18
+# @Author  : qiujunli
+# @Site    :
+# @File    : views_trigger_config.py
+# @Software: PyCharm
+# @Function: 触发器参数
+
+from django.views.generic import TemplateView
+from ..vanilla import CreateView, QUpdateView
+from django.http import JsonResponse
+from django.core.urlresolvers import reverse
+from django.http import HttpResponseRedirect
+from django.db.models import Q
+import datetime
+import json
+import logging
+from api.system_enum import *
+_logger = logging.getLogger('loggers')
+
+
+from models import Apps, Protocoltrigger, TriggerType, ProtocolType
+from api.iso_interface import *
+from api.pack.pack_ctrl import *
+from ..common.iso.iso_response_code import *
+from api.data_src.data_src_interface import IDataSrc
+from api.data_src.external_interface import Client
+from api.pack.data_src_config import DataSrcConfig
+
+from api.data_request import IDataRequest
+# Create your views here.
+
+class PageTriggerConfigView(TemplateView):
+    template_name = 'packmanage/packmanage.trigger.config.html'
+
+    def get(self, request, *args, **kwargs):
+        id = request.GET.get('id', None)
+        opt = request.GET.get('option', None)
+
+        if opt is not None:
+            src_name = request.GET.get('src_name', None)
+            if opt == 'src_list': # 获取数据源列表
+                src_type = request.GET.get('src_type', None)
+                l = IDataSrc(src_type).get_all_src_list()
+                return JsonResponse({'code': '00', 'desc': 'ok', 'data':l })
+            elif opt == 'src_list_resp':
+                src_type = request.GET.get('src_type', None)
+                l = IDataSrc(src_type).get_all_src_list(2)
+                return JsonResponse({'code': '00', 'desc': 'ok', 'data': l})
+            elif opt == 'src_cols':  # 获取文件列数据信息
+                src_type = request.GET.get('src_type', None)
+                cols_in, cols_out = IDataSrc(src_type).get_cols_name_list(src_name)
+                return JsonResponse(
+                    {'code': '00', 'desc': 'ok!', "data": cols_out[1], "keys": cols_out[0], 'in_k':cols_in[0],
+                     'in_v':cols_in[1], 'out_k':cols_out[0], 'out_v':cols_out[1] })
+            elif opt == 'src_cols_resp':  # 获取文件列数据信息
+                src_type = request.GET.get('src_type', None)
+                cols_in, cols_out = IDataSrc(src_type).get_cols_name_list(src_name, DATA_SRC_DB_CUD_MULTI)
+                return JsonResponse(
+                    {'code': '00', 'desc': 'ok!', "data": cols_out[1], "keys": cols_out[0], 'in_k': cols_in[0],
+                     'in_v': cols_in[1], 'out_k': cols_out[0], 'out_v': cols_out[1]})
+            elif opt == 'reconfig':
+                try:
+                    info = Protocoltrigger.objects.get(id=id)
+                    info.datasrc_id = ''
+                    info.datasrc_type = ''
+                    info.trigger_param = ''
+                    info.save()
+                    context = {'code': '00', 'desc': '操作成功!'}
+                    return JsonResponse(context)
+                except Exception as e:
+                    context = {'code': '01', 'desc': '操作异常:%s!' % str(e)}
+                    return JsonResponse(context)
+
+
+        trigger = Protocoltrigger.objects.get(id=id)
+        protocol = ProtocolType.objects.get(protocol_id=trigger.protocol_id)
+        app = Apps.objects.get(app_id=trigger.app_id)
+
+        context = self.get_context_data(**kwargs)
+        context['trigger_name'] = trigger.name
+        try:
+            context['trigger_type'] = TriggerType.objects.get(trigger_id=trigger.trigger_type).trigger_name
+        except:
+            pass
+        context['app_name'] = app.app_name
+        context['protocol_name'] = protocol.protocol_name
+        context['protocol_id'] = protocol.protocol_id
+
+        # 操作类型
+        context['is_add'] = protocol.operation_type == int(OPERATOR_TYPE_ADD)
+        context['is_del'] = protocol.operation_type == int(OPERATOR_TYPE_DEL)
+        context['is_search'] = protocol.operation_type == int(OPERATOR_TYPE_SEARCH)
+        context['is_updata'] = protocol.operation_type == int(OPERATOR_TYPE_UPDATA)
+        try:
+            context['operation_name'] = PROTOCOL_OPERATOR_TYPE[str(protocol.operation_type)]
+        except:
+            pass
+
+        # 请求协议的出参、入参
+        context['protocol_content_in'] = self.get_protocol_content_in(protocol.protocol_content)
+        context['protocol_content_out'] = self.get_protocol_content_out(protocol.protocol_content)
+
+        if trigger.trigger_param is not None and 0!=len(trigger.trigger_param):
+            try:
+                context["src_type"] = PROTOCOL_DATA_SRC_TYPE[str(trigger.datasrc_type)]
+            except:
+                pass
+            context["src_type_index"] = trigger.datasrc_type
+            context["is_over"] = 1
+            context["src_name"] = trigger.datasrc_id
+            context["cols_list"] = IDataSrc(trigger.datasrc_type).get_cols_name_list(trigger.datasrc_id)
+            context["in_param"], context["out_param"], context["in_param"], context["out_param"], context["query_param"] = self.get_src_info(trigger.id)
+            self.format_data_src(context)
+
+            if context['is_search']:  # 如果是检索
+                dsc = DataSrcConfig()
+                dsc.init(trigger.id, True)
+                t_list = dsc.get_response_data_list()
+                try:
+                    context['src_type_response'] = PROTOCOL_DATA_SRC_TYPE[dsc.get_response_src_type()]
+                except:
+                    pass
+
+                context['src_name_response'] = dsc.get_response_src_name()
+                try:
+                    for i in range( 0, len(t_list) ):
+                        t_list[i][0] = context['protocol_content_out'][i]['field_name']
+                except:
+                    pass
+
+                context['data_response'] = t_list
+
+
+        else:
+            context["datasrc_list"] = PROTOCOL_DATA_SRC_TYPE
+            context["src_list"] = IDataSrc(trigger.datasrc_type).get_all_src_list()
+
+        return self.render_to_response(context)
+
+    def get_src_info(self, id):
+        dsc = DataSrcConfig()
+        dsc.init(id, True)
+        return dsc.get_data_src_in_col_index(), dsc.get_data_src_out_index(), dsc.get_data_src_in_col_index_note(), dsc.get_data_src_out_col_index_note(), dsc.get_data_src_query_param()
+
+    def format_data_src(self, context):
+        try:
+            src_in = context['in_param']
+            src_out = context['out_param']
+            protocol_content_in = context['protocol_content_in']
+            protocol_content_out = context['protocol_content_out']
+
+            new_in = []
+            new_out = []
+            for i in range(0, len(protocol_content_in)):
+                new_in.append((protocol_content_in[i]['field_name'], src_in[i]))
+
+            for i in range(0, len(protocol_content_out)):
+                new_out.append((protocol_content_out[i]['field_name'], src_out[i]))
+
+            context['in_param'] = new_in
+            context['out_param'] = new_out
+
+            return True
+        except Exception as e:
+            return False
+
+    #获取协议内容
+    def get_protocol_content_in(self, protocol_content):
+        if protocol_content is None or len(protocol_content)==0:
+            return []
+        #dict_protocol = eval(protocol_content)
+        dict_protocol = json.loads(protocol_content)
+        return  list(dict_protocol['in'].values())
+
+    def get_protocol_content_out(self, protocol_content):
+        if protocol_content is None or len(protocol_content) == 0:
+            return []
+        # dict_protocol = eval(protocol_content)
+        dict_protocol = json.loads(protocol_content)
+        return list(dict_protocol['out'].values())
+
+    def post(self, request, *args, **kwargs):
+        id = request.GET.get('id', None)
+
+
+        trigger = Protocoltrigger.objects.get(id=id)
+        # protocol = ProtocolType.objects.get(protocol_id=trigger.protocol_id)
+        app = Apps.objects.get(app_id=trigger.app_id)
+
+
+        opt = request.GET.get('option', None)
+        if opt is None:
+            return JsonResponse({'code': '01', 'desc': '00', 'data':['操作类型不明确，请检查url接口']})
+
+        if opt is not None:
+            json_data = json.loads(request.body)  # json
+            if opt == 'search':
+                return self.do_search(app, trigger)
+            elif opt == 'add':
+                return self.do_add(app, trigger)
+            elif opt == 'del':
+                return self.do_del(app, trigger)
+            elif opt == 'updata':
+                return self.do_updata(app, trigger)
+            elif opt == 'save':
+                return self.do_save(id, json_data)
+
+    def do_search(self, app, trigger):
+        '''
+        手动触发器的查询操作
+        :param app:适配器
+        :param trigger:触发器
+        :param in_list:输入参数列表
+        :return:
+        '''
+
+        try:
+            data = TotalData()
+            dsc = DataSrcConfig()
+
+
+            dsc.init(trigger.id, True)
+
+            src_name = dsc.get_src_name()  # 数据源名称或者ID
+            src_type = dsc.get_src_type()  # 数据源类型
+            in_cols = dsc.get_data_src_in_col_index()  # 入参做出参在此处查询
+            out_cols = dsc.get_data_src_out_index()  # 出参不做处理
+            query_param = dsc.get_data_src_format_query_param()  # 获取查询参数
+
+            idata = IDataSrc(src_type)
+            b_search_local = False  # 是否查询完成
+
+            while b_search_local is False:
+                v_list = [[]]
+                b_search_local = True
+
+                #查询
+                if  src_type == DATA_SRC_TYPE_DB:
+                    if 1:#len(query_param) != 0:
+                        try:
+                            v_list, b_search_local = idata.query(src_name, query_param, in_cols)  # 返回结果list以及是否查询完成结果
+                        except Exception as e:
+                            if str(e) == CODE_ERROR_NO_SEARCH:
+                                raise Exception('请求数据源获取查询条件失败')
+                            else:
+                                raise e
+
+                else:
+                    v_list, b_search_local = idata.query(src_name, query_param, in_cols)  # 返回结果list以及是否查询完成结果
+
+                for in_list in v_list:
+                    iso_net = PackCtrl().create_pack(trigger.id, in_list)  # 网络传输报文
+                    client = Client(app.app_ip, app.app_port)
+                    client.create_connenct()
+                    client.send(iso_net)
+                    # ISOInterface(iso_net=iso_net).show()
+
+                    is_over  = False#是否持续接收数据
+                    i = 0
+                    while is_over is False:
+                        iso_recv = client.recv()
+                        client.send(iso_recv)
+                        i8583 = ISOInterface(iso_net=iso_recv)
+                        #i8583.show()
+
+                        is_over = i8583.get_is_over_flag()
+
+                        i = i+1
+                        #print 'current:', i , is_over
+                        code = i8583.get_response_code()
+                        if code == '00':
+                            src_name_resp = dsc.get_response_src_name()  # 数据源名称或者ID
+                            src_type_resp = dsc.get_response_src_type()  # 数据源类型
+                            src_data_resp = dsc.get_response_data_list()
+
+                            param = {}
+                            for d in src_data_resp:
+                                bit = d[0]
+                                key = d[1]
+                                param[key] = i8583.get_index_value(bit)
+                            IDataSrc(src_type_resp).add(src_name_resp, param, is_over)
+
+                        data.add(code)
+
+                    client.close_connect()
+                print '-----------total------------:', i
+            context = {'code': '00', 'desc': '00', 'data':data.format()}
+            return JsonResponse(context)
+        except Exception as e:
+            code = str(e)
+            data.add(code)
+            desc = ECode().get_desc(code)
+
+            desc = 'Error: ' + desc + '错误码:[' + str(e) + ']'
+            print "error:", desc
+            context = {'code': '01', 'desc': desc, 'data': data.format()}
+            return JsonResponse(context)
+
+    def do_add(self, app, trigger):
+        '''
+        执行手动触发器的新增操作
+        :param app: 适配器
+        :param trigger: 触发器
+        :return:
+        '''
+        try:
+            data = TotalData()
+            dsc = DataSrcConfig()
+            dsc.init(trigger.id, True)
+            src_name = dsc.get_src_name() # 数据源名称或者ID
+            src_type = dsc.get_src_type() # 数据源类型
+            in_cols = dsc.get_data_src_in_col_index() # 入参做出参在此处查询
+            out_cols = dsc.get_data_src_out_index() # 出参不做处理
+            query_param = dsc.get_data_src_format_query_param()#获取查询参数
+
+            idata = IDataSrc(src_type)
+            bOver = False # 是否查询完成
+
+            while bOver is False:
+                v_list, bOver = idata.query(src_name, query_param, in_cols)#返回结果list以及是否查询完成结果
+
+                len_l = len(v_list)
+                for i in range(0, len_l):
+                    in_list = v_list[i]
+                    pc = PackCtrl()
+
+                    is_over = False
+                    if bOver is True and i == len_l - 1:
+                        is_over = True
+                    pc.set_over_flag(is_over)
+
+                    iso_net = pc.create_pack(trigger.id, in_list)  # 网络传输报文
+                    client = Client(app.app_ip, app.app_port)
+                    client.create_connenct()
+                    iso_recv =client.send_and_recv(iso_net)  # 收到的报文信息
+
+                    code = ISOInterface(iso_net=iso_recv).get_response_code()
+                    data.add(code)
+
+            context = {'code': '00', 'desc': '00', 'data': data.format()}
+            return JsonResponse(context)
+        except Exception as e:
+            code = str(e)
+            data.add(code)
+            desc = ECode().get_desc(str(e))
+            desc = 'Error: ' + desc+'错误码:[' + str(e) + ']'
+            context = {'code': '01', 'desc': desc, 'data': data.format()}
+            return JsonResponse(context)
+
+    def do_del(self, app, trigger):
+        '''
+        手动触发删除操作
+        :param app:
+        :param protocol:
+        :param in_list:
+        :return:
+        '''
+
+        try:
+            data = TotalData()
+            dsc = DataSrcConfig()
+            dsc.init(trigger.id, True)
+            src_name = dsc.get_src_name()  # 数据源名称或者ID
+            src_type = dsc.get_src_type()  # 数据源类型
+            in_cols = dsc.get_data_src_in_col_index()  # 入参做出参在此处查询
+            out_cols = dsc.get_data_src_out_index()  # 出参不做处理
+            query_param = dsc.get_data_src_format_query_param()  # 获取查询参数
+
+            idata = IDataSrc(src_type)
+            bOver = False  # 是否查询完成
+
+            while bOver is False:
+                v_list, bOver = idata.query(src_name, query_param, in_cols)  # 返回结果list以及是否查询完成结果
+                for in_list in v_list:
+                    iso_net = PackCtrl().create_pack(trigger.id, in_list)  # 网络传输报文
+                    client = Client(app.app_ip, app.app_port)
+                    client.create_connenct()
+                    iso_recv = client.send_and_recv(iso_net)  # 收到的报文信息
+                    code = ISOInterface(iso_net=iso_recv).get_response_code()
+                    data.add(code)
+            context = {'code': '00',   'data': data.format()}
+            return JsonResponse(context)
+        except Exception as e:
+            code = str(e)
+            data.add(code)
+            desc = ECode().get_desc(str(e))
+            desc = 'Error: ' + desc + '错误码:[' + str(e) + ']'
+
+            context = {'code': '01', 'desc': desc, 'data': data.format()}
+            return JsonResponse(context)
+
+    def do_updata(self, app, trigger):
+        '''
+        手动触发更新操作
+        :param app:
+        :param protocol:
+        :param in_list:
+        :param out_list:
+        :return:
+        '''
+
+        try:
+            data = TotalData()
+            dsc = DataSrcConfig()
+            dsc.init(trigger.id, True)
+            src_name = dsc.get_src_name()  # 数据源名称或者ID
+            src_type = dsc.get_src_type()  # 数据源类型
+            in_cols = dsc.get_data_src_in_col_index()  # 入参做出参在此处查询
+            out_cols = dsc.get_data_src_out_index()  # 出参不做处理
+            query_param = dsc.get_data_src_format_query_param()  # 获取查询参数
+
+
+            idata = IDataSrc(src_type)
+            bOver = False  # 是否查询完成
+
+            while bOver is False:
+                v_list, bOver = idata.query(src_name, query_param, in_cols+out_cols)  # 返回结果list以及是否查询完成结果
+                in_len = len(in_cols)
+                out_len = len(out_cols)
+
+                for in_list in v_list:
+                    iso_net = PackCtrl().create_pack(trigger.id, in_list[0:in_len], in_list[in_len:in_len+out_len])  # 网络传输报文
+                    client = Client(app.app_ip, app.app_port)
+                    client.create_connenct()
+                    iso_recv = client.send_and_recv(iso_net)  # 收到的报文信息
+
+                    code = ISOInterface(iso_net=iso_recv).get_response_code()
+                    data.add(code)
+
+            context = {'code': '00', 'data': data.format()}
+            return JsonResponse(context)
+        except Exception as e:
+            code = str(e)
+            data.add(code)
+            desc = ECode().get_desc(str(e))
+            desc = 'Error: ' + desc + '错误码:[' + str(e) + ']'
+            context = {'code': '01', 'desc': desc, 'data': data.format()}
+            return JsonResponse(context)
+
+    def do_save(self, id, json_data):
+        # 1. get trigger id
+        src_type = json_data['src_type']
+        src_name = json_data['src_name']
+        json_data = json.dumps(json_data)
+        try:
+            info = Protocoltrigger.objects.get(id=id)
+            info.trigger_param = json_data
+            info.datasrc_id = src_name
+            info.datasrc_type = src_type
+            info.save()
+        except:
+            return JsonResponse({'code': '01', 'desc': '触发器信息已经丢失!'})
+
+        return JsonResponse({'code': '00', 'desc': '保存成功!'})
+
+
+class TotalData:
+    '''
+    统计
+    '''
+    def __init__(self):
+        self.data = {}
+        print '--------start----------'
+        self.start_time = datetime.datetime.now()
+
+    def add(self, code):
+        '''
+        设置
+        :param code:
+        :return:
+        '''
+        if isinstance(code, unicode): code = code.encode("utf-8")
+        try:
+            self.data[code] = self.data[code] + 1
+        except:
+            self.data[code] =1
+
+    def format(self):
+        '''
+        格式化为list输出信息
+        :return:
+        '''
+        end_time = datetime.datetime.now()
+        data_new = []
+        nTotal = 0;
+        for v in self.data.values():
+            nTotal = nTotal + v
+
+        data_new.append('处理总数据量:%d条'%nTotal + '.')
+
+        for k in self.data.keys():
+            code = k
+            desc = ECode().get_desc(code)  # 返回码描述
+            data_new.append('数据数量[%s]条,' % self.data[k] + '操作结果描述:' + desc + '.')
+
+        data_new.append('花费时间:%s秒'%str(end_time-self.start_time))
+        print '--------end----------'
+        return data_new

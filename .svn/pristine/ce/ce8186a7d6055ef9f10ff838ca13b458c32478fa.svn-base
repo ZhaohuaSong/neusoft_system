@@ -1,0 +1,415 @@
+{% extends "mainbase.html" %}
+{% load staticfiles %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    {% block scripts %}
+
+         <link rel="stylesheet" href="{% static "css/jquery-ui.min.css" %}"/>
+        <link rel="stylesheet" href="{% static "css/zTreeStyle/zTreeStyle.css" %}"/>
+        <link rel="stylesheet" href="{% static "css/zTreeStyle/demo.css" %}"/>
+        <!-- jquery scripts -->
+        <script src="{% static "js/jquery-ui.min.js" %}"></script>
+        <script src="{% static "js/jquery.ui.touch-punch.min.js" %}"></script>
+        <script src="{% static "js/jquery.dataTables.min.js" %}"></script>
+        <script src="{% static "js/jquery.dataTables.bootstrap.min.js" %}"></script>
+        <script src="{% static "js/dataTables.buttons.min.js" %}"></script>
+        <!-- buttons scripts -->
+        <script src="{% static "js/buttons.flash.min.js" %}"></script>
+        <script src="{% static "js/buttons.html5.min.js" %}"></script>
+        <script src="{% static "js/buttons.print.min.js" %}"></script>
+        <script src="{% static "js/buttons.colVis.min.js" %}"></script>
+        <script src="{% static "js/dataTables.select.min.js" %}"></script>
+        <script src="{% static "js/ztree/jquery.ztree.core.js" %}"></script>
+        <!-- ace scripts -->
+        <script src="{% static "js/fuelux.tree.min.js" %}"></script>
+        <script type="text/javascript">
+{#            var COMMERCIAL_URL = "{% url 'websitemanage:columnmanage.list' %}"#}
+{#            var TXNNAMES_LIST_URL = '{% url "websitemanage:columnmanage.data" %}';#}
+            var REMOTE_URL = '{% url "websitemanage:columnmanage.treeview" %}';
+
+{#                        var TREE_CHILDS_URL = '{% url "Column:Commercial.treechilds" %}';#}
+
+        </script>
+
+        <script src="{% static "js/sysadmin/sysadmin_add.js" %}"></script>
+
+
+
+    {% endblock %}
+
+
+</head>
+<body class="no-skin">
+{% block content %}
+    <div class="main-content">
+        <div class="breadcrumbs" id="breadcrumbs">
+            <ul class="breadcrumb">
+                <li>
+                    <i class="ace-icon fa fa-home home-icon"></i>
+                    <a href="#">首页</a>
+                </li>
+                <li><a href="#">系统管理</a></li>
+                <li><a href="{% url 'sysadmin:permission.list' %}">权限管理</a></li>
+                <li class="active">设置权限</li>
+            </ul><!-- /.breadcrumb -->
+        </div>
+
+        <div class="page-content">
+
+
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="widget-box col-xs-12">
+                        <div class="widget-header widget-header-blue widget-header-flat">
+                            <h4 class="widget-title lighter">权限管理</h4>
+
+                        </div>
+                        <div class="space-20"></div>
+                        <form class="form-horizontal" role="form" action="" method="post">
+                            {% csrf_token %}
+
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right"> {{ form.name.label }} </label>
+                                <div class="col-sm-9">
+                                    {{ form.name }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.name.errors }} </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right">  {{ form.url.label }}  </label>
+                                <div class="col-sm-9">
+                                    {{ form.url }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.url.errors }} </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right" style="padding-top:0px;">  {{ form.type.label }}  </label>
+                                <div class="col-sm-9">
+                                    <input class="ace input-lg" {% if 1 == type %} checked {% endif %} name="type" type="checkbox" />
+                                    <span class="lbl bigger-120"></span>
+                                </div>
+                                <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.type.errors }} </div>
+                                </div>
+                            </div>
+
+                        <div class="widget-box widget-color-blue2">
+											<div class="widget-header">
+												<h5 class="widget-title lighter smaller"><i class="fa fa-sitemap" aria-hidden="true"></i> 可选择权限</h5>
+											</div>
+
+											<div class="widget-body">
+                                                <div id="tag_treeview" role="" style="display: none"></div>
+												<div class="widget-main padding-8">
+													<ul id="tree1" class="tree tree-selectable" role="tree"><li class="tree-branch hide" data-template="treebranch" role="treeitem" aria-expanded="false">				<div class="tree-branch-header">					<span class="tree-branch-name">						<i class="icon-folder ace-icon fa fa-folder orange"></i>						<span class="tree-label"></span>					</span>				</div>				<ul class="tree-branch-children" role="group"></ul>				<div class="tree-loader hide" role="alert"><div class="tree-loading"><i class="ace-icon fa fa-refresh fa-spinner blue"></i></div></div>						</li><li class="tree-item hide" data-template="treeitem" role="treeitem">				<span class="tree-item-name">				  <i class="icon-item ace-icon fa fa-times"></i>				  <span class="tree-label"></span>				</span>			</li><li class="tree-branch" role="treeitem" aria-expanded="false">				<div class="tree-branch-header">					<span class="tree-branch-name">						<i class="icon-folder ace-icon fa fa-folder orange"></i>						<span class="tree-label">系统管理</span>					</span>				</div>				<ul class="tree-branch-children" role="group"></ul>				<div class="tree-loader hide" role="alert"><div class="tree-loading"><i class="ace-icon fa fa-refresh fa-spinner blue"></i></div></div>						</li><li class="tree-branch" role="treeitem" aria-expanded="false">				<div class="tree-branch-header">					<span class="tree-branch-name">						<i class="icon-folder ace-icon fa fa-folder orange"></i>						<span class="tree-label">默认权限</span>					</span>				</div>				<ul class="tree-branch-children" role="group"></ul>				<div class="tree-loader hide" role="alert"><div class="tree-loading"><i class="ace-icon fa fa-refresh fa-spinner blue"></i></div></div>						</li><li class="tree-branch" role="treeitem" aria-expanded="false">				<div class="tree-branch-header">					<span class="tree-branch-name">						<i class="icon-folder ace-icon fa fa-folder orange"></i>						<span class="tree-label">xx管理</span>					</span>				</div>				<ul class="tree-branch-children" role="group"></ul>				<div class="tree-loader hide" role="alert"><div class="tree-loading"><i class="ace-icon fa fa-refresh fa-spinner blue"></i></div></div>						</li><li class="tree-branch" role="treeitem" aria-expanded="false">				<div class="tree-branch-header">					<span class="tree-branch-name">						<i class="icon-folder ace-icon fa fa-folder orange"></i>						<span class="tree-label">xxx管理</span>					</span>				</div>				<ul class="tree-branch-children hide" role="group"><li class="tree-item" role="treeitem">				<span class="tree-item-name">				  <i class="icon-item ace-icon fa fa-times"></i>				  <span class="tree-label">首页</span>				</span>			</li><li class="tree-item" role="treeitem">				<span class="tree-item-name">				  <i class="icon-item ace-icon fa fa-times"></i>				  <span class="tree-label">报文管理</span>				</span>			</li><li class="tree-item" role="treeitem">				<span class="tree-item-name">				  <i class="icon-item ace-icon fa fa-times"></i>				  <span class="tree-label">权限错误</span>				</span>			</li><li class="tree-item" role="treeitem">				<span class="tree-item-name">				  <i class="icon-item ace-icon fa fa-times"></i>				  <span class="tree-label">退出登录</span>				</span>			</li><li class="tree-item" role="treeitem">				<span class="tree-item-name">				  <i class="icon-item ace-icon fa fa-times"></i>				  <span class="tree-label">个人信息</span>				</span>			</li><li class="tree-item" role="treeitem">				<span class="tree-item-name">				  <i class="icon-item ace-icon fa fa-times"></i>				  <span class="tree-label">修改密码</span>				</span>			</li><li class="tree-item" role="treeitem">				<span class="tree-item-name">				  <i class="icon-item ace-icon fa fa-times"></i>				  <span class="tree-label">上传图片</span>				</span>			</li></ul>				<div class="tree-loader hide" role="alert"><div class="tree-loading"><i class="ace-icon fa fa-refresh fa-spinner blue"></i></div></div>						</li></ul>
+												</div>
+											</div>
+
+                            <div class="widget-body">
+                                <div id="tag_treeview" role="" style="display: none"></div>
+                                <div class="widget-main padding-7" id="add_tree" style="padding:0px;">
+                                    <ul id="treeDemo" class="ztree" style="background-color: rgba(255, 255, 255, 0.03)" >
+
+
+                                    </ul>
+                                    <p class="highlight_red" id="demoMsg">
+                                </div>
+                            </div>
+
+
+
+										</div>
+
+
+
+                            <div class="space-20"></div>
+                            <hr>
+                            <div class="space-10"></div>
+                            {% include "form_buttons.html" %}<!-- /.form_buttons -->
+                            <div class="space-10"></div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+
+
+
+        </div>
+    </div>
+
+
+
+       <!--树形图JS -->
+     <script src="{% static "js/sysadmin/fuelux.tree.min.js" %}"></script>
+
+      <script type="text/javascript">
+            jQuery(function ($) {
+                $("#btn-back").bind("click",
+                        function () {
+                            window.location.href = "{% url 'sysadmin:permission.list' %}"
+
+                        });
+            })
+        </script>
+
+
+    		<script type="text/javascript">
+			jQuery(function($) {
+
+				var oTable1 =
+				$('#dynamic-table')
+				//.wrap("<div class='dataTables_borderWrap' />")   //if you are applying horizontal scrolling (sScrollX)
+				.dataTable( {
+					bAutoWidth: false,
+
+			    } );
+
+
+
+
+
+				/**下拉**/
+
+if(!ace.vars['touch']) {
+					$('.chosen-select').chosen({allow_single_deselect:true});
+					//resize the chosen on window resize
+
+					$(window)
+					.off('resize.chosen')
+					.on('resize.chosen', function() {
+						$('.chosen-select').each(function() {
+							 var $this = $(this);
+							 $this.next().css({'width':"100%"});
+						})
+					}).trigger('resize.chosen');
+					//resize chosen on sidebar collapse/expand
+					$(document).on('settings.ace.chosen', function(e, event_name, event_val) {
+						if(event_name != 'sidebar_collapsed') return;
+						$('.chosen-select').each(function() {
+							 var $this = $(this);
+							 $this.next().css({'width':"100%"});
+						})
+					});
+
+
+					$('#chosen-multiple-style .btn').on('click', function(e){
+						var target = $(this).find('input[type=radio]');
+						var which = parseInt(target.val());
+						if(which == 2) $('#form-field-select-4').addClass('tag-input-style');
+						 else $('#form-field-select-4').removeClass('tag-input-style');
+					});
+				}
+
+
+});
+			//树形图
+				var sampleData = initiateDemoData();//see below
+
+
+	$('#tree1').ace_tree({
+		dataSource: sampleData['dataSource1'],
+		multiSelect: true,
+		cacheItems: true,
+		'open-icon' : 'ace-icon fa fa-folder-open orange',
+		'close-icon' : 'ace-icon fa fa-folder orange',
+		'selectable' : true,
+		'selected-icon' : 'ace-icon fa fa-check',
+		'unselected-icon' : 'ace-icon fa fa-times',
+		loadingHTML : '<div class="tree-loading"><i class="ace-icon fa fa-refresh fa-spinner blue"></i></div>'
+	});
+
+
+
+	function initiateDemoData(){
+{#		var tree_data = {#}
+{#			'系统管理' : {text: '系统管理', type: 'folder'},#}
+{#			'默认权限' : {text: '默认权限', type: 'folder'},#}
+{#			'xx管理' : {text: 'xx管理', type: 'folder'},#}
+{#			'xxx管理' : {text: 'xxx管理', type: 'folder'}#}
+{#		}#}
+{##}
+{#		tree_data['系统管理']['additionalParameters'] = {#}
+{#			'children' : {#}
+{#				'用户管理' : {text: '用户管理', type: 'folder'},#}
+{#				'角色管理' : {text: '角色管理', type: 'folder'},#}
+{#				'权限管理' : {text: '权限管理', type: 'folder'},#}
+{#			}#}
+{#		}#}
+{#		tree_data['默认权限']['additionalParameters'] = {#}
+{#			'children' : {#}
+{#				'首页' : {text: '首页', type: 'item'},#}
+{#				'报文管理' : {text: '报文管理', type: 'item'},#}
+{#				'权限错误' : {text: '权限错误', type: 'item'},#}
+{#				'退出登录' : {text: '退出登录', type: 'item'},#}
+{#				'个人信息' : {text: '个人信息', type: 'item'},#}
+{#				'修改密码' : {text: '修改密码', type: 'item'},#}
+{#				'上传图片' : {text: '上传图片', type: 'item'}#}
+{#			}#}
+{#		}#}
+{#		tree_data['系统管理']['additionalParameters']['children']['用户管理']['additionalParameters'] = {#}
+{#			'children' : {#}
+{#				'添加' : {text: '添加', type: 'item'},#}
+{#				'编辑' : {text: '编辑', type: 'item'},#}
+{#				'删除' : {text: '删除', type: 'item'},#}
+{#			}#}
+{#		}#}
+{#		tree_data['系统管理']['additionalParameters']['children']['角色管理']['additionalParameters'] = {#}
+{#			'children' : {#}
+{#				'列表' : {text: '列表', type: 'item'},#}
+{#				'添加' : {text: '添加', type: 'item'},#}
+{#				'编辑' : {text: '编辑', type: 'item'},#}
+{#				'删除' : {text: '删除', type: 'item'}#}
+{#			}#}
+{#		}#}
+{#		tree_data['系统管理']['additionalParameters']['children']['权限管理']['additionalParameters'] = {#}
+{#			'children' : {#}
+{#				'添加' : {text: '添加', type: 'item'},#}
+{#				'编辑' : {text: '编辑', type: 'item'},#}
+{#				'删除' : {text: '删除', type: 'item'}#}
+{#			}#}
+{#		}#}
+{#		tree_data['xx管理']['additionalParameters'] = {#}
+{#			'children' : {#}
+{#				'用户管理' : {text: '用户管理', type: 'folder'},#}
+{#				'角色管理' : {text: '角色管理', type: 'folder'},#}
+{#				'权限管理' : {text: '权限管理', type: 'folder'}#}
+{#			}#}
+{#		}#}
+{#		tree_data['xxx管理']['additionalParameters'] = {#}
+{#			'children' : {#}
+{#				'首页' : {text: '首页', type: 'item'},#}
+{#				'报文管理' : {text: '报文管理', type: 'item'},#}
+{#				'权限错误' : {text: '权限错误', type: 'item'},#}
+{#				'退出登录' : {text: '退出登录', type: 'item'},#}
+{#				'个人信息' : {text: '个人信息', type: 'item'},#}
+{#				'修改密码' : {text: '修改密码', type: 'item'},#}
+{#				'上传图片' : {text: '上传图片', type: 'item'}#}
+{#			}#}
+{#		}#}
+{#		tree_data['xx管理']['additionalParameters']['children']['用户管理']['additionalParameters'] = {#}
+{#			'children' : {#}
+{#				'添加' : {text: '添加', type: 'item'},#}
+{#				'编辑' : {text: '编辑', type: 'item'},#}
+{#				'删除' : {text: '删除', type: 'item'}#}
+{#			}#}
+{#		}#}
+{#		tree_data['xx管理']['additionalParameters']['children']['角色管理']['additionalParameters'] = {#}
+{#			'children' : {#}
+{#				'列表' : {text: '列表', type: 'item'},#}
+{#				'添加' : {text: '添加', type: 'item'},#}
+{#				'编辑' : {text: '编辑', type: 'item'},#}
+{#				'删除' : {text: '删除', type: 'item'}#}
+{#			}#}
+{#		}#}
+{#		tree_data['xx管理']['additionalParameters']['children']['权限管理']['additionalParameters'] = {#}
+{#			'children' : {#}
+{#				'添加' : {text: '添加', type: 'item'},#}
+{#				'编辑' : {text: '编辑', type: 'item'},#}
+{#				'删除' : {text: '删除', type: 'item'}#}
+{#			}#}
+{#		}#}
+{##}
+{#		var dataSource1 = function(options, callback){#}
+{#			var $data = null#}
+{#			if(!("text" in options) && !("type" in options)){#}
+{#				$data = tree_data;//the root tree#}
+{#				callback({ data: $data });#}
+{#				return;#}
+{#			}#}
+{#			else if("type" in options && options.type == "folder") {#}
+{#				if("additionalParameters" in options && "children" in options.additionalParameters)#}
+{#					$data = options.additionalParameters.children || {};#}
+{#				else $data = {}//no data#}
+{#			}#}
+{##}
+{#			if($data != null)//this setTimeout is only for mimicking some random delay#}
+{#				setTimeout(function(){callback({ data: $data });} , parseInt(Math.random() * 500) + 200);#}
+{##}
+{#			//we have used static data here#}
+{#			//but you can retrieve your data dynamically from a server using ajax call#}
+{#			//checkout examples/treeview.html and examples/treeview.js for more info#}
+{#		}#}
+
+ var dataSource1 = function (options, callback) {
+               $('#tag_treeview').attr('role', '-1')
+
+                var remoteUrl = Rmote_URL
+                if (!('text' in options || 'type' in options)) {
+                    parent_id = $('#tag_treeview').attr('role');//load first level data
+
+                }
+                else if ('type' in options && options['type'] == 'folder') {//it has children
+                    if ('additionalParameters' in options && 'children' in options.additionalParameters)
+                        parent_id = options.additionalParameters['id']
+
+                }
+                ////根据父节点id，请求子节点
+                //if (parent_id = "") {
+                //    parent_id = -1
+                //}
+                //alert(parent_id)
+
+                //var search_value =
+                //alert(search_value)
+                $.ajax({
+                    url: remoteUrl,
+                    data: {parent_id: parent_id, search_value: $('#in-search').val()},
+                    type: 'POST',
+                    dataType: 'json',
+                    success: function (response) {
+                        callback({data: response.data})
+                    },
+                    error: function (response) {
+                        //console.log(response);
+                    }
+                })
+            }
+
+
+
+		var dataSource2 = function(options, callback){
+			var $data = null
+			if(!("text" in options) && !("type" in options)){
+				$data = tree_data_2;//the root tree
+				callback({ data: $data });
+				return;
+			}
+			else if("type" in options && options.type == "folder") {
+				if("additionalParameters" in options && "children" in options.additionalParameters)
+					$data = options.additionalParameters.children || {};
+				else $data = {}//no data
+			}
+
+			if($data != null)//this setTimeout is only for mimicking some random delay
+				setTimeout(function(){callback({ data: $data });} , parseInt(Math.random() * 500) + 200);
+
+			//we have used static data here
+			//but you can retrieve your data dynamically from a server using ajax call
+			//checkout examples/treeview.html and examples/treeview.js for more info
+		}
+
+
+		return {'dataSource1': dataSource1 , 'dataSource2' : dataSource2}
+	}
+
+
+		$('.tree-item').addClass('tree-selected');
+		$('.icon-item').removeClass('fa-times').addClass('fa-check');
+
+		</script>
+
+
+
+{% endblock %}
+<!-- /.main-content -->
+</body>
+</html>

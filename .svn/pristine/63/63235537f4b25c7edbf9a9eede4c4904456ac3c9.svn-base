@@ -1,0 +1,65 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2017/1/15
+# @Author  : ljh
+# @Site    :
+# @File    : forms.py
+# @Software: PyCharm
+# @Function: 表单类
+
+from django import forms
+from models import Filename, FilePathName, FileUpload
+import os
+import chardet
+
+class UpLoadFileForm(forms.Form):
+    """
+    文件上传表单
+    :param Form:
+    :return:
+    """
+
+    filename = forms.FileField(label=u'文件上传',
+                             required=False,
+                             widget=forms.FileInput(
+                                 attrs={'class': 'col-xs-10 col-sm-10', 'placeholder': u'文件上传', 'id': 'id_image',
+                                        'name': 'image'}))
+
+
+    def __init__(self, *args, **kwargs):
+        super(UpLoadFileForm, self).__init__(*args, **kwargs)
+
+    def clean_filename(self):
+        filename = self.cleaned_data['filename']
+        if filename:
+            if filename != self.fields['filename'].initial:
+                if Filename.objects.filter(file_name=filename).count() is not 0:
+                    raise forms.ValidationError("0")
+                if str(os.path.splitext(str(filename))[1]) != '.csv' and str(os.path.splitext(str(filename))[1]) != '.xls' and str(os.path.splitext(str(filename))[1]) != '.txt':
+                    print os.path.splitext(str(filename))[1]
+                    raise forms.ValidationError("2")
+        else:
+            raise forms.ValidationError("1")
+        return filename
+
+class DeleteFileConfigForm(forms.Form):
+    """
+    文件删除表单
+    :param Form:
+    :return:
+    """
+    class Meta:
+        model = FileUpload
+        fields = ['file_standard_name']
+
+    file_standard_name = forms.ModelChoiceField(label='文件名',
+                                      queryset=FileUpload.objects.all().values_list("file_standard_name", flat=True),
+                                      to_field_name="file_standard_name",
+                                      required=True,
+                                      widget=forms.Select(
+                                          attrs={
+                                              'id': 'form-field-select-1',
+                                              'name': 'tmk_flag',
+                                              'class': 'select2  form-control',}
+                                      ),
+                                      )

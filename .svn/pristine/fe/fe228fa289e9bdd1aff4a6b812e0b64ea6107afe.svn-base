@@ -1,0 +1,91 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+import socket
+from  redismodels import  SendMsgRs
+import datetime
+from ..common.iso.iso_tool import *
+from iso_log_interface import ISOLogInterface
+
+class ExchangeData:
+    '''
+    报文发送网络接口
+    接口提供者：richdataserver
+    '''
+    def __init__(self, ip, port):
+        if isinstance(ip, unicode): ip = ip.encode("utf-8")
+        if isinstance(port, unicode): port = port.encode("utf-8")
+        self.ip = ip
+        self.port = port
+        self.address = (self.ip, self.port)
+
+    def send_and_recv(self, iso_net):
+        '''
+        发送接受报文接口
+        :param iso_net:
+        :return:
+        '''
+        # p = PackData()
+        # p.address = (self.ip, self.port)
+        # p.message = iso_net
+        # data, addr = p.send_roule()
+        # return data
+
+        # self.sock.send(iso_net)
+        # data, address = self.sock.recvfrom(8192)
+
+        self.sock.sendall(iso_net)
+        data = self.sock.recv(1024*10)
+
+        self.log(iso_net)
+        #self.log(data)
+
+        return data
+
+    def create_connenct(self):
+        '''
+        创建链接
+        :return:
+        '''
+        #self.sock = socket.socket(type=socket.SOCK_DGRAM)
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.settimeout(20)
+        self.sock.connect(self.address)
+
+
+    def send(self, iso_net):
+        #self.sock.send(iso_net)
+        self.sock.sendall(iso_net)
+        self.log(iso_net)
+
+    def recv(self):
+        '''
+        接收
+        :return:
+        '''
+        #data, address = self.sock.recvfrom(8192)
+
+        data = self.sock.recv(8192)
+        #self.log(data)
+        return data
+
+    def close_connect(self):
+        '''
+        关闭链接
+        :return:
+        '''
+        self.sock.close()
+
+    def log(self,message, back_msg=''):
+        msg = SendMsgRs()
+        iso_log = ISOLogInterface(message)
+        msg.app_id = iso_log.get_app_id()
+        msg.protocol_id = ISOLogInterface(message).get_protocol_id()
+        msg.content =str(format_assic_to_str(message))
+        msg.back_content = back_msg
+        msg.server_address = str(self.address[0])
+        msg.server_port = str(self.address[1])
+        msg.send_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        msg.type=str(iso_log.get_msg_type())#规则报文
+        msg.status='1'#正在发送
+        msg.save()
+        #print '------------------log succuss--------------------------', msg.app_id, msg.protocol_id

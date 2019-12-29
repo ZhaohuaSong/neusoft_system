@@ -1,0 +1,65 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2016/12/27 上午10:03
+# @Author  : qiujunli
+# @Site    :
+# @File    : views_protocol_content.py
+# @Software: PyCharm
+# @Function: 报文协议内容视图模型
+
+from django.views.generic import TemplateView
+from django.http import JsonResponse
+from django.db.models import Q
+import datetime
+import json
+import logging
+_logger = logging.getLogger('loggers')
+
+from models import ProtocolType
+
+# Create your views here.
+
+class PageProtocolContentView(TemplateView):
+    template_name = 'packmanage/packmanage.protocoltype.content.html'
+
+    #GET请求
+    def get(self, request, *args, **kwargs):
+        id = request.GET.get('id', None)
+        info = ProtocolType.objects.get(id=id)
+        context = self.get_context_data(**kwargs)
+        #显示协议基础信息
+        context['protocol_name'] = info.protocol_name
+        context['protocol_id'] = info.protocol_id
+        context['protocol_srctype'] = info.protocol_srctype
+        context['protocol_creater'] = info.create_by
+        context['protocol_state'] = info.protocol_state
+        context['protocol_content'] = self.get_protocol_content(info.protocol_content)
+        return self.render_to_response(context)
+
+    #获取协议内容
+    def get_protocol_content(self, protocol_content):
+        if protocol_content is None or len(protocol_content)==0:
+            return []
+        #dict_protocol = eval(protocol_content)
+        dict_protocol = json.loads(protocol_content)
+        return  list(dict_protocol.values())
+
+    def post(self, request, *args, **kwargs):
+        id = request.GET.get('id', None)
+        if id is None:
+            context = {'code': '01', 'desc': '该协议类型不存在!'}
+            return JsonResponse(context)
+
+        try:
+            json_data = json.loads(request.body)
+            json_data = json.dumps(json_data)
+            info = ProtocolType.objects.get(id=id)
+            info.protocol_content = str(json_data)
+            info.update_date = datetime.datetime.now()
+            info.save()
+        except Exception as e:
+            context = {'code': '01', 'desc': '保存过程中出现异常：%s!'%str(e)}
+            return JsonResponse(context)
+
+        context = {'code': '00', 'desc': '保存成功!'}
+        return JsonResponse(context)

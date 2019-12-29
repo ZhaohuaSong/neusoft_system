@@ -1,0 +1,18 @@
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from dbutils import crud_model_data
+import json
+
+@csrf_exempt
+def api_service(request):
+    dbname = request.POST.get('dbname', '')
+    sql = request.POST.get('sql', '')
+    pageindex = request.POST.get('pageindex', '')
+    pagesize = request.POST.get('pagesize', '')
+    params = {}
+    params['dbname'] = dbname
+    params['sql'] = sql
+    params['pageindex'] = pageindex
+    params['pagesize'] = pagesize
+    result = crud_model_data(params)
+    return HttpResponse(json.dumps(result, sort_keys=True, indent=4), content_type="application/json")

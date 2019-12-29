@@ -1,0 +1,99 @@
+{% extends "mainbase.html" %}
+{% load staticfiles %}
+{% load i18n staticfiles %}
+{% load url from future %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% block title %}
+        <title>恒鑫大数据云平台-数据交换中心</title>
+
+        <!-- page specific plugin scripts -->
+        <script src="{% static "js/message/ws4redis.js" %}"></script>
+        <script type="text/javascript">
+            var TXNNAMES_LIST_URL = '{% url "message:message.data" %}';
+        </script>
+        {#        <script type="text/javascript" charset="utf8" src="//cdn.datatables.net/1.10.12/js/jquery.dataTables.js"></script>#}
+        <!-- txnname scripts -->
+
+    {% endblock %}
+</head>
+<body class="no-skin">
+{% block content %}
+    <div class="main-content">
+        <div class="breadcrumbs" id="breadcrumbs">
+            <script type="text/javascript">
+                try {
+                    ace.settings.check('breadcrumbs', 'fixed')
+                } catch (e) {
+                }
+                {#                jQuery(document).ready(function ($) {#}
+                {#                    var url = encodeURI(window.location.host);#}
+                {#                    var ws4redis = WS4Redis({#}
+                {#                        uri: '{{ WEBSOCKET_URI }}foobar?subscribe-user',#}
+                {#                        receive_message: receiveMessage,#}
+                {#                        heartbeat_msg: {{ WS4REDIS_HEARTBEAT }}#}
+                {#                    });#}
+                {#                    // receive a message though the Websocket from the server#}
+                {#                    function receiveMessage(msg) {#}
+                {#                        alert('msg>>>>>>>>>>>>>' + msg)#}
+                {#                        $("#mybody").append(msg)#}
+                {#                    }#}
+                {#                });#}
+            </script>
+            <ul class="breadcrumb">
+                <li>
+                    <i class="ace-icon fa fa-home home-icon"></i>
+                    <a href="#">首页</a>
+                </li>
+                <li>
+                    <a href="#">消息中心</a>
+                </li>
+                <li class="active">短消息管理</li>
+            </ul><!-- /.breadcrumb -->
+        </div>
+
+        <div class="page-content">
+            {% include "page_message_header.html" %}<!-- /.page-header -->
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="clearfix">
+                        <div class="pull-left tableTools-container" style="margin-top: 10px"></div>
+                    </div>
+                    <div class="table-header"> <!--table-header -->
+                        消息列表
+                    </div>
+                    <div>
+                        <table id="dynamic-table" class="table table-striped table-bordered table-hover"><!--table -->
+                            <thead class="thin-border-bottom">
+                            <tr>
+                                <th class="hidden-480 center" width='45px'>
+                                    <label class="pos-rel">
+                                        <input type="checkbox" class="ace"/>
+                                        <span class="lbl"></span>
+                                    </label>
+                                </th>
+                                <th class="hidden-480" width='55px'>序号</th>
+                                <th>发件人</th>
+                                <th>主题</th>
+                                <th>时间</th>
+                                <th>类型</th>
+                                <th>操作</th>
+                            </tr>
+                            </thead>
+                            <tbody id="mybody">
+
+                            </tbody>
+                        </table><!--table -->
+                    </div>
+                </div><!-- /.span -->
+            </div><!-- /.row -->
+        </div>
+    </div>
+    {% include "message.html" %}
+    <script src="{% static "js/message/message_list.js" %}"></script>
+
+{% endblock %}
+<!-- /.main-content -->
+</body>
+</html>

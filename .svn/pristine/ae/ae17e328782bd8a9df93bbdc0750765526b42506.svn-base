@@ -1,0 +1,39 @@
+/*
+SQLyog Ultimate v11.24 (32 bit)
+MySQL - 5.6.28-log : Database - richdatax
+*********************************************************************
+*/
+
+/*!40101 SET NAMES utf8 */;
+
+/*!40101 SET SQL_MODE=''*/;
+
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+CREATE DATABASE /*!32312 IF NOT EXISTS*/`richdatax` /*!40100 DEFAULT CHARACTER SET utf8 */;
+
+USE `richdatax`;
+
+/*Table structure for table `resource_field_list` */
+
+DROP TABLE IF EXISTS `resource_field_list`;
+
+CREATE TABLE `resource_field_list` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '默认django使用的ID',
+  `field_id` varchar(64) DEFAULT NULL COMMENT '领域分类资源id',
+  `field` varchar(64) DEFAULT NULL COMMENT '领域名或资源名',
+  `field_parent_id` varchar(64) DEFAULT NULL COMMENT '领域分类父节点（树状结构用,资源id或提供单位终端号）',
+  `post_status` varchar(255) DEFAULT NULL COMMENT '发布状态',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=15720 DEFAULT CHARSET=utf8;
+
+/*Data for the table `resource_field_list` */
+
+insert  into `resource_field_list`(`id`,`field_id`,`field`,`field_parent_id`,`post_status`) values (15697,'10','社会发展','0','2'),(15698,'11','经济建设','0','2'),(15699,'12','劳动人事','0','2'),(15700,'13','教育科技','0','2'),(15701,'14','文体休闲','0','2'),(15702,'15','三农服务','0','2'),(15703,'16','交通运输','0','2'),(15704,'17','生态文明','0','2'),(15705,'18','公共安全','0','2'),(15706,'19','政府机构','0','2'),(15707,'20','财税金融','0','2'),(15708,'21','卫生健康','0','2'),(15709,'22','企业服务','0','2'),(15710,'23','信用服务','0','2'),(15711,'1000000001','广州市交通系统驾驶员信息表','16','2'),(15712,'1000000002','广州市交通违规驾驶信息表','16','2'),(15713,'1000000003','公民五险一金缴纳信息表','12','2'),(15714,'1000000004','公民社保违规信息表','12','2'),(15715,'1000000005','广州地区大学生信息表','13','2'),(15716,'1000000006','广州地区贫困学生信息表','13','2'),(15717,'1000000007','佛山市交通系统驾驶员信息表','16','2'),(15718,'1000000008','佛山市交通违规驾驶信息表','16','2'),(15719,'1000000009','广州市交通事故信息表','16','2');
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;

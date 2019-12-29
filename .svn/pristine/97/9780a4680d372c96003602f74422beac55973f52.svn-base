@@ -1,0 +1,13 @@
+from django.apps import AppConfig
+
+
+class MessageConfig(AppConfig):
+    name = 'richDataX-system.message'
+    verbose_name = "message"
+
+    def ready(self):
+        """Override this to put in:
+            Users system checks
+            Users signal registration
+        """
+        pass

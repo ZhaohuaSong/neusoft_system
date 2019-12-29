@@ -1,0 +1,104 @@
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : localhost_3306
+Source Server Version : 50628
+Source Host           : localhost:3306
+Source Database       : richdatax
+
+Target Server Type    : MYSQL
+Target Server Version : 50628
+File Encoding         : 65001
+
+Date: 2017-03-09 11:36:11
+*/
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for `permissionlist`
+-- ----------------------------
+DROP TABLE IF EXISTS `permissionlist`;
+CREATE TABLE `permissionlist` (
+  `id` varchar(64) NOT NULL,
+  `name` varchar(64) NOT NULL,
+  `url` varchar(255) NOT NULL,
+  `type` int(11) DEFAULT '0',
+  `parent_id` varchar(200) DEFAULT NULL,
+  `parent_ids` varchar(200) NOT NULL DEFAULT '' COMMENT '所有父级编号',
+  `permission_id` varchar(64) NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of permissionlist
+-- ----------------------------
+INSERT INTO `permissionlist` VALUES ('119', '默认权限：权限错误', '/error', '1', '184', '', '');
+INSERT INTO `permissionlist` VALUES ('120', '默认权限：退出登录', '/logout/', '1', '184', '', '');
+INSERT INTO `permissionlist` VALUES ('121', '默认权限：个人信息', '/myInfo', '1', '184', '', '');
+INSERT INTO `permissionlist` VALUES ('122', '默认权限：修改密码', '/changePwd', '1', '184', '', '');
+INSERT INTO `permissionlist` VALUES ('134', '默认权限：上传图片', '/myInfo/setAvatar', '1', '184', '', '');
+INSERT INTO `permissionlist` VALUES ('135', '默认权限：忘记密码', '/forgotpw/', '1', '184', '', '');
+INSERT INTO `permissionlist` VALUES ('136', '默认权限：首页', '/home', '1', '184', '0,184', '');
+INSERT INTO `permissionlist` VALUES ('139', '系统管理-》角色管理：列表数据', '/sysadmin/role/data', '0', '26', '', '');
+INSERT INTO `permissionlist` VALUES ('140', '系统管理-》权限管理：列表数据', '/sysadmin/permission/data', '0', '26', '', '');
+INSERT INTO `permissionlist` VALUES ('142', '系统管理-》权限管理：列表', '/sysadmin/permission/list', '0', '26', '', '');
+INSERT INTO `permissionlist` VALUES ('150', '系统管理-》操作记录：操作记录', '/sysadmin/syslog/jsonlist', '0', '26', '', '');
+INSERT INTO `permissionlist` VALUES ('151', '系统管理-》用户管理：列表数据', '/sysadmin/user/data', '0', '26', ',26', '');
+INSERT INTO `permissionlist` VALUES ('184', '默认权限', '/media/', '1', '0', '0', '');
+INSERT INTO `permissionlist` VALUES ('185', '消息中心', '/message/', '0', '0', '0', '');
+INSERT INTO `permissionlist` VALUES ('188', '消息中心-》消息列表：发送消息', '/message/add/', '0', '185', '', '');
+INSERT INTO `permissionlist` VALUES ('189', '消息中心-》消息列表：删除', '/message/delete/', '0', '185', '', '');
+INSERT INTO `permissionlist` VALUES ('190', '消息中心-》消息列表：阅读', '/message/detail/', '0', '185', '', '');
+INSERT INTO `permissionlist` VALUES ('220', '数据库配置中心', '/dbadmin/mgr/', '0', '0', '', '');
+INSERT INTO `permissionlist` VALUES ('2200001', '数据库配置中心->>数据库链接管理', '/dbadmin/dbconfig/list/', '0', '220', ',220', '');
+INSERT INTO `permissionlist` VALUES ('2200002', '数据库配置中心->>数据库链接管理列表数据', '/dbadmin/dbconfig/data', '0', '220', ',220', '');
+INSERT INTO `permissionlist` VALUES ('2200003', '数据库配置中心->>数据库链接管理：添加', '/dbadmin/dbconfig/add', '0', '220', ',220', '');
+INSERT INTO `permissionlist` VALUES ('2200004', '数据库配置中心->>数据库链接管理：编辑', '/dbadmin/dbconfig/edit', '0', '220', ',220', '');
+INSERT INTO `permissionlist` VALUES ('2200005', '数据库配置中心->>数据库链接管理：删除', '/dbadmin/dbconfig/delete', '0', '220', ',220', '');
+INSERT INTO `permissionlist` VALUES ('2200006', '数据库配置中心->>数据源管理', '/dbadmin/dbconfig/datasourcelist', '0', '220', ',220', '');
+INSERT INTO `permissionlist` VALUES ('2200007', '数据库配置中心->>多业务变更设置', '/dbadmin/service/list', '0', '220', ',220', '');
+INSERT INTO `permissionlist` VALUES ('2200008', '数据库配置中心->>多业务变更设置：添加', '/dbadmin/service/add', '0', '220', ',220', '');
+INSERT INTO `permissionlist` VALUES ('2200009', '数据库配置中心->>多业务查询设置', '/dbadmin/queryservice/list', '0', '220', ',220', '');
+INSERT INTO `permissionlist` VALUES ('2200010', '数据库配置中心->>多业务查询设置：添加', '/dbadmin/queryservice/add', '0', '220', ',220', '');
+INSERT INTO `permissionlist` VALUES ('221', '通讯报文管理', '/richdataserver', '0', '0', '0', '');
+INSERT INTO `permissionlist` VALUES ('2210001', '通讯报文管理-》发送报文管理', '/richdataserver/send/list', '0', '221', '0,221', '');
+INSERT INTO `permissionlist` VALUES ('2210002', '通讯报文管理-》发送报文管理：删除', '/richdataserver/send/delete', '0', '221', '0,221', '');
+INSERT INTO `permissionlist` VALUES ('2210003', '通讯报文管理-》接受报文管理', '/richdataserver/receive/list', '0', '221', '0,221', '');
+INSERT INTO `permissionlist` VALUES ('2210004', '通讯报文管理-》接受报文管理：删除', '/richdataserver/receive/delete', '0', '221', '0,221', '');
+INSERT INTO `permissionlist` VALUES ('222', '资源中心', '/filemanage', '0', '0', '0', '');
+INSERT INTO `permissionlist` VALUES ('2220001', '资源中心-》文件管理', '/filemanage/file/list', '0', '222', '0,222', '');
+INSERT INTO `permissionlist` VALUES ('2220002', '资源中心-》文件管理：上传文件', '/filemanage/file/upload', '0', '222', '0,222', '');
+INSERT INTO `permissionlist` VALUES ('2220003', '资源中心-》文件管理：删除', '/filemanage/file/delete', '0', '222', '0,222', '');
+INSERT INTO `permissionlist` VALUES ('223', '适配器通讯管理', '/packmanage', '0', '0', '0', '');
+INSERT INTO `permissionlist` VALUES ('2230001', '适配器通讯管理-》本地适配器信息', '/packmanage/localapp', '0', '223', '0,223', '');
+INSERT INTO `permissionlist` VALUES ('2230002', '适配器通讯管理-》本地适配器信息：编辑', '/packmanage/localapp/edit', '0', '223', '0,223', '');
+INSERT INTO `permissionlist` VALUES ('2230003', '适配器通讯管理-》远程适配器管理', '/packmanage/apps/list', '0', '223', '0,223', '');
+INSERT INTO `permissionlist` VALUES ('2230004', '适配器通讯管理-》远程适配器管理：添加', '/packmanage/apps/add', '0', '223', '0,223', '');
+INSERT INTO `permissionlist` VALUES ('2230005', '适配器通讯管理-》远程适配器管理：编辑', '/packmanage/apps/edit', '0', '223', '0,223', '');
+INSERT INTO `permissionlist` VALUES ('2230006', '适配器通讯管理-》远程适配器管理：删除', '/packmanage/apps/delete', '0', '223', '0,223', '');
+INSERT INTO `permissionlist` VALUES ('2230007', '适配器通讯管理-》请求报文协议管理', '/packmanage/protocoltype/list', '0', '223', '0,223', '');
+INSERT INTO `permissionlist` VALUES ('2230008', '适配器通讯管理-》请求报文协议管理：添加', '/packmanage/protocoltype/add', '0', '223', '0,223', '');
+INSERT INTO `permissionlist` VALUES ('2230009', '适配器通讯管理-》请求报文协议管理：编辑', '/packmanage/protocoltype/edit', '0', '223', '0,223', '');
+INSERT INTO `permissionlist` VALUES ('2230010', '适配器通讯管理-》请求报文协议管理：删除', '/packmanage/protocoltype/delete', '0', '223', '0,223', '');
+INSERT INTO `permissionlist` VALUES ('2230011', '适配器通讯管理-》请求触发器管理', '/packmanage/trigger/list', '0', '223', '0,223', '');
+INSERT INTO `permissionlist` VALUES ('2230012', '适配器通讯管理-》请求触发器管理：添加', '/packmanage/trigger/add', '0', '223', '0,223', '');
+INSERT INTO `permissionlist` VALUES ('2230013', '适配器通讯管理-》请求触发器管理：编辑', '/packmanage/trigger/edit', '0', '223', '0,223', '');
+INSERT INTO `permissionlist` VALUES ('2230014', '适配器通讯管理-》请求触发器管理：删除', '/packmanage/trigger/delete', '0', '223', '0,223', '');
+INSERT INTO `permissionlist` VALUES ('2230015', '适配器通讯管理-》响应报文协议管理', '/packmanage/remoteprotocoltype/list', '0', '223', '0,223', '');
+INSERT INTO `permissionlist` VALUES ('2230016', '适配器通讯管理-》报文协议配置请求', '/packmanage/reomte/protocoltype/list', '0', '223', '0,223', '');
+INSERT INTO `permissionlist` VALUES ('2230017', '适配器通讯管理-》报文协议配置请求：删除', '/packmanage/reomte/protocoltype/delete', '0', '223', '0,223', '');
+INSERT INTO `permissionlist` VALUES ('26', '系统管理', '/sysadmin/mgr/', '0', '0', '', '');
+INSERT INTO `permissionlist` VALUES ('27', '系统管理-》用户管理：列表', '/sysadmin/user/list', '0', '26', '', '');
+INSERT INTO `permissionlist` VALUES ('28', '系统管理-》用户管理：添加', '/sysadmin/user/add', '0', '26', '', '');
+INSERT INTO `permissionlist` VALUES ('29', '系统管理-》用户管理：编辑', '/sysadmin/user/edit/', '0', '26', '', '');
+INSERT INTO `permissionlist` VALUES ('30', '系统管理-》用户管理：删除', '/sysadmin/user/delete', '0', '26', '', '');
+INSERT INTO `permissionlist` VALUES ('31', '系统管理-》角色管理：列表', '/sysadmin/role/list', '0', '26', '', '');
+INSERT INTO `permissionlist` VALUES ('32', '系统管理-》角色管理：添加', '/sysadmin/role/add', '0', '26', '', '');
+INSERT INTO `permissionlist` VALUES ('33', '系统管理-》角色管理：编辑', '/sysadmin/role/edit/', '0', '26', '', '');
+INSERT INTO `permissionlist` VALUES ('34', '系统管理-》角色管理：删除', '/sysadmin/role/delete', '0', '26', '', '');
+INSERT INTO `permissionlist` VALUES ('36', '系统管理-》权限管理：添加', '/sysadmin/permission/add', '0', '26', '', '');
+INSERT INTO `permissionlist` VALUES ('37', '系统管理-》权限管理：编辑', '/sysadmin/permission/edit/', '0', '26', '', '');
+INSERT INTO `permissionlist` VALUES ('38', '系统管理-》权限管理：删除', '/sysadmin/permission/delete', '0', '26', '', '');
+INSERT INTO `permissionlist` VALUES ('39', '系统管理-》操作记录：列表', '/sysadmin/syslog/list/', '0', '26', '', '');
+INSERT INTO `permissionlist` VALUES ('40', '系统管理-》操作记录：查询', '/sysadmin/syslog/list/search/', '0', '26', '', '');

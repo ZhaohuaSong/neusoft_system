@@ -1,0 +1,93 @@
+{% extends "mainbase.html" %}
+{% load staticfiles %}
+{% load i18n staticfiles %}
+{% load url from future %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% block scripts %} 
+        <script src="{% static "js/packmanage/packmanage.apps.localapp.js" %}"></script>
+        <script type="text/javascript">
+        var url_start  = "{% url 'richdataserver:server.start' %}";
+        var url_kill = "{% url 'richdataserver:server.start' %}?kill=1";
+        var url_test  = "{% url 'packmanage:apps.localapp.test' %}";
+        jQuery(function ($) {
+                    $("#btn-edit").bind("click",
+                        function () {
+                            window.location.href = "edit"
+                        });
+                })
+        </script> 
+    {% endblock %}
+</head>
+<body class="no-skin">
+{% block content %}
+    <div class="main-content">
+        <div class="breadcrumbs" id="breadcrumbs">
+            <ul class="breadcrumb">
+                <li>
+                    <i class="ace-icon fa fa-home home-icon"></i>
+                    <a href="#">首页</a>
+                </li>
+                <li>
+                    <a href="#">适配器通讯管理</a>
+                </li> 
+                <li class="active">本地适配器信息</li>
+            </ul><!-- /.breadcrumb -->
+        </div> 
+        <div class="page-content">
+            <div id="ace-settings-box">
+                <div class="pull-left width-100">
+                    <div style="width:100%; border-bottom:1px #dedede dashed; float:left"> 
+                        <button class="btn btn-success btn-sm popover-success" id="btn-edit"
+                                style="float:left; margin:10px 3px 10px 3px;">
+                            编辑
+                        </button>
+
+                        <div id="myAlert" class="alert alert-warning" style="padding-left:100px;display:none">
+                            <strong>.</strong>
+                        </div>
+                        
+                    </div>
+                </div><!-- /.pull-left -->
+
+                <!-- /.pull-left -->
+            </div><!-- /.ace-settings-box -->
+            <div style="height:20px;"></div>
+             <table class="table table-striped table-bordered" style="max-width:800px; margin-left:auto;margin-right:auto; margin-top:50px;font-size:16px; ">
+                <tr>
+                    <td width="150px">名称：</td>
+                    <td>{{ localapp.app_name }}</td>
+                </tr>
+                <tr>
+                    <td>适配器终端号：</td>
+                    <td>{{ localapp.app_id }}</td>
+                </tr>
+                <tr>
+                    <td>IP地址：</td>
+                    <td>{{ localapp.local_ip }}</td>
+                </tr>
+                <tr>
+                    <td>端口号：</td>
+                    <td>{{ localapp.local_port }}</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td>
+                        <button id="btn-start" class="btn btn-white btn-info btn-bold">启动服务</button> 
+                        <button id="btn-stop"  class="btn btn-white btn-info btn-bold">停止服务</button>
+                        <button id="btn-test"  class="btn btn-white btn-info btn-bold">点击测试</button>
+                    </td>
+                </tr>
+             </table> 
+        </div>
+
+    </div>
+  
+  
+
+    {% include "message.html" %}
+{% endblock %}
+<!-- /.main-content -->
+</body>
+</html>

@@ -1,0 +1,29 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
+from django.db import models, migrations
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+    ]
+
+    operations = [
+        migrations.CreateModel(
+            name='Message',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('sender', models.CharField(max_length=64)),
+                ('sub', models.CharField(max_length=255)),
+                ('type', models.IntegerField(choices=[(0, '\u672a\u8bfb'), (1, '\u5df2\u8bfb')])),
+                ('data', models.TextField()),
+                ('time', models.CharField(max_length=32, null=True, verbose_name=b'\xe5\x8f\x91\xe9\x80\x81\xe6\x97\xb6\xe9\x97\xb4', blank=True)),
+                ('recipients', models.CharField(max_length=255, null=True, blank=True)),
+            ],
+            options={
+                'db_table': 'message',
+                'managed': False,
+            },
+        ),
+    ]

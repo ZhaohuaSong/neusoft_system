@@ -1,0 +1,299 @@
+{% load staticfiles i18n compress %}
+{% load permission_extras %}
+
+<div id="sidebar" class="sidebar                  responsive" style="position:fixed; z-index:111111; float:left">
+    <script type="text/javascript">
+        try {
+            ace.settings.check('sidebar', 'fixed')
+        } catch (e) {
+        }
+    </script>
+
+
+    <!--菜单开始-->
+    <ul class="nav nav-list">
+
+        <!--数据库配置中心菜单开始-->
+
+        {% if user|has_permission:"/dbadmin/mgr/" %}
+            {% if 'dbadmin' in request.path %}
+                <li class="active open">
+                    {% elif 'permission' in request.path %}
+                <li class="active open">
+                    {% else %}
+                <li class="">
+            {% endif %}
+        <a href="#" class="dropdown-toggle">
+            <i class="menu-icon fa fa-database"></i>
+            <span class="menu-text">
+								数据库配置中心
+                </span>
+            <b class="menu-icon fa fa-caret-right"></b>
+        </a>
+        <b class="arrow"></b>
+        <ul class="submenu">
+            {% if 'dbadmin' in request.path %}
+                <li class="active">
+                    {% else %}
+                <li class="">
+            {% endif %}
+            <a href="{% url 'dbadmin:dbconfig.list' %}">
+                <i class="menu-icon fa fa-caret-right"></i>
+                数据库链接管理
+            </a>
+            <b class="arrow"></b>
+            </li>
+        </ul>
+
+        </li>
+
+        {% endif %}
+
+
+        <!--数据库配置中心菜单结束-->
+
+        <!--消息中心菜单开始-->
+        {% if user|has_permission:"/message/mgr/" %}
+            {% if 'message' in request.path %}
+                <li class="active open">
+                    {% else %}
+                <li class="">
+            {% endif %}
+        <a href="#" class="dropdown-toggle">
+            <i class="menu-icon fa fa-envelope-o"></i>
+            <span class="menu-text">
+								消息中心
+							</span>
+            <b class="menu-icon fa fa-caret-right"></b>
+        </a>
+        <b class="arrow"></b>
+        <ul class="submenu">
+            {% if 'message' in request.path %}
+                <li class="active">
+                    {% else %}
+                <li class="">
+            {% endif %}
+            <a href="{% url 'message:message.list' %}">
+                <i class="menu-icon fa fa-caret-right"></i>
+                短消息管理
+            </a>
+            <b class="arrow"></b>
+            </li>
+        </ul>
+
+
+        </li>
+        {% endif %}
+
+        <!--消息中心菜单结束-->
+
+        <!--数据控制中心菜单开始-->
+        {% if user|has_permission:"/packmanage/mgr/" %}
+            {% if 'packmanage' in request.path %}
+            <li class="active open">
+            {% else %}
+            <li class="">
+            {% endif %}
+            <a href="#" class="dropdown-toggle">
+                <i class="menu-icon fa  fa-bar-chart-o"></i>
+                <span class="menu-text">
+                            数据报文管理
+                            </span>
+                <b class="menu-icon fa fa-caret-right"></b>
+            </a>
+
+            <b class="arrow"></b>
+            <ul class="submenu">
+                {% if user|has_permission:"/packmanage/apps/list" %}
+                    {% if 'packmanage/apps' in request.path %}
+                    <li class="active">
+                        {% else %}
+                    <li class="">
+                    {% endif %}
+                    <a href="{% url 'packmanage:apps.list' %}">
+                        <i class="menu-icon fa fa-caret-right"></i>
+                        适配器管理
+                    </a>
+                    <b class="arrow"></b>
+                    </li>
+                {%  endif  %}
+
+                {% if user|has_permission:"/packmanage/protocoltype/list" %}
+                    {% if 'packmanage/protocoltype' in request.path %}
+                    <li class="active">
+                        {% else %}
+                    <li class="">
+                    {% endif %}
+                    <a href="{% url 'packmanage:protocoltype.list' %}">
+                        <i class="menu-icon fa fa-caret-right"></i>
+                        报文协议管理
+                    </a>
+                    <b class="arrow"></b>
+                    </li>
+                {%  endif  %}
+
+            </ul>
+            </li>
+        {% endif %}
+            <!--数据控制中心菜单结束-->
+
+        {% if user|has_permission:"/richdataserver/" %}
+            {% if 'richdataserver' in request.path %}
+            <li class="active open">
+            {% else %}
+            <li class="">
+            {% endif %}
+            <a href="#" class="dropdown-toggle">
+                <i class="menu-icon fa  fa-bar-chart-o"></i>
+                <span class="menu-text">
+                            通讯报文管理
+                            </span>
+                <b class="menu-icon fa fa-caret-right"></b>
+            </a>
+
+            <b class="arrow"></b>
+            <ul class="submenu">
+                {% if user|has_permission:"/richdataserver/send/list" %}
+                    {% if 'richdataserver/send' in request.path %}
+                    <li class="active">
+                        {% else %}
+                    <li class="">
+                    {% endif %}
+                    <a href="{% url 'richdataserver:sendmsg.list' %}">
+                        <i class="menu-icon fa fa-caret-right"></i>
+                        发送报文管理
+                    </a>
+                    <b class="arrow"></b>
+                    </li>
+                {%  endif  %}
+                {% if user|has_permission:"/richdataserver/receive/list" %}
+                    {% if 'richdataserver/receive' in request.path %}
+                    <li class="active">
+                        {% else %}
+                    <li class="">
+                    {% endif %}
+                    <a href="{% url 'richdataserver:receivemsg.list' %}">
+                        <i class="menu-icon fa fa-caret-right"></i>
+                        接收报文管理
+                    </a>
+                    <b class="arrow"></b>
+                    </li>
+                {%  endif  %}
+
+            </ul>
+            </li>
+        {% endif %}
+        <!--个人中心菜单开始-->
+        {% if user|has_permission:"/sysadmin/mgr/" %}
+            {% if 'sysadmin' in request.path %}
+                <li class="active open">
+                    {% elif 'permission' in request.path %}
+                <li class="active open">
+                    {% else %}
+                <li class="">
+            {% endif %}
+        <a href="#" class="dropdown-toggle">
+            <i class="menu-icon fa fa-user"></i>
+            <span class="menu-text">
+                            系统管理
+                            </span>
+
+            <b class="menu-icon fa fa-caret-right"></b>
+        </a>
+
+        <b class="arrow"></b>
+        <ul class="submenu">
+            {% if user|has_permission:"/sysadmin/user/list" %}
+                {% if 'user' in request.path %}
+                    <li class="active">
+                        {% else %}
+                    <li class="">
+                {% endif %}
+            <a href="{% url 'sysadmin:user.list' %}">
+                <i class="menu-icon fa fa-caret-right"></i>
+                用户管理
+            </a>
+            <b class="arrow"></b>
+            </li>
+            {% endif %}
+            {% if user|has_permission:"/sysadmin/role/list" %}
+                {% if 'role' in request.path %}
+                    <li class="active">
+                        {% else %}
+                    <li class="">
+                {% endif %}
+            <a href="{% url 'sysadmin:role.list' %}">
+                <i class="menu-icon fa fa-caret-right"></i>
+                角色管理
+            </a>
+            <b class="arrow"></b>
+            </li>
+            {% endif %}
+            {% if user|has_permission:"/sysadmin/permission/list" %}
+                {% if 'permission' in request.path %}
+                    <li class="active">
+                        {% else %}
+                    <li class="">
+                {% endif %}
+            <a href="{% url 'sysadmin:permission.list' %}">
+
+                <i class="menu-icon fa fa-caret-right"></i>
+                权限管理
+            </a>
+            <b class="arrow"></b>
+            </li>
+            {% endif %}
+
+            {% if user|has_permission:"/sysadmin/syslog/list/" %}
+                {% if '/sysadmin/syslog/list/' in request.path %}
+                    <li class="active">
+                        {% else %}
+                    <li class="">
+                {% endif %}
+                <a href="{% url 'sysadmin:syslog_list' %}">
+
+                    <i class="menu-icon fa fa-caret-right"></i>
+                    操作记录
+                </a>
+            {% endif %}
+            <b class="arrow"></b>
+            </li>
+
+        </ul>
+        </li>
+
+        {% endif %}
+        <!--个人中心菜单结束-->
+
+    </ul>
+
+
+    <!--菜单结束-->
+
+    <!--菜单收缩开始-->
+    <div class="sidebar-toggle sidebar-collapse" id="sidebar-collapse">
+        <i class="ace-icon fa fa-angle-double-left" data-icon1="ace-icon fa fa-angle-double-left"
+           data-icon2="ace-icon fa fa-angle-double-right"></i>
+    </div>
+
+    <script type="text/javascript">
+        try {
+            ace.settings.check('sidebar', 'collapsed')
+        } catch (e) {
+        }
+    </script>
+    <script>
+        //获取当前的页面路径 Qiailin
+        var pathname = window.location.pathname;
+        //获取标签中的路径 Qiailin
+        $("li a").each(function () {
+            var href = $(this).attr("href");
+            //如果相等就激活 ,否则就移除
+            if (pathname == href) {
+                $(this).parents("ul").parent("li").addClass("active");
+                $(this).parent("li").addClass("active");
+            }
+        });
+    </script>
+    <!--菜单收缩结束-->
+</div>

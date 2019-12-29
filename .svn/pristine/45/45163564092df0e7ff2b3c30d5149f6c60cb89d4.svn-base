@@ -1,0 +1,9 @@
+
+# ENV richDataX-system
+
+# General settings
+DJANGO_ADMIN_URL=
+DJANGO_SETTINGS_MODULE=config.settings.local
+DJANGO_SECRET_KEY=m^ix521nv01p&8l%a=)04*mdb@diuamu30jw++dz3wg^rrbr+c
+
+

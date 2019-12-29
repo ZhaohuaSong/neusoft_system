@@ -1,0 +1,104 @@
+<h4 class="lighter block blue col-sm-12">基本信息</h4>
+
+<div class="col-xs-12 no-padding">
+    <div class="form-group col-sm-6">
+        <label class="control-label col-sm-4 no-padding-right"> {{ form.app_name.label }}</label>
+
+        <div class="col-sm-8">
+            {{ form.app_name }}
+            <div class="form-group has-error">
+                <div class="help-block col-xs-12 col-sm-reset inline">{{ form.app_name.errors }} </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group col-sm-6">
+        <label class="control-label col-sm-4 no-padding-right"> {{ form.app_id.label }}</label>
+
+        <div class="col-sm-8">
+            {{ form.app_id }}
+            <div class="form-group has-error">
+                <div class="help-block col-xs-12 col-sm-reset inline">{{ form.app_id.errors }} </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="col-xs-12 no-padding">
+    <div class="form-group col-sm-6">
+        <label class="control-label col-sm-4 no-padding-right"> {{ form.local_ip.label }}</label>
+
+        <div class="col-sm-8">
+            {{ form.local_ip }}
+            <div class="form-group has-error">
+                <div class="help-block col-xs-12 col-sm-reset inline">{{ form.local_ip.errors }} </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group col-sm-6">
+        <label class="control-label col-sm-4 no-padding-right">{{ form.local_port.label }}</label>
+
+        <div class="col-sm-8">
+            {{ form.local_port }}
+            <div class="form-group has-error">
+                <div class="help-block col-xs-12 col-sm-reset inline">{{ form.local_port.errors }} </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="col-xs-12 no-padding">
+    <div class="form-group col-sm-6">
+        <label class="control-label col-sm-4 no-padding-right"> {{ form.org_name.label }}</label>
+
+        <div class="col-sm-8">
+            {{ form.org_name }}
+            <div class="form-group has-error">
+                <div class="help-block col-xs-12 col-sm-reset inline">{{ form.org_name.errors }} </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group col-sm-6">
+        <label class="control-label col-sm-4 no-padding-right">{{ form.org_address.label }}</label>
+
+        <div class="col-sm-8">
+            {{ form.org_address }}
+            <div class="form-group has-error">
+                <div class="help-block col-xs-12 col-sm-reset inline">{{ form.org_address.errors }} </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="col-xs-12 no-padding">
+    <div class="form-group col-sm-6">
+        <label class="control-label col-sm-4 no-padding-right"> {{ form.org_phone.label }}</label>
+
+        <div class="col-sm-8">
+            {{ form.org_phone }}
+            <div class="form-group has-error">
+                <div class="help-block col-xs-12 col-sm-reset inline">{{ form.org_phone.errors }} </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group col-sm-6">
+        <label class="control-label col-sm-4 no-padding-right"> {{ form.org_content.label }}</label>
+
+        <div class="col-sm-8">
+            {{ form.org_content }}
+            <div class="form-group has-error">
+                <div class="help-block col-xs-12 col-sm-reset inline">{{ form.org_content.errors }} </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+

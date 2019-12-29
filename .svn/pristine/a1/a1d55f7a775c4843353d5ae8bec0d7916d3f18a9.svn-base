@@ -1,0 +1,152 @@
+# -*- coding:utf-8 -*-
+'''
+Created on 2016年10月10日17:57:12
+
+@author: Qiailin
+'''
+# 标准模块
+from urllib import quote
+
+# 第三方模块
+from django.core.urlresolvers import reverse
+from django.http import HttpResponseRedirect
+from django.contrib.auth import SESSION_KEY
+from models import SysUser, RoleList, PermissionList, SysLog, SysOrg
+import datetime
+import json
+import sys
+from django.shortcuts import render, render_to_response
+from ..common.TYException import *
+
+reload(sys)
+sys.setdefaultencoding('utf8')
+
+
+class QtsAuthenticationMiddleware(object):
+    # 拦截
+    def process_request(self, request):
+        if request.path != '/login/' and request.path != '/registration/' and request.path != '/forgotpw/'and request.path != '/userchangePwd':
+            if not request.user.is_authenticated():
+                return HttpResponseRedirect('/login/')
+            else:
+                # TODO Qiailins
+                pass
+                # 登录验证通过 , 进行权限判断 请将权限判断放在这里
+                iUser = SysUser.objects.get(email=request.user.email)
+                if not iUser.is_superuser:  # 判断用户如果是超级管理员则具有所有权限
+                    if not iUser.role:  # 如果用户无角色，直接返回无权限
+                        return HttpResponseRedirect(reverse('sysadmin:permission.no'))
+                    if self.is_default_url(request.path):
+                        return
+                    role_permission = RoleList.objects.get(name=iUser.role)
+                    role_permission_list = role_permission.permission.all()
+
+                    matchUrl = []
+                    for x in role_permission_list:
+                        if request.path == x.url or request.path.rstrip('/') == x.url:  # 精确匹配，判断request.path是否与permission表中的某一条相符
+                            matchUrl.append(x.url)
+                        elif request.path.startswith(x.url):  # 判断request.path是否以permission表中的某一条url开头
+                            matchUrl.append(x.url)
+                        # elif str(request.path).__contains__('posp-manager'):  # 判断request.path是否以permission表中的某一条url开头
+                        #     matchUrl.append('/posp-manager')
+                        else:
+                            pass
+
+                    if len(matchUrl) == 0:
+                           return HttpResponseRedirect(reverse('sysadmin:permission.no'))
+                    else:
+                        pass
+
+    #是不是默认的URL权限 QiuJL 2016-12-1
+    # 是不是默认的URL权限 QiuJL 2016-12-1
+    def is_default_url(self, path):
+        matchUrl = []
+        default_url_lsit = PermissionList.objects.filter(type=1)
+        for x in default_url_lsit:
+            if path == x.url or path.rstrip('/') == x.url:  # 精确匹配，判断request.path是否与permission表中的某一条相符
+                matchUrl.append(x.url)
+                return True
+            elif path.startswith(x.url):  # 判断request.path是否以permission表中的某一条url开头
+                matchUrl.append(x.url)
+                return True
+        return False
+
+
+class SysLogSaveMiddleware(object):
+    '''
+    记录操作日志信息
+    '''
+
+    def process_request(self, request):
+        if not str(request.path).__contains__('static') and request.session and request.session.get('user_id', ''):
+            user_id = request.session.get('user_id', '')
+            log = SysLog();
+            try:
+                user = SysUser.objects.get(id=user_id)
+            except:
+                return
+            log.user_name = user.username
+            if user.role_id:
+                role = RoleList.objects.get(id=user.role_id)
+                log.user_role_name = role.name
+            if user.sys_org_id:
+                sysorg = SysOrg.objects.get(id=user.sys_org_id)
+                log.sys_org_name = sysorg.org_name
+            log.user_mobile = user.mobile
+            log.handle_url = request.path
+            log.sys_timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            try:
+                real_ip = request.META['HTTP_X_FORWARDED_FOR']
+            except KeyError:
+                pass
+            else:
+                real_ip = real_ip.split(",")[0]
+                request.META['REMOTE_ADDR'] = real_ip
+            log.ip_address = request.META['REMOTE_ADDR']
+            if request.method == "POST":
+                reqdict = request.POST.dict()
+                if reqdict.get('search[value]', ''):
+                    log.handle_params = '{search[value]:' + str(reqdict.get('search[value]', '')) + '}'
+                elif reqdict and not reqdict.has_key('search[value]'):
+                    if reqdict.get('csrfmiddlewaretoken', ''):
+                        del reqdict['csrfmiddlewaretoken']
+                    log.handle_params = json.dumps(reqdict, ensure_ascii=False)
+                else:
+                    log.handle_params = '无参数'
+            else:
+                reqdict = request.GET.dict()
+                if reqdict.get('search[value]', ''):
+                    log.handle_params = '{search[value]:' + str(reqdict.get('search[value]', '')) + '}'
+                elif reqdict and not reqdict.has_key('search[value]'):
+                    if reqdict.get('csrfmiddlewaretoken', ''):
+                        del reqdict['csrfmiddlewaretoken']
+                    log.handle_params = json.dumps(reqdict, ensure_ascii=False)
+                else:
+                    log.handle_params = '无参数'
+            log.save();
+            pass
+        else:
+            pass
+
+
+# 异常抓取
+class SysCatchException(object):
+    # def process_request(self, request):
+    #     return None
+    #
+    # def process_response(self, request, response):
+    #     return response
+    def process_exception(self, request, exception):
+        context = {}
+        if isinstance(exception, EMsgException):
+            context['msg'] = str(exception)
+            context['resolvent_list'] = exception.resolvent_list
+            return render(request, 'error.html', context)
+        # elif isinstance(exception, Exception):
+        #     context['msg'] = str(exception)  # '尝试下列方法，解决该问题.'
+        #     return render(request, 'error.html', context)
+        # else:
+        #     context['msg'] = str(exception)  # '尝试下列方法，解决该问题.'
+        #     return render(request, 'error.html', context)
+
+

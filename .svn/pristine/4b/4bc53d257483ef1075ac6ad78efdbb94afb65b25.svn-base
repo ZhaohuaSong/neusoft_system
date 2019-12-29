@@ -1,0 +1,69 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
+import datetime
+import copy
+from django.db.models import Q
+
+from ...api.iso_interface import ISOInterface
+from ....common.iso.iso_response_code import *
+from handle_exception import *
+
+from django.apps import apps
+AppsProtocol = apps.get_model(app_label='packmanage', model_name='AppsProtocol')
+ProtocolType = apps.get_model(app_label='packmanage', model_name='ProtocolType')
+
+class ConfigProtocolResponse:
+    '''
+    协议配置响应
+    '''
+    def handle(self, iso_8583):
+        '''
+        处理
+        :param iso_8583:
+        :return:
+        '''
+
+        # 1、获取信息
+        i8583 = ISOInterface(iso_8583=iso_8583)
+        protocol_id = i8583.get_protocol_id()
+        app_id = i8583.get_app_id()#发送请求的适配器编号
+
+        #2、更新适配器关联的规则状态
+        try:
+            info = AppsProtocol.objects.get(Q(app_id=app_id)&Q(protocol_id=protocol_id))
+        except:#之前为远程适配器配置的协议规则不存在了...或者是被删除了
+            raise HandleException(CODE_REQUEST_PROTOCOL_NOT_FIND,
+                                  'protocol is not find in ConfigProtocolResponse function[protocol_id:%s, app_id=%s]' % (
+                                  protocol_id, app_id))
+
+        if CODE_SUCCESS == i8583.get_response_code():
+            info.state = 2 #同意配置
+        else:
+            info.state = 3 #拒绝配置
+        info.response_date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        info.save()
+
+        #3、写入协议规则表
+        try:
+            info = ProtocolType.objects.get(protocol_id=protocol_id)
+        except:
+            info = ProtocolType()
+
+        info.protocol_id = protocol_id
+        info.protocol_name = i8583.get_protocol_name()
+        info.protocol_state = 1
+        info.protocol_content = i8583.get_protocol_content()
+        info.create_date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        info.update_date = info.create_date
+        bremoteconfig = 0#
+        info.save()
+
+
+        response_8538 = copy.deepcopy(i8583.get_iso_8583())
+        i8583 = ISOInterface(iso_8583=response_8538)
+        i8583.set_response_code(CODE_SUCCESS)
+
+        return i8583.get_iso_8583()
+
+

@@ -1,0 +1,34 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+from django.conf.urls import url
+from views_send import SendMsgListView,SendMsgDataView,\
+    senddetail,sendmsg_batches_delete,sendMsgRsList,sendrespdetail,MsgLogList
+from views_receive import ReceiveMsgListView,recedetail,recemsg_batches_delete,receiveMsgRsList,server_start,trigger_start
+urlpatterns = [
+    url(r'^richdataserver/send/list$', SendMsgListView.as_view(), name='sendmsg.list'),  # 发送报文列表
+    url(r'^richdataserver/send/data$', SendMsgDataView.as_view(), name="sendmsg.data"),  # 获取数据
+    url(r'^richdataserver/send/rsdata$', sendMsgRsList, name="sendmsg.rsdata"),  # 获取redis数据
+    url(r'^richdataserver/send/delete$', sendmsg_batches_delete, name="sendmsg.delete"),  # 删除信息
+    url(r'^richdataserver/send/detail/$', senddetail, name="sendmsg.detail"),  # 报文详情
+    url(r'^richdataserver/send/respdetail/$', sendrespdetail, name="sendmsg.respdetail"),  # 即时响应报文详情
+
+    url(r'^richdataserver/receive/list$', ReceiveMsgListView.as_view(), name='receivemsg.list'),  # 接收报文列表
+    url(r'^richdataserver/receive/rsdata$',receiveMsgRsList, name="receivemsg.rsdata"),  # 从redis获取接收报文数据
+
+    url(r'^richdataserver/receive/detail/$', recedetail, name="receivemsg.detail"),  # 报文详情
+    url(r'^richdataserver/receive/delete$', recemsg_batches_delete, name="receivemsg.delete"),  # 删除信息
+
+
+    url(r'^richdataserver/server/start/$', server_start, name="server.start"),  # 启动服务
+
+    url(r'^richdataserver/trigger/start/$', trigger_start, name="trigger.start"),  # 启动触发器服务
+
+    url(r'^log/msglog/list/$', MsgLogList.as_view(), name='msglog.list'),  # 报文日志
+
+    url(r'^log/msglog/send/detail/$', senddetail, name="sendmsg.detail1"),  # 报文日志 >> 报文详情
+    url(r'^log/msglog/send/respdetail/$', sendrespdetail, name="sendmsg.respdetail1"),  # 报文日志 >> 即时响应报文详情
+
+    url(r'^log/msglog/receive/detail/$', recedetail, name="receivemsg.detail1"),  # 报文日志 >> 接收报文详情
+
+
+ ]

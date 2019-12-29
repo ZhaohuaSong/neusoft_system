@@ -1,0 +1,51 @@
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : posp
+Source Server Version : 50628
+Source Host           : localhost:3306
+Source Database       : richdatax
+
+Target Server Type    : MYSQL
+Target Server Version : 50628
+File Encoding         : 65001
+
+Date: 2017-02-19 01:47:18
+*/
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for packmanage_protocoltype
+-- ----------------------------
+DROP TABLE IF EXISTS `packmanage_protocoltype`;
+CREATE TABLE `packmanage_protocoltype` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `protocol_id` varchar(255) DEFAULT NULL COMMENT 'TPDU，来区分定义协议类型 6位数',
+  `protocol_name` varchar(255) DEFAULT NULL,
+  `protocol_state` int(11) DEFAULT NULL,
+  `protocol_srctype` int(11) DEFAULT NULL COMMENT '协议来源：占位',
+  `protocol_content` text COMMENT '报文协议内容 json数据',
+  `request_datasrc_content` text COMMENT '数据源配置信息——请求方',
+  `response_datasrc_content` text COMMENT '数据源配置信息——响应方',
+  `protocol_msgtype` varchar(255) DEFAULT NULL COMMENT '占位',
+  `app_id` varchar(50) DEFAULT NULL COMMENT '适配器编号，如果bremoteconfig为0，那么该字段为空，表示本地适配器名称',
+  `bremoteconfig` int(11) DEFAULT '0' COMMENT '是否远程请求配置',
+  `create_by` varchar(255) DEFAULT NULL COMMENT '协议创建者',
+  `remarks` varchar(255) DEFAULT NULL COMMENT '协议注释',
+  `create_date` datetime DEFAULT NULL COMMENT '创建日期',
+  `update_date` datetime DEFAULT NULL COMMENT '修改日期',
+  `operation_type` int(11) DEFAULT NULL COMMENT '操作方式：增=0 删=1 查=2 改=3',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of packmanage_protocoltype
+-- ----------------------------
+INSERT INTO `packmanage_protocoltype` VALUES ('13', '5000000000', '学生信息查询', '1', null, '{\"operation\": \"2\", \"out\": {\"0\": {\"bit_index\": \"65\", \"field_name\": \"\\u59d3\\u540d\"}, \"00\": {\"bit_index\": \"66\", \"field_name\": \"\\u6027\\u522b\"}, \"000\": {\"bit_index\": \"67\", \"field_name\": \"\\u7c4d\\u8d2f\"}}, \"in\": {\"0\": {\"bit_index\": \"65\", \"field_name\": \"\\u5b66\\u53f7\"}, \"00\": {\"bit_index\": \"66\", \"field_name\": \"\\u5b66\\u6821\\u4ee3\\u53f7\"}}}', '{\"src_name\": \"45_1111_2017-02-14_153417.715000.txt\", \"src_type\": \"\\u6587\\u4ef6\", \"param_out\": {\"1\": \"5_\\u7535\\u8bdd\", \"0\": \"2_\\u6027\\u522b\", \"2\": \"2_\\u6027\\u522b\"}, \"param_in\": {\"1\": \"5_\\u7535\\u8bdd\", \"0\": \"6_\\u5361\\u53f7\"}}', '{\"src_name\": \"45_1111_2017-02-14_153417.715000.txt\", \"src_type\": \"0\", \"param_out\": {\"1\": \"2_\\u6027\\u522b\", \"0\": \"1_\\u59d3\\u540d\", \"2\": \"3_\\u7c4d\\u8d2f\"}, \"param_in\": {\"1\": \"7_\\u5b66\\u9662\", \"0\": \"6_\\u5b66\\u53f7\"}}', '', '10000002 ', '1', 'admin', '无', '2017-02-10 10:01:44', '2017-02-18 14:11:18', '2');
+INSERT INTO `packmanage_protocoltype` VALUES ('14', '5000000001', '学生信息增加', '1', null, '{\"operation\": \"0\", \"out\": {}, \"in\": {\"0\": {\"bit_index\": \"65\", \"field_name\": \"\\u59d3\\u540d\"}, \"00\": {\"bit_index\": \"66\", \"field_name\": \"\\u7c4d\\u8d2f\"}, \"000\": {\"bit_index\": \"67\", \"field_name\": \"\\u6027\\u522b\"}}}', '{\"src_name\": \"45_1111_2017-02-14_153417.715000.txt\", \"src_type\": \"\\u6587\\u4ef6\", \"param_out\": {}, \"param_in\": {\"1\": \"3_\\u7c4d\\u8d2f\", \"0\": \"1_\\u59d3\\u540d\", \"2\": \"2_\\u6027\\u522b\"}}', '{\"src_name\": \"45_1111_2017-02-14_153417.715000.txt\", \"src_type\": \"0\", \"param_out\": {}, \"param_in\": {\"1\": \"3_\\u7c4d\\u8d2f\", \"0\": \"1_\\u59d3\\u540d\", \"2\": \"2_\\u6027\\u522b\"}}', '', '10000002 ', '1', 'admin', '无', '2017-02-18 17:28:57', '2017-02-18 17:39:41', '0');
+INSERT INTO `packmanage_protocoltype` VALUES ('16', '5000000002', '学生信息删除', '1', null, '{\"operation\": \"1\", \"out\": {}, \"in\": {\"0\": {\"bit_index\": \"65\", \"field_name\": \"\\u5b66\\u53f7\"}}}', '{\"src_name\": \"45_1111_2017-02-14_153417.715000.txt\", \"src_type\": \"\\u6587\\u4ef6\", \"param_out\": {}, \"param_in\": {\"0\": \"6_\\u5b66\\u53f7\"}}', '{\"src_name\": \"45_1111_2017-02-14_153417.715000.txt\", \"src_type\": \"0\", \"param_out\": {}, \"param_in\": {\"0\": \"0_\\u5e8f\\u53f7\"}}', '', '10000002 ', '1', 'admin', '无', '2017-02-18 18:09:39', '2017-02-18 18:10:02', '1');
+INSERT INTO `packmanage_protocoltype` VALUES ('17', '5000000003', '学生信息修改', '1', null, '{\"operation\": \"3\", \"out\": {\"0\": {\"bit_index\": \"67\", \"field_name\": \"\\u59d3\\u540d\"}}, \"in\": {\"0\": {\"bit_index\": \"65\", \"field_name\": \"\\u5b66\\u53f7\"}}}', '{\"src_name\": \"45_1111_2017-02-14_153417.715000.txt\", \"src_type\": \"\\u6587\\u4ef6\", \"param_out\": {\"0\": \"1_\\u59d3\\u540d\"}, \"param_in\": {\"0\": \"6_\\u5b66\\u53f7\"}}', '{\"src_name\": \"45_1111_2017-02-14_153417.715000.txt\", \"src_type\": \"0\", \"param_out\": {\"0\": \"1_\\u59d3\\u540d\"}, \"param_in\": {\"0\": \"6_\\u5b66\\u53f7\"}}', '', '10000002 ', '1', 'admin', '无', '2017-02-18 18:16:50', '2017-02-18 18:19:36', '3');
+INSERT INTO `packmanage_protocoltype` VALUES ('18', '5000000004', 'DB查询', '1', null, '{\"operation\": \"2\", \"out\": {\"0\": {\"bit_index\": \"65\", \"field_name\": \"\\u5b57\\u6bb5\\u4e8c\"}}, \"in\": {\"0\": {\"bit_index\": \"65\", \"field_name\": \"\\u5b57\\u6bb5\\u4e00\"}}}', '{\"src_name\": \"45_1111_2017-02-14_153417.715000.txt\", \"src_type\": \"\\u6587\\u4ef6\", \"param_out\": {\"0\": \"3_\\u7c4d\\u8d2f\"}, \"param_in\": {\"0\": \"4_\\u5b66\\u5386\"}}', '', '', '10000002 ', '1', 'admin', '无', '2017-02-18 20:13:41', '2017-02-18 20:14:33', '2');
+INSERT INTO `packmanage_protocoltype` VALUES ('19', '5555555555', 'DB2', '1', null, '{\"operation\": \"2\", \"out\": {\"0\": {\"bit_index\": \"65\", \"field_name\": \"\\u59d3\\u540d\"}, \"00\": {\"bit_index\": \"66\", \"field_name\": \"\\u6027\\u522b\"}}, \"in\": {\"0\": {\"bit_index\": \"65\", \"field_name\": \"\\u5b66\\u53f7\"}}}', '{\"src_name\": \"24\", \"src_type\": \"1\", \"param_out\": {\"1\": \"address_\\u5730\\u5740\", \"0\": \"address_\\u5730\\u5740\"}, \"param_in\": {\"0\": \"id_\\u5e8f\\u53f7\"}}', '{\"src_name\": \"24\", \"src_type\": \"1\", \"param_out\": {\"1\": \"address_\\u5730\\u5740\", \"0\": \"address_\\u5730\\u5740\"}, \"param_in\": {\"0\": \"id_\\u5e8f\\u53f7\"}}', '', '10000002 ', '1', 'admin', '无', '2017-02-18 21:44:19', '2017-02-18 22:33:11', '2');
+INSERT INTO `packmanage_protocoltype` VALUES ('20', '1000000000', '查询信用卡信息', '1', null, '{\"operation\": \"2\", \"out\": {\"0\": {\"bit_index\": \"65\", \"field_name\": \"\\u59d3\\u540d\"}, \"00\": {\"bit_index\": \"66\", \"field_name\": \"\\u6027\\u522b\"}, \"000\": {\"bit_index\": \"67\", \"field_name\": \"\\u7c4d\\u8d2f\"}}, \"in\": {\"0\": {\"bit_index\": \"65\", \"field_name\": \"\\u5361\\u53f7\"}}}', '{\"src_name\": \"45_1111_2017-02-14_153417.715000.txt\", \"src_type\": \"0\", \"param_out\": {\"1\": \"3_\\u7c4d\\u8d2f\", \"0\": \"1_\\u59d3\\u540d\", \"2\": \"5_\\u7535\\u8bdd\"}, \"param_in\": {\"0\": \"7_\\u5b66\\u9662\"}}', '', '', '10000002 ', '0', 'admin', '无', '2017-02-19 00:41:09', '2017-02-19 00:43:35', '2');

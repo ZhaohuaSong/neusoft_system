@@ -1,0 +1,105 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# from __future__ import print_function
+# import sys
+# from gevent import socket
+# from PackData import PackData
+#
+# address = ('localhost', 7000)
+# message = ' '.join(sys.argv[1:])
+# sock = socket.socket(type=socket.SOCK_DGRAM)
+# sock.connect(address)
+# packdata = PackData();
+# message = packdata.send_message()
+# print('Sending %s bytes to %s:%s' % ((len(message), ) + address))
+# sock.send(message.encode())
+# data, address = sock.recvfrom(8192)
+# sock.close()
+# print('%s:%s: got %r' % (address + (data, )))
+
+import json
+from PackData import PackData
+import datetime
+import time
+import thread,threading
+
+
+
+
+import redis
+r = redis.StrictRedis(host='127.0.0.1')
+
+
+def send(threadName):
+    count = 100
+
+    starttime = time.time()
+    # print starttime
+    # time.sleep(5)
+    # endtime = time.time()
+    # print endtime
+
+    # print int(endtime-starttime)
+    success = 0
+    fail = 0
+    mintime  = 0
+    maxtime = 0
+    account_time = 0
+    for i in range(0,count):
+        packData  =  PackData();
+        packData.address=('121.14.17.105',7490)
+        packData.message='test'
+        context={}
+        context['content']='test'
+        context['staus']='1'
+        context['msg']='ready send'
+        begintime = time.time()
+        context['start_time'] = begintime
+        r.set(threadName+'key'+str(i),context)
+        data ,address  = packData.send_message()
+        if data:
+            context['staus']='2'
+            context['msg']=str(data)
+            overtime = time.time()
+            context['end_time'] = overtime
+            use_time = int((overtime-begintime)*1000)
+            context['use_time'] = str(use_time)+'ms'
+            r.set(threadName+'key'+str(i),context)
+            mintime = use_time
+            if mintime> use_time :
+                mintime = use_time
+            if mintime == 0 or maxtime ==0:
+                mintime = use_time
+                maxtime = use_time
+            if maxtime < use_time:
+                maxtime = use_time
+            success = success+1
+        else:
+            context['staus']='3'
+            context['msg']='fail'
+            overtime = time.time()
+            context['end_time'] = overtime
+            use_time = int((overtime-begintime)*1000)
+            context['use_time']=str(use_time)+'ms'
+            r.set(threadName+'key'+str(i),context)
+            fail = fail +1
+
+    endtime = time.time()
+    print threadName+'--time:'+str(endtime - starttime)+'s\n'
+    print threadName+'--success:'+str(success)+'\n'
+    print threadName+'--fail:'+str(fail)+'\n'
+    print threadName+'--mintime:'+str(mintime)+'\n'
+    print threadName+'--maxtime:'+str(maxtime)+'\n'
+
+if __name__ == '__main__':
+    # for i in range(0,100):
+    # thread.start_new_thread(send,('threadname_'+str(1),))
+    # send('test')
+    for i in range(0,20):
+        threading.Thread(target = send, args = ('1thread-'+str(i),), name = '1thread-' + str(i)).start()
+
+
+
+
+

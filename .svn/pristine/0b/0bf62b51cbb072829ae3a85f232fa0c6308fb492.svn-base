@@ -1,0 +1,76 @@
+<div class="widget-box col-xs-12 step_3 {% if is_over == 0 %}hidden{% endif %}">
+    <div class="widget-header widget-header-blue widget-header-flat">
+        <h4 class="widget-title lighter">协议数据源配置——配置完成</h4>
+    </div>
+    <div class="space-20"></div> 
+
+
+    <div class=" form-horizontal">
+
+         
+        <div class="space-10"></div>
+        <div class="form-group"> 
+            <label class="col-sm-3 control-label no-padding-right">数据源信息</label>
+            <div class="col-xs-8 ">
+                <table class="table table-striped table-bordered" >
+                     <tr><td style="width:55px">类型</td>
+                        <td id="lb_datasrc_type">{% if is_over == 1 %}{{src_type}}{% endif %}</td></tr>
+                     <tr><td>名称</td>
+                        <td id="lb_datasrc_name">{% if is_over == 1 %}{{src_name}}{% endif %}</td></tr>
+                </table>
+            </div> 
+        </div> 
+
+        <hr/>
+        <div class="form-group"> 
+            <label class="col-sm-3 control-label no-padding-right">数据源信息—输入参数</label>
+            <div class="col-xs-8 ">
+                <table class="table table-striped table-bordered">
+                    <tr><td width="55px">序号</td><td>参数名称</td><td>数据源字段名称</td></tr>
+                    {% if is_over == 0 %}
+                        {% for data in protocol_content_in %}
+                        <tr><td>{{forloop.counter}}</td><td>{{ data.field_name }}</td><td class="in_param_show"></td></tr>
+                        {% endfor %}
+                    {% else %}
+                        {% for data in src_in %}
+                            <tr><td>{{forloop.counter}}</td><td>{{ data.0 }}</td><td class="out_param_show">{{data.1}}</td></tr>
+                        {% endfor %}
+                    {% endif %}
+                </table>
+            </div> 
+        </div> 
+
+        <div class="form-group"> 
+            <label class="col-sm-3 control-label no-padding-right">数据源信息—输出参数</label>
+            <div class="col-xs-8 ">
+                <table class="table table-striped table-bordered">
+                    <tr><td width="55px">序号</td><td>参数名称</td><td>数据源字段名称</td></tr>
+                    {% if is_over == 0 %}
+                        {% for data in protocol_content_out %}
+                        <tr><td>{{forloop.counter}}</td><td>{{ data.field_name }}</td><td class="out_param_show"></td></tr>
+                        {% endfor %}
+                    {% else %}
+                        {% for data in src_out %}
+                        <tr><td>{{forloop.counter}}</td><td>{{ data.0 }}</td><td class="out_param_show">{{data.1}}</td></tr>
+                        {% endfor %}
+                    {% endif %}
+                </table>
+            </div> 
+        </div> 
+
+        <hr/>
+        <div class="form-group o-2-pre">
+            <label class="col-sm-3 control-label no-padding-right"></label>
+            <div class="col-sm-9">
+                <button class="btn btn-danger btn-sm tooltip-error" id="btn_reconfig"
+                                style="float:left; ">
+                        重新配置
+                    </button>
+            </div>
+        </div>
+        <div class="space-10"></div>
+
+        
+    </div>
+
+</div>

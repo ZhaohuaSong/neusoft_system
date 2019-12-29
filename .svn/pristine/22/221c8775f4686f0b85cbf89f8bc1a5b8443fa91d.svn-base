@@ -1,0 +1,38 @@
+/*
+SQLyog Ultimate v11.24 (32 bit)
+MySQL - 5.6.28-log : Database - richdatax
+*********************************************************************
+*/
+
+/*!40101 SET NAMES utf8 */;
+
+/*!40101 SET SQL_MODE=''*/;
+
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+CREATE DATABASE /*!32312 IF NOT EXISTS*/`richdatax` /*!40100 DEFAULT CHARACTER SET utf8 */;
+
+USE `richdatax`;
+
+/*Table structure for table `resource_middleware` */
+
+DROP TABLE IF EXISTS `resource_middleware`;
+
+CREATE TABLE `resource_middleware` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '默认django使用的ID',
+  `mid_name` varchar(64) DEFAULT NULL COMMENT '名',
+  `mid_id` varchar(64) DEFAULT NULL COMMENT 'id',
+  `mid_type` varchar(64) DEFAULT NULL COMMENT '类型',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=16812 DEFAULT CHARSET=utf8;
+
+/*Data for the table `resource_middleware` */
+
+insert  into `resource_middleware`(`id`,`mid_name`,`mid_id`,`mid_type`) values (16783,'可作查询键','0','search'),(16784,'不可作查询键','1','search'),(16785,'可作返回结果','2','result'),(16786,'不可作返回结果','3','result'),(16787,'可修改','4','modify'),(16788,'不可修改','5','modify'),(16789,'可添加','6','add'),(16790,'不可添加','7','add'),(16791,'可删除','8','delete'),(16792,'不可删除','9','delete'),(16793,'社会发展','10','category_name'),(16794,'经济建设','11','category_name'),(16795,'劳动人事','12','category_name'),(16796,'教育科技','13','category_name'),(16797,'文体休闲','14','category_name'),(16798,'三农服务','15','category_name'),(16799,'交通运输','16','category_name'),(16800,'生态文明','17','category_name'),(16801,'公共安全','18','category_name'),(16802,'政府机构','19','category_name'),(16803,'财税金融','20','category_name'),(16804,'卫生健康','21','category_name'),(16805,'企业服务','22','category_name'),(16806,'信用服务','23','category_name'),(16807,'完全开放','24','power'),(16808,'限制权限','25','power'),(16809,'按年','26','update'),(16810,'按月','27','update'),(16811,'实时','28','update');
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;

@@ -1,0 +1,52 @@
+/*
+SQLyog Ultimate v11.24 (32 bit)
+MySQL - 5.6.28-log : Database - richdatax
+*********************************************************************
+*/
+
+/*!40101 SET NAMES utf8 */;
+
+/*!40101 SET SQL_MODE=''*/;
+
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+CREATE DATABASE /*!32312 IF NOT EXISTS*/`richdatax` /*!40100 DEFAULT CHARACTER SET utf8 */;
+
+USE `richdatax`;
+
+/*Table structure for table `resource_list` */
+
+DROP TABLE IF EXISTS `resource_list`;
+
+CREATE TABLE `resource_list` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '默认django使用的ID',
+  `resource_id` varchar(64) DEFAULT NULL COMMENT '资源id',
+  `resource_name` varchar(255) DEFAULT NULL COMMENT '提供单位或资源名称',
+  `field_id` varchar(64) DEFAULT NULL COMMENT '领域分类资源id',
+  `field` varchar(64) DEFAULT NULL COMMENT '领域名或资源名',
+  `category_name` varchar(255) DEFAULT NULL COMMENT '数据领域',
+  `title_type` varchar(64) DEFAULT NULL COMMENT '主题分类',
+  `power` varchar(64) DEFAULT NULL COMMENT '开放属性',
+  `update` varchar(64) DEFAULT NULL COMMENT '更新频率',
+  `resource_type` varchar(64) DEFAULT NULL COMMENT '资源格式（数据库/文件）',
+  `post_status` varchar(64) DEFAULT NULL COMMENT '发布状态',
+  `registration_time` datetime DEFAULT NULL COMMENT '发布时间',
+  `org_name` varchar(255) DEFAULT NULL COMMENT '数据提供单位',
+  `org_address` varchar(255) DEFAULT NULL COMMENT '数据提供单位地址',
+  `audit_status` varchar(64) DEFAULT NULL COMMENT '数据审核状态',
+  `parent_id` varchar(64) DEFAULT NULL COMMENT '父节点（树状结构用,资源id或提供单位终端号）',
+  `field_parent_id` varchar(64) DEFAULT NULL COMMENT '领域分类父节点（树状结构用,资源id或提供单位终端号）',
+  `create_by` varchar(255) DEFAULT NULL COMMENT '创建者',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=15770 DEFAULT CHARSET=utf8;
+
+/*Data for the table `resource_list` */
+
+insert  into `resource_list`(`id`,`resource_id`,`resource_name`,`field_id`,`field`,`category_name`,`title_type`,`power`,`update`,`resource_type`,`post_status`,`registration_time`,`org_name`,`org_address`,`audit_status`,`parent_id`,`field_parent_id`,`create_by`) values (15756,'1','广州市公安局','','',NULL,NULL,NULL,NULL,NULL,'2','2017-03-29 09:53:56',NULL,NULL,'2','0','',NULL),(15757,'1000000001','广州市交通系统驾驶员信息表',NULL,'','16','','24','26','csv','2','2017-03-29 09:53:59','广州市公安局','天河北路600号','2','1','',NULL),(15758,'1000000002','广州市交通违规驾驶信息表',NULL,'','16','','25','27','csv','2','2017-03-29 09:54:01','广州市公安局','天河北路600号','2','1','',NULL),(15759,'2','人社局',NULL,'',NULL,'',NULL,NULL,NULL,'2','2017-03-29 09:54:03',NULL,NULL,'2','0','',NULL),(15760,'1000000003','公民五险一金缴纳信息表',NULL,'','12','','25','28','xls','2','2017-03-29 09:54:05','人社局','天河北路600号','2','2','',NULL),(15761,'1000000004','公民社保违规信息表',NULL,'','12','','24','26','xls','2','2017-03-29 09:54:07','人社局','天河北路600号','2','2','',NULL),(15762,'3','教育局',NULL,'',NULL,'',NULL,NULL,NULL,'2','2017-03-29 09:54:09',NULL,NULL,'2','0','',NULL),(15763,'1000000005','广州地区大学生信息表',NULL,'','13','','24','26','txt','2','2017-03-29 09:54:11','教育局','天河北路600号','2','3','',NULL),(15764,'1000000006','广州地区贫困学生信息表',NULL,'','13','','25','27','txt','2','2017-03-29 09:54:14','教育局','天河北路600号','2','3','',NULL),(15765,'4','佛山市公安局',NULL,'',NULL,'',NULL,NULL,NULL,'2',NULL,NULL,NULL,'2','0','',NULL),(15766,'1000000007','佛山市交通系统驾驶员信息表',NULL,'','16','','24','27','csv','2','2017-03-29 11:52:06','佛山市公安局','佛山北路600号','2','4','',NULL),(15767,'1000000008','佛山市交通违规驾驶信息表',NULL,'','16','','25','27','csv','2','2017-03-29 11:55:37','佛山市公安局','佛山北路600号','2','4','',NULL),(15768,'1000000009','广州市交通事故信息表',NULL,NULL,'16','','24','27','csv','2','2017-03-29 14:17:13','广州市公安局','天河北路600号','2','1',NULL,NULL),(15769,'5','广州市城管局',NULL,NULL,NULL,NULL,NULL,NULL,NULL,'2','2017-03-31 13:04:13',NULL,NULL,'2','0','0',NULL);
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;

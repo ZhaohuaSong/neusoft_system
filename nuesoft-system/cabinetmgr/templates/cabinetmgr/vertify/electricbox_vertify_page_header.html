@@ -1,0 +1,28 @@
+<!-- -->
+
+<div  id="ace-settings-box">
+    <div class="pull-left width-100">
+        <div style="width:100%; border-bottom:1px #dedede dashed; float:left">
+            <div class="input-group col-sm-3" style="margin-top: 10px; float: right;">
+                <input class="form-control" id="in-search" name="keywords" placeholder="输入要查询的内容" type="text" >
+                <div class="input-group-btn" style="padding-left: 10px">
+                    <button class="btn btn-info btn-sm tooltip-info" id="btn-search">
+                        查询
+                    </button>
+                </div>
+            </div>
+
+            {% if operate_elbox == 2 %}
+                <button class="btn btn-info btn-sm tooltip-info" id="btn-pass" style="float:left; margin:10px 3px 10px 3px;">
+                    审核通过
+                </button>
+            {% elif operate_elbox == 3 %}
+                <button class="btn btn-info btn-sm tooltip-info" id="btn-fail" style="float:left; margin:10px 3px 10px 3px;">
+                    审核不通过
+                </button>
+            {% endif %}
+        </div>
+    </div><!-- /.pull-left -->
+
+    <!-- /.pull-left -->
+</div><!-- /.ace-settings-box -->

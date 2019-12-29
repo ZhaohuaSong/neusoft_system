@@ -1,0 +1,308 @@
+/**
+ * Created by rich on 2017/1/6.
+ */
+function  add(){
+        $("#form_title").text('新增数据')
+        $("#add_data").css('display','block')
+        $("#dynamic-table-list").css('display','none')
+        $("#tool_bar").css('display','none')
+        $("input[type='text']").val('')
+        }
+function show(){
+        $("#dl").css('display','block')
+        $("#yl").css('display','none')
+        $("#cl").css('display','none')
+        $("#sl").css('display','none')
+        $("#ol").css('display','none')
+        $("#dynamic-table-list").css('display','block')
+        $("#dynamic-sql-list").css('display','none')
+        $("#tool_bar").css('display','block')
+        $("#add_data").css('display','none')
+        }
+function view(){
+        $("#dl").css('display','none')
+        $("#cl").css('display','none')
+        $("#yl").css('display','block')
+        $("#sl").css('display','none')
+        $("#ol").css('display','none')
+        $("#dynamic-sql-list").css('display','none')
+        }
+function show_url(){
+        $("#dl").css('display','none')
+        $("#cl").css('display','block')
+        $("#yl").css('display','none')
+        $("#sl").css('display','none')
+        $("#ol").css('display','none')
+        $("#dynamic-sql-list").css('display','none')
+        }
+
+function show_out_sql(){
+        $("#dl").css('display','none')
+        $("#cl").css('display','none')
+        $("#yl").css('display','none')
+        $("#sl").css('display','none')
+        $("#ol").css('display','block')
+        $("#dynamic-sql-list").css('display','block')
+    $("#sqldata").html('')
+    $.ajax({
+        url:SQL_LIST,
+        success:function(data){
+            $.each(jQuery.parseJSON(data),function(i,item){
+               var  ts=''
+                    ts = '<td><input type="button" data-toggle="modal" value="参数详情" onclick="params_detail(this)">&nbsp;</td>'
+
+               $("#sqldata").append(
+                   '<tr>' +
+                     '<input type="hidden" value="'+item.id+'">'+
+                    '<td>'+item.dbname+'</td>' +
+                    '<td>'+item.sqlname+'</td>' +
+                    '<input type="hidden" value="'+item.sqlcontent+'">'+
+                    ts +
+                    '</tr>'
+               )
+            })
+          $('.queryfilter').attr('disabled',"true");
+        }
+    })
+}
+
+jQuery(function ($) {
+
+    /*
+     树形菜单+检索
+     */
+    $('#treeview1').treeview({
+        data: defaultData,
+        levels: 1,
+        showTags: true,
+        onNodeSelected: function (event, node) {
+            $.ajax({
+                url: DBTables_LIST_URL,
+                type: "POST",
+                "data": {"id": node.id, "table_name": node.text},
+                success: function (result) {
+
+                    $("#dbcontent").html('')
+                    $(".th_name").remove()
+                    $("#table_datas").html('')
+                    $("#add_form").html('')
+                    $("#urlcontent").html('')
+                    $(".cud_field_name").html('')
+                    $(".cud_field_name").append('<option value="">'+'请选择参数'+'</option>')
+
+                    var jsonObj=jQuery.parseJSON(result)
+                    $("#cud_dbname").val(jsonObj.dbname)
+                    var colobj = jsonObj.columns
+                    var dtatlist = jsonObj.datalist
+                    var title =[]
+                    $("#sys_table_name").val( node.text)
+                    $("#add_form").append('<input type="hidden" name="databasename" value="'+jsonObj.dbname+'">')
+                    $("#add_form").append('<input type="hidden" name="table_name" value="'+jsonObj.table_name+'">')
+                    $("#edit_form").append('<input type="hidden" name="databasename" value="'+jsonObj.dbname+'">')
+                    $("#edit_form").append('<input type="hidden" name="table_name" value="'+jsonObj.table_name+'">')
+                    $("#urlcontent").append(
+                            '<tr>' +
+                            '<td>'+'dbadmin/dynamic/'+jsonObj.dbname+'/'+jsonObj.table_name+'/detail/'+colobj[0].name+'/</td>' +
+                            '<td>'+'根据主键查询'+'</td>' +
+                            '</tr>'
+                    ).append(
+                            '<tr>' +
+                            '<td>'+'dbadmin/api/'+'</td>' +
+                            '<td>'+'多表操作'+'</td>' +
+                            '</tr>'
+
+                    )
+                    $.each(colobj, function (i, item) {
+                       $(".cud_field_name").append('<option value='+item.name+':'+item.type+'>'+item.name+'</option>')
+                        $("#dbcontent").append(
+                            '<tr>' +
+                            '<td>'+item.name+'</td>' +
+                            '<td>'+item.type+'</td>' +
+                            '<td>'+item.length+'</td>' +
+                            '</tr>'
+                        )
+                        $("#table_th").before('<th class="th_name">'+item.name+'</th>')
+                        if (!item.autoincrement)
+                            $("#add_form").append(
+                                '<div class="form-group">'+
+                                '<label class="col-sm-3 control-label no-padding-right"> '+item.name+' </label>'+
+                                '<div class="col-sm-9">'+
+                                '<input type="text" value="" name="'+item.name+'">'+
+                                '</div>'+
+                                '</div>')
+                            $("#edit_form").append(
+                                '<div class="form-group">'+
+                                '<label class="col-sm-3 control-label no-padding-right"> '+item.name+' </label>'+
+                                '<div class="col-sm-9">'+
+                                '<input type="text" value="" name="'+item.name+'">'+
+                                '</div>'+
+                                '</div>')
+                        title.push(item.name)
+                    });
+                    $.each(dtatlist, function (i, item) {
+                        var tds = ''
+                         for(var j = 0 ; j<title.length; j++){
+                            tds = tds+ '<td>'+item[title[j]]+'</td>'
+                         }
+                         $("#table_datas").append(
+                            '<tr>' +
+                            '<td><input type="radio" name="radio_id"></td>' +
+                             tds+
+                            '</tr>'
+
+                         )
+                     })
+                    //view();
+                }
+            });
+
+        },
+    });
+
+    $("#add_filter").click(function(){
+        cloneObj(this)
+    })
+
+
+    $("#add_filter_params").click(function(){
+        cloneObj(this)
+    })
+
+    //设置新增业务中添加一行的方法
+    $("#add_cud").click(function(){
+        var opt = $("#curd_opt").val()
+        cloneObj(this)
+        if (opt=="C"||opt=="D"){
+        $(".cud_field_type option[value='1']").prop('selected',true)
+        $(".cud_field_type").prop('disabled',true)
+        }
+
+    })
+
+
+    //设置新增业务
+    $("#add_service").click(function(){
+        $(".cudparams:gt(0)").remove()
+        $(this).attr("data-target","#cudModal")
+        $(".cud_field_type option[value='1']").prop('selected',true)
+        $(".cud_field_type").prop('disabled',true)
+        $("#curd_opt").val('C')
+    })
+
+    //设置编辑业务
+    $("#edit_service").click(function(){
+        $(".cudparams:gt(0)").remove()
+        $(this).attr("data-target","#cudModal")
+        $(".cud_field_type option[value='']").prop('selected',true)
+        $(".cud_field_type").prop('disabled',false)
+        $("#curd_opt").val('U')
+
+    })
+
+    //设置删除业务
+    $("#del_service").click(function(){
+        $(".cudparams:gt(0)").remove()
+        $(this).attr("data-target","#cudModal")
+        $(".cud_field_type option[value='1']").prop('selected',true)
+        $(".cud_field_type").prop('disabled',true)
+        $("#curd_opt").val('D')
+
+    })
+
+});
+
+function cloneObj(obj){
+    var clone_obj = ($(obj).parent().clone(true))
+    $(clone_obj).find("input[value='+']").remove()
+    $(clone_obj).append('<input type="button" value="-" style="width:25.66px" id="del_filter" onclick="del_filter(this)">')
+    $("#remark").before(clone_obj)
+}
+
+
+
+function cudsqlsave(){
+        var sqlname = $("#cud_sql_name").val()
+        if ($.trim(sqlname)==""){
+            alert("请输入业务描述")
+            return
+        }
+        var sqlcontent =$.trim($("#sys_table_name").val())
+
+        var dbname =$("#cud_dbname").val()
+
+        var cudparams = $(".cudparams")
+
+        var jsonobj =""
+        for(var i=0;i<cudparams.length;i++){
+           var a = $(cudparams[i]).find(".cud_field_name option:selected").val()
+           var b =  $(cudparams[i]).find(".cud_field_type option:selected").val()
+           var c =  $(cudparams[i]).find(".cud_field_memo").val()
+            if (a==""){
+                alert("请选择字段！")
+                return
+            }else if(b==""){
+               alert("请选择类型！")
+                return
+            }else if (c==""){
+                alert("请填写字段描述！")
+                return
+            }
+             jsonobj =jsonobj+
+            '{"field_name":"'+$(cudparams[i]).find(".cud_field_name option:selected").val()+'",'+
+            '"field_type":"'+$(cudparams[i]).find(".cud_field_type option:selected").val()+'",'+
+            '"field_memo":"'+$(cudparams[i]).find(".cud_field_memo").val()+'"},'
+        }
+        $("#cudsave").attr("data-dismiss","modal")
+        var conditions_arr ="["+jsonobj+"]"
+        $.ajax({
+            url:SQL_ADD,
+            type:"POST",
+            data:{'sqlname':sqlname,'sqlcontent':sqlcontent,'dbname':dbname,'sql_params':conditions_arr,'sqltype':$("#curd_opt").val()},
+            success:function(data){
+                var result = jQuery.parseJSON(data)
+                if (result['code']=='00'){
+                    alert('保存成功')
+                }else {
+                    alert('保存失败')
+                }
+            }
+        })
+
+    }
+
+
+function params_detail(obj){
+    $("#sql_name_detail").html('')
+    $("#sql_content_detail").html('')
+    $("#field_name_details").html('')
+    $(obj).attr("data-target","#detailModal")
+    var id = $.trim($(obj).parent().prev().prev().prev().prev().val())
+    $.ajax({
+        url:SQL_DETAIL+'?id='+id,
+        success:function(data){
+            result = $.parseJSON(data)
+            $("#sql_name_detail").html(result.sqlname.name)
+            $("#sql_content_detail").html(result.sqlname.content)
+            var sqlparamslist = result.sqlparams
+            $.each(sqlparamslist,function(i,item){
+                $("#field_name_details").append(
+                    '<span>'+item.field_name+'</span>:<span>'+item.field_memo+'</span>【'+item.field_type+'】<br>'
+                )
+            })
+        }
+    })
+}
+
+
+//修改数据库业务
+function update_service(obj){
+    var id = $.trim($(obj).parent().prev().prev().prev().prev().val())
+
+}
+
+
+function del_filter(obj){
+     $(obj).parent().remove()
+}
+
+

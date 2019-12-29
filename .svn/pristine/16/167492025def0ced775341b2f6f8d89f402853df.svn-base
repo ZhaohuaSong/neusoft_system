@@ -1,0 +1,56 @@
+/*
+SQLyog Ultimate v11.24 (32 bit)
+MySQL - 5.7.11-log : Database - richdatax
+*********************************************************************
+*/
+
+/*!40101 SET NAMES utf8 */;
+
+/*!40101 SET SQL_MODE=''*/;
+
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+CREATE DATABASE /*!32312 IF NOT EXISTS*/`richdatax` /*!40100 DEFAULT CHARACTER SET utf8 */;
+
+USE `richdatax`;
+
+/*Table structure for table `test_3` */
+
+DROP TABLE IF EXISTS `test_3`;
+
+CREATE TABLE `test_3` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(64) DEFAULT NULL COMMENT '姓名',
+  `sex` varchar(16) DEFAULT NULL COMMENT '1-男;2-女',
+  `mobile` varchar(256) DEFAULT NULL COMMENT '手机号',
+  `personid` varchar(256) DEFAULT NULL COMMENT '身份证号',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
+
+/*Data for the table `test_3` */
+
+insert  into `test_3`(`id`,`name`,`sex`,`mobile`,`personid`) values (1,'张三','1','15112121622','4453811984090721'),(2,'李四','1','13214141367','3602231521211322'),(3,'吴燕','2','18915168766','3231123212123212');
+
+/*Table structure for table `test_4` */
+
+DROP TABLE IF EXISTS `test_4`;
+
+CREATE TABLE `test_4` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `address` varchar(256) DEFAULT NULL COMMENT '地址',
+  `test3_id` int(11) DEFAULT NULL COMMENT 'test3表id',
+  PRIMARY KEY (`id`),
+  KEY `test3_id` (`test3_id`),
+  CONSTRAINT `test_4_ibfk_1` FOREIGN KEY (`test3_id`) REFERENCES `test_3` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
+
+/*Data for the table `test_4` */
+
+insert  into `test_4`(`id`,`address`,`test3_id`) values (1,'广东顺德',1),(2,'广东汕头',2),(3,'广东佛山',3);
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;

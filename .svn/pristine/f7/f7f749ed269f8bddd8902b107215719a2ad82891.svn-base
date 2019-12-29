@@ -1,0 +1,76 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
+from django.conf.urls import url
+from views import DBConfigListView, DBConfigtListJson, CreateDBConfig, EditDBConfig, dbconfig_delete,dynamic_list,\
+    dynamic_add,dynamic_edit,dynamic_delete,dynamic_detail,add_sql,list_sql,test_sql,detail_sql,delete_sql,Servicelist,\
+    Servicedata,CreateService,service_setting,service_add_detail,QueryServicelist,QueryServicedata,queryservice_setting,\
+    CreateQueryService,addparams_sql,ServiceEdit,service_delete,QueryServiceEdit,queryservice_delete
+from views_dbdetails import DBTable_View
+from api import api_service
+
+urlpatterns = [
+    # 数据库链接管理
+    url(r'^dbadmin/dbconfig/list$', DBConfigListView.as_view(), name='dbconfig.list'),  # 数据库配置列表
+    url(r'^dbadmin/dbconfig/data$', DBConfigtListJson.as_view(), name='dbconfig.data'),  # 数据库配置列表列表数据
+    url(r'^dbadmin/dbconfig/add', CreateDBConfig.as_view(), name='dbconfig.add'),  # 数据库配置列表添加
+    url(r'^dbadmin/dbconfig/delete$', dbconfig_delete, name='dbconfig.delete'),  # 删除
+    url(r'^dbadmin/dbconfig/edit/(?P<pk>\d+)/$', EditDBConfig.as_view(), name='dbconfig.edit'),  # 数据库配置列表编辑
+
+    url(r'dbadmin/dbconfig/datasourcelist$', DBTable_View.as_view(), name='dbconfig.datasourcelist'),
+
+    url(r'^dbadmin/dynamic/list/$', dynamic_list, name='dynamic.list'),  # 测试动态model
+
+    url(r'^dbadmin/dynamic/add/$', dynamic_add, name='dynamic.add'),  # 新增测试动态model
+
+    url(r'^dbadmin/dynamic/edit/$', dynamic_edit, name='dynamic.edit'),  # 修改测试动态model
+
+    url(r'^dbadmin/dynamic/delete/$', dynamic_delete, name='dynamic.delete'),  # 删除测试动态model
+
+    url(r'^dbadmin/api/$', api_service, name='api'),  # 数据对外接口
+
+    url(r'^dbadmin/dynamic/(\w+)/(\w+)/detail/(\w+)/(\w+)', dynamic_detail, name='dynamic.detail'),  # 新增测试动态model
+
+    url(r'^dbadmin/sql/add', add_sql, name='sql.add'),  # 添加动态sql
+
+    url(r'^dbadmin/sql/list', list_sql, name='sql.list'),  # 查看动态sql列表
+
+    url(r'^dbadmin/sql/test/$', test_sql, name='sql.test'),  # 查看动态sql列表
+
+    url(r'^dbadmin/sql/detail/$', detail_sql, name='sql.detail'),  # 参数详情
+
+    url(r'^dbadmin/sql/delete/$', delete_sql, name='sql.delete'),  # 动态sql删除
+
+    url(r'^dbadmin/service/data/$', Servicedata.as_view(), name='service.data'),  # 多业务变更数据
+
+    url(r'^dbadmin/service/list/$', Servicelist.as_view(), name='service.list'),  # 多业务变更列表
+
+    url(r'^dbadmin/service/edit/(?P<pk>\d+)/$', ServiceEdit.as_view(), name='service.edit'),  # 多业务编辑
+
+    url(r'^dbadmin/service/add/$', CreateService.as_view(), name='service.add'),  # 多业务变更新增
+
+    url(r'^dbadmin/service/adddetail/$', service_add_detail, name='service.add.detail'),  # 多业务变更明细保存
+
+    url(r'^dbadmin/service/setting/$', service_setting, name='service.setting'),  # 多业务变更设置
+
+    url(r'^dbadmin/service/delete/$', service_delete, name='service.delete'),  # 多业务变更删除
+
+
+
+    url(r'^dbadmin/queryservice/list/$', QueryServicelist.as_view(), name='queryservice.list'),  # 多业务查询列表
+
+    url(r'^dbadmin/queryservice/data/$', QueryServicedata.as_view(), name='queryservice.data'),  # 多业查询务数据
+
+    url(r'^dbadmin/queryservice/add/$', CreateQueryService.as_view(), name='queryservice.add'),  # 多业务查询新增
+
+    url(r'^dbadmin/queryservice/edit/(?P<pk>\d+)/$', QueryServiceEdit.as_view(), name='queryservice.edit'),  # 多业务查询编辑
+
+    url(r'^dbadmin/queryservice/setting/$', queryservice_setting, name='queryservice.setting'),  # 多业务查询设置
+
+    url(r'^dbadmin/queryservice/addsql', addparams_sql, name='queryservice.addsql'),  # 多业务查询动态参数设置
+
+    url(r'^dbadmin/queryservice/delete/$', queryservice_delete, name='queryservice.delete'),  # 多业务查询删除
+
+    # url(r'^dbadmin/dbconfig/dbtreeview',DBDictTypeTreeView, name='dbconfig.treeview'),  # 数据库类型树形
+
+]

@@ -1,0 +1,199 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2016/1/13 13:39
+# @Author  : qiujunli
+# @Site    :
+# @File    : iso_interface.py
+# @Software: PyCharm
+# @Function: 报文通用接口
+
+from ...common.iso.iso_8583 import *
+from ...common.iso.iso_tool import *
+class ISOInterface:
+    def __init__(self, iso_net=None, iso_8583=None):
+        '''
+        初始化
+        :param iso_net: 网络传输报文
+        :param iso_8583: 8583对象
+        '''
+
+        if iso_net:
+            self.iso_8583 = ISO8583()
+            self.iso_8583.setNetworkISO(iso_net)
+        elif iso_8583:
+            self.iso_8583 = iso_8583
+        else:
+            self.iso_8583 = ISO8583()
+
+    def get_iso_8583(self):
+        '''
+        获取8583对象
+        :return:
+        '''
+
+        return self.iso_8583
+
+    def get_app_id(self):
+        '''
+        获取APP编号（ID），即终端号
+        :return:
+        '''
+        return self.iso_8583.getBit(41)
+
+    def set_app_id(self, app_id):
+        '''
+        设置APP编号（ID），即终端号
+        :param app_id:
+        :return:
+        '''
+        self.iso_8583.setBit(41, app_id)
+
+    def get_protocol_id(self):
+        '''
+        获取协议规则编号
+        :return:
+        '''
+        return self.iso_8583.get_TPDU()
+
+    def set_protocol_id(self, protocol_id):
+        '''
+        设置报文协议规则ID
+        :param protocol_id:
+        :return:
+        '''
+        self.iso_8583.setTPDU(protocol_id)
+
+    def get_protocol_name(self):
+        '''
+        报文骨规则中获取协议规则ID，放在120域
+        :return:
+        '''
+        return  self.iso_8583.getBitAssicValue(120)
+
+    def set_protocol_name(self, protocol_name):
+        '''
+        设置报文协议规则名称，在报文位置的120域
+        :param protocol_name:
+        :return:
+        '''
+        self.iso_8583.setBit(120, protocol_name)
+
+    def get_protocol_content(self):
+        '''
+        获取报文协议规则 内容放在121——127域
+        :return:
+        '''
+        str = ''
+        for i in range(0, 8):
+            value = self.iso_8583.getBitAssicValue(121+i)
+            if value:
+                str += value
+            else:
+                break
+
+        return str
+
+    def set_protocol_content(self, content):
+        '''
+        设置报文协议规则到8583对象中 内容放在121——127域
+        :return:
+        '''
+        len = 950  # 每个域存放协议的最大长度
+        for i in range(0, 8):
+            str = content[len * i:len * i + len]
+            if str:
+                self.iso_8583.setBit(121 + i, str)
+            else:
+                break;
+
+    def get_msg_type(self):
+        '''
+        获取消息类型
+        :return:
+        '''
+        return self.iso_8583.get_msg_type()
+
+    def set_msg_type(self, msg_type):
+        '''
+        设置消息类型
+        :param msg_type:
+        :return:
+        '''
+        self.iso_8583.setMsgtype(msg_type)
+
+    def get_iso_hex(self):
+        '''
+        获取报文的hex格式字符串信息,方便数据库存储记忆
+        :return:
+        '''
+        return format_assic_to_str(self.iso_8583.getNetworkISO(), True)
+
+    def  get_response_code(self):
+        '''
+        获取应答码 00表示成功
+        :return:
+        '''
+        #self.show()
+        return self.iso_8583.getBit(39)
+
+    def set_response_code(self, code):
+        '''
+        设置报文应答码
+        :param code:
+        :return:
+        '''
+        self.iso_8583.setBit(39, code)
+
+    def set_is_over_flag(self, bOver=True):
+        '''
+        设置是否客户端计算接受标志
+        :param bOver:
+        :return:
+        '''
+        if bOver:
+            self.iso_8583.setHeader('000001')
+        else:
+            self.iso_8583.setHeader('000000')
+
+    def get_is_over_flag(self):
+        '''
+        获取是否需要客户端继续接受
+        :return:
+        '''
+        return '000001' == self.iso_8583.getHeader()
+
+    def show(self):
+        '''
+        显示报文域信息内容
+        :return:
+        '''
+        self.iso_8583.showBitsAndValues()
+
+
+    def get_index_value(self, bit_index):
+        '''
+        获取域信息值
+        :param bit_index:
+        :return:
+        '''
+        if isinstance(bit_index, unicode): bit_index = bit_index.encode("utf-8")
+        bit_index = int(bit_index)
+        return self.iso_8583.getBitAssicValue(bit_index)
+
+    def set_index_value(self, bit_index, value):
+        '''
+        设置报文内容
+        :param bit_index:
+        :param value:
+        :return:
+        '''
+        if isinstance(bit_index, unicode): bit_index = bit_index.encode("utf-8")
+        bit_index = int(bit_index)
+        return self.iso_8583.setBit(bit_index, value)
+
+    def reset_all_index_value(self):
+        '''
+        重置域信息的值
+        :return:
+        '''
+        self.iso_8583.resetBitValue()

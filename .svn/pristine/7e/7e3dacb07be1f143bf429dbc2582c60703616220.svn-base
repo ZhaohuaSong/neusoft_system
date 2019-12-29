@@ -1,0 +1,16 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
+from ....common.iso.iso_8583 import *
+from ....packmanage.pack.pack_ctrl import *
+from instance_base import *
+
+class UserInfo(InstanceBase):
+    # 请求处理
+    def request(self, iso):
+        hex_iso = PackCtrl().create_pack(protocol_id='6000010000', msgtype='01', data_list=['李四', '男', '610526198856547874'], bHex=True)
+        return hex_iso
+    # 响应处理
+    def response(self, iso):
+        print '-----------------------------------------'
+        return None

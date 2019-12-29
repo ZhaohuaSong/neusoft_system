@@ -1,0 +1,166 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+from django.apps import apps
+Protocoltrigger = apps.get_model(app_label='packmanage', model_name='Protocoltrigger')
+ProtocolType = apps.get_model(app_label='packmanage', model_name='ProtocolType')
+from data_src_config import DataSrcConfig
+from protocol import ProtocoFactory
+from ....common.iso.iso_8583 import *
+from ....common.iso.iso_tool import *
+from ..iso_interface import *
+from ..iso_msg_type import *
+#QiuJL 2017.1.5 报文接口处理文件
+#入口参数：一维数组 list，以及协议ID
+class PackCtrl:
+    def __init__(self):
+        self.protocofactory = ProtocoFactory()
+        self.dsc = DataSrcConfig()
+        self.b_over = True
+
+    def set_over_flag(self, b_over):
+        '''
+        设置是否结束标志
+        :param b_over:
+        :return:
+        '''
+        self.b_over = b_over
+
+    def create_pack(self, trigger_id, data_list, data_out_list=None):
+        '''
+        :author QiuJL 2017.1.5
+        :param trigger_id: 协议ID
+        :param data_list: 一维数组，data_list=['李四', '男', '18127858207']
+        :param bHex 是否hex格式，存储到数据库，网络传输也是如此传输，收到网络报文后再assic
+        :return: 要发送的报文
+        '''
+
+        #根据协议ID获取列表所存放的域顺序信息
+
+        tri = Protocoltrigger.objects.get(id=trigger_id)
+        protocol_id  =tri.protocol_id
+        app_id = tri.app_id
+
+        iso = ISO8583()
+        i8538 = ISOInterface(iso_8583=iso)
+        i8538.set_is_over_flag(self.b_over)
+        i8538.set_msg_type(MSG_DATAEXCHANGE)
+        i8538.set_protocol_id(protocol_id)
+        i8538.set_app_id(app_id)
+        self.protocofactory.init(protocol_id)
+        self.dsc.init(trigger_id, True)
+
+        #1. 填写输入参数
+        bit_index = self.protocofactory.get_bit_index_in_param()# 输入参数
+        try:
+            for index in range(0, len(bit_index)):
+                i8538.set_index_value(int(bit_index[index]), data_list[index])
+        except Exception as e:
+            raise Exception('入参组织报文出现异常:'+str(e))
+
+        #2.填写输出参数
+        if data_out_list is not None:
+            bit_index = self.protocofactory.get_bit_index_out_param()  # 输出参数
+            try:
+                for index in range(0, len(bit_index)):
+                    i8538.set_index_value(int(bit_index[index]), data_out_list[index])
+            except Exception as e:
+                raise Exception('出参组织报文出现异常:' + str(e))
+
+        # print '----create pack-------'
+        # i8538.show()
+
+        #3.返回要发送的网络报文信息
+        iso = iso.getNetworkISO()
+        #i8538.show()
+        return iso
+
+    def get_pack_out_param_list(self, protocol_id, iso_net):
+        '''
+        解析输出参数，按顺序返回list
+        :param protocol_id:
+        :param iso_net:
+        :return:
+        '''
+        i8538 = ISOInterface(iso_net=iso_net)
+
+        i8538.set_msg_type(MSG_DATAEXCHANGE)
+        i8538.set_protocol_id(protocol_id)
+        self.protocofactory.init(protocol_id)
+
+        # i8538.show()
+
+
+        v_list = []
+        bit_index = self.protocofactory.get_bit_index_out_param()  # 输出参数
+        try:
+            for index in range(0, len(bit_index)):
+                v = i8538.get_index_value(bit_index[index])
+                v_list.append(v)
+            return  v_list
+        except Exception as e:
+            raise Exception('出参组织报文出现异常:' + str(e))
+
+    def get_pack_content(self, assic_iso, bHex=True):
+        '''
+
+        :param assic_iso:
+        :param bHex:
+        :return:
+        '''
+        if bHex:
+            assic_iso = format_str_to_assic(assic_iso)
+
+        i8583 = ISOInterface(iso_net=assic_iso)
+        msg_type = i8583.get_msg_type()
+
+        if MSG_DATAEXCHANGE == msg_type:#数据交换
+            return self.__get_pack_content_for_data_exchange(i8583.get_iso_8583())
+        else:
+            return self.__get_pack_content_for_protocol_config(i8583.get_iso_8583())
+
+    def __get_pack_content_for_data_exchange(self, iso_8583):
+        '''
+        数据交换的报文格式
+        :param assic_iso:
+        :param bHex:
+        :return:
+        '''
+        try:
+            i8583 = ISOInterface(iso_8583=iso_8583)
+            protocol_id = i8583.get_protocol_id()
+            bit_info_list = self.protocofactory.init(protocol_id).get_bit_info()
+            list_dic = []
+            for info in bit_info_list:
+                bit_index = int(info[0])
+                value = iso_8583.getBitAssicValue(bit_index)
+                dic={'bit':bit_index, 'name':info[1], 'value':value }
+                list_dic.append(dic)
+            return list_dic, None
+        except Exception as e:
+            raise  Exception('解析报文异常:'+str(e))
+
+    def __get_pack_content_for_protocol_config(self, iso_8583):
+        '''
+        格式化报文规则配置请求
+        :param hex_iso:
+        :return: 返回入参、出参
+        '''
+        i8583 = ISOInterface(iso_8583=iso_8583)
+        protocol_content = i8583.get_protocol_content()
+        if protocol_content is None or len(protocol_content) == 0:
+            return [],[]
+
+        dict_protocol = json.loads(protocol_content)
+        list_in =  list(dict_protocol['in'].values())
+        list_out =list(dict_protocol['out'].values())
+        new_in = []
+        new_out = []
+        for data in list_in:
+            dic = {'bit': data['bit_index'], 'value': '', 'name': data['field_name']}
+            new_in.append(dic)
+
+        for data in list_out:
+            dic = {'bit': data['bit_index'], 'value': '', 'name': data['field_name']}
+            new_out.append(dic)
+
+        return new_in, new_out

@@ -1,0 +1,22 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+</head>
+<body>
+	<form target="" method="post" action="http://192.168.0.203/socpass" id="jinshanForm">
+		<input type="hidden" name="jinshan" value="{&quot;user&quot;:&quot;admin&quot;,&quot;pw&quot;:&quot;RrgIyd9x0Mx0HWUiqSDe4+a8xqdWiGv3bVvIofDhbElfj0z+6mTHZFWcs4LSHxkOMPyfdbVlspx3THsvZ0GnqhkNbDhcQqQ49ZPqaWP4IF95+v7O/CWIO72NVmBE5ucACep2Ijemuchjku8Q4/v5gS8duB7nqDAc/FsaPGMfwOSPZ0HWdCtLBgGUERBQiQucq0T1S71NP/UnMW3p0uk0qGKgzEkI+g+5+NaWOEtHpSjhYw/sK2Ad3Mxe+zDjMEyT4YrpweG7GMhfvTexTofPNaqpjtT/Jb/Cdws+UHC1Q0VABCD16y+Vh2o/fyysD68wzGdZViJaK3w+J8c1OHkNvw==&quot;,&quot;url&quot;:&quot;http://192.168.0.203/clientvirus?special=1&quot;}">
+		<input type = "submit" value = "提交" style="display:none"></input>
+	</form>
+	<script>
+		function s(){
+			return "OK"
+		}
+        function validate() {
+            document.getElementById('jinshanForm').submit();
+        }
+        window.load = validate();
+	</script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+{% extends "mainbase.html" %}
+{% load staticfiles %}
+{% load i18n staticfiles %}
+{% load url from future %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% block scripts %}  
+    <script src="{% static "js/packmanage/packmanage.protocolcontent.js" %}"></script>
+    <script type="text/javascript">
+                jQuery(function ($) {
+                    $("#btn-back").bind("click",
+                        function () {
+                            window.location.href = "{% url 'packmanage:protocoltype.list' %}"
+                        });
+                })
+    </script>
+
+<style type="text/css">
+    table#table_protocol
+    {   
+        margin-left:auto; margin-right:auto
+    }
+
+    table#table_protocol tr td
+    {   
+        padding:3px;
+        padding-left:10px;
+    }
+</style>
+    {% endblock %}
+</head>
+<body class="no-skin">
+{% block content %}
+    <div class="main-content">
+        <div class="breadcrumbs" id="breadcrumbs">
+            <ul class="breadcrumb">
+                <li>
+                    <i class="ace-icon fa fa-home home-icon"></i>
+                    <a href="#">首页</a>
+                </li>
+                <li>
+                    <a href="#">数据报文管理</a>
+                </li>
+                <li>
+                    <a href="{% url 'packmanage:protocoltype.list' %}">报文协议管理</a>
+                </li>
+                <li class="active">协议内容编辑({{ protocol_name }})</li>
+            </ul><!-- /.breadcrumb -->
+        </div>
+
+        <div class="page-content">  
+            <div class="page-header " style="border-bottom:1px dashed #DEDEDE" >       
+                        协议名称：<span class="blue"  >{{protocol_name}}</span>&nbsp;&nbsp;&nbsp;&nbsp;
+                        协议ID：<span id="lb_mid" class="blue">{{protocol_id}}</span> &nbsp;&nbsp;&nbsp;&nbsp;
+                         
+                        创建者：<span id="lb_tid" class="blue">{{protocol_creater}}</span>&nbsp;&nbsp;&nbsp;&nbsp;
+
+                        使用状态：
+                        {% if 1 == protocol_state %}<span  class="green">正常使用</span>{% elif 0 == protocol_state %}<span  class="red">已停用</span>
+                        {% else %} <span class="red">已停用</span> {% endif %}
+            </div><!-- /.page-header -->
+            <div >           
+            <table id="table_protocol" >
+          
+                <tr>
+                    <td><input type='text'  disabled style="width:75px; " value="序号"></input></td>
+                    <td><input type='text'  disabled value='域索引' style="width:120px;" ></input></td>
+                    <td><input type='text'  disabled value='域名称'   style="width:180px"></input></td>
+                    <td style="width:75px;" /> 
+                </tr>
+                {% for data in protocol_content %}
+                <tr class="content">
+                    <td><input  type="text"   class="index" disabled style="width:75px; " value="{{forloop.counter}}"></input></td> 
+                    <td><input  type="number" class="bit_index" value="{{ data.bit_index }}" style="width:120px" ></input></td>
+                    <td><input  type="text"   class="field_name" value="{{ data.field_name }}"  style="width:180px"></input></td>
+                    <td><button type="button" class="btn btn-white btn-danger btn-sm btn_delete"><i class="ace-icon fa fa-times red2"></i>删除</button></td>
+                </tr>
+                {% endfor %}
+
+            </table>
+            </div>
+            <div class="space-10"></div>
+            <div class="col-xs-12 clearfix " style="text-align:center; margin-bottom: 10px">
+                <button id="btn_add" class="btn btn-success"   style="margin-right: 10px;">
+                        <i class="fa fa-plus" aria-hidden="true"></i>
+                        添 加
+                </button>
+                <button id="btn_submit" class="btn btn-info sumbmit_input"   style="margin-right: 10px;">
+                        <i class="ace-icon fa fa-check bigger-110"></i>
+                        提 交
+                </button>
+                <button  id="btn-back" class="btn"    style="margin-left: 10px;">
+                        <i class="ace-icon fa fa-undo bigger-110"></i>
+                        取 消
+                </button>
+            </div>
+            <div class="space-30"></div>
+
+        </div>
+    </div>
+    {% include "message.html" %}
+{% endblock %}
+<!-- /.main-content -->
+</body>
+</html>

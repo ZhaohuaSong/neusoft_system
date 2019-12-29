@@ -1,0 +1,97 @@
+/**
+ * Created by taiyi on 2017/3/1.
+ */
+
+
+//克隆复制tr
+function clonetr(obj){
+    var clone_obj = ($(obj).parent().parent().clone(true))
+    $(clone_obj).find('td:first').find('select').find("option[value='0']").prop("selected",'selected');
+    $(clone_obj).find("td:last").html('<input type="button" value="-" style="width:25.66px" onclick="del_tr(this)">')
+    $("#services").find('tr:last').after(clone_obj)
+}
+
+//删除tr
+function del_tr(obj){
+   var my_index  = $(obj).parent().parent().index()
+   $(".tmp_"+my_index).remove()
+   $(obj).parent().parent().remove()
+}
+
+function addservice(obj){
+
+   clonetr(obj)
+}
+
+
+function query_sql_params(obj){
+    var my_index  = $(obj).parent().parent().index()
+    var  id_val = $(obj).find("option:selected").val()
+    if (id_val=='0'){
+        $(".tmp_"+my_index).remove()
+        return
+    }
+    var allselects  = $('#services').find('tr:not(:eq('+eval(my_index+1)+'))').find(".service_sql_name option:selected")
+    var remark = false
+    $.each(allselects,function(i,item){
+        if ($(item).val()==id_val){
+            $(obj).find("option[value='0']").prop("selected",'selected');
+            remark = true
+        }
+    })
+    if (remark){
+        $(".tmp_"+my_index).remove()
+        alert('重复业务，请重选！')
+        return
+    }
+
+    $(".tmp_"+my_index).remove()
+    $.ajax({
+        'url':SQL_PARAMS_URL+'?id='+id_val,
+        success:function(data){
+             var result = jQuery.parseJSON(data)
+            $.each(result['sqlparams'],function(i,item){
+             $("#params_detail").append('<tr class="tmp_'+my_index+'"><td>'+item.sql_name+'</td><td>'+item.field_name+'</td><td>'+item.field_type+'</td><td>'+item.field_memo+'</td></tr>')
+            })
+        }
+    })
+}
+$(function(){
+   var allselects =  $('#services').find('tr:gt(0)').find('td').find('select')
+    $.each(allselects,function(i,item){
+        $(item).trigger("change")
+    })
+    //保存业务明细
+    $("#service_detail").click(function(){
+        var trs = $('#services').find('tr:gt(0)')
+         var jsonobj =""
+        for(var i=0;i<trs.length;i++){
+            var sql_name_id = $(trs[i]).find(".service_sql_name option:selected").val()
+            if (sql_name_id!='0'){
+             jsonobj =jsonobj+
+            '{"sql_name_id":"'+sql_name_id+'",'+
+            '"sql_service_id":"'+$(trs[i]).find(".service_id").val()+'"},'
+            }
+        }
+        var conditions_arr ="["+jsonobj+"]"
+        if (jsonobj==""){
+            alert("请选择业务!")
+            return
+        }
+
+        $.ajax({
+            url:SQL_SERVICE_DETAIL_SAVE,
+            type:"POST",
+            data:{'service_detail':conditions_arr,'sql_service_id':$("#sql_service_id").val()},
+            success:function(data){
+                var result = jQuery.parseJSON(data)
+                if (result['code']=='00'){
+                    alert('保存成功')
+                    window.location.href = SERVICE_LIST_URL
+                }else {
+                    alert('保存失败')
+                }
+            }
+        })
+    })
+})

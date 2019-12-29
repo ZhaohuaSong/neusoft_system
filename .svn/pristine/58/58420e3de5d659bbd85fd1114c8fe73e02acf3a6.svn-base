@@ -1,0 +1,111 @@
+{% extends "mainbase.html" %}
+{% load staticfiles %}
+{% load i18n staticfiles %}
+{% load url from future %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% block scripts %}
+        <script type="text/javascript">
+            var MSG_RECEIVE_DATA = '{% url "richdataserver:receivemsg.data" %}';
+            var MSG_RECEIVE = '{% url "richdataserver:receivemsg.msg" %}';
+            var RECE_MSG_DETAIL = '{% url "richdataserver:receivemsg.detail" %}';
+        </script>
+        <script src="{% static "js/richdataserver/richdataserver.receivemsg.list.js" %}"></script>
+    {% endblock %}
+</head>
+<body class="no-skin">
+{% block content %}
+    <div class="main-content">
+        <div class="breadcrumbs" id="breadcrumbs">
+            <ul class="breadcrumb">
+                <li>
+                    <i class="ace-icon fa fa-home home-icon"></i>
+                    <a href="#">首页</a>
+                </li>
+                <li>
+                    <a href="#">报文通讯管理</a>
+                </li>
+                <li class="active">接收报文管理</li>
+            </ul><!-- /.breadcrumb -->
+        </div>
+
+        <div class="page-content">
+
+            <div id="ace-settings-box">
+                <div class="pull-left width-100">
+                    <div style="width:100%; border-bottom:1px #dedede dashed; float:left">
+                        <div class="input-group col-sm-4" style="margin-top: 10px; float: right;">
+                            <input class="form-control" id="in-search" name="keywords" placeholder="输入要查询的内容"
+                                   type="text">
+                            <div class="input-group-btn" style="padding-left: 10px">
+                                <button class="btn btn-info btn-sm tooltip-info" id="btn-search">
+                                    查询
+                                </button>
+                            </div>
+                        </div>
+{#                        <button class="btn btn-info btn-sm tooltip-info" id="btn-add"#}
+{#                                style="float:left; margin:10px 3px 10px 3px;">#}
+{#                            添加#}
+{#                        </button>#}
+{#                        <button class="btn btn-success btn-sm popover-success" id="btn-update"#}
+{#                                style="float:left; margin:10px 3px 10px 3px;">#}
+{#                            编辑#}
+{#                        </button>#}
+                        <button class="btn btn-danger btn-sm tooltip-error" id="btn-delete"
+                                style="float:left; margin:10px 3px 10px 3px;">
+                            删除
+                        </button>
+
+                        <div id="myAlert" class="alert alert-warning" style="padding-left:100px;display:none">
+                            <strong>.</strong>
+                        </div>
+
+                    </div>
+                </div><!-- /.pull-left -->
+
+                <!-- /.pull-left -->
+            </div><!-- /.ace-settings-box -->
+
+
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="clearfix" style="padding-top: 10px">
+                        <div class="tableTools-container"></div>
+                    </div>
+                    <div class="table-header"> <!--table-header -->
+                        接收报文列表
+                    </div>
+                    <div>
+                        <table id="dynamic-table" class="table table-striped table-bordered table-hover"><!--table -->
+                            <thead>
+                            <tr>
+                                <th class="hidden-480 center" width='45px'>
+                                    <label class="pos-rel">
+                                        <input type="checkbox" class="ace"/>
+                                        <span class="lbl"></span>
+                                    </label>
+                                </th>
+                                <th class="hidden-480" width='55px'>序号</th>
+                                <th>报文编号</th>
+                                <th>发送状态</th>
+                                <th>响应状态</th>
+                                <th>响应结果</th>
+                                <th>响应时间</th>
+                                <th>回复服务器</th>
+                                <th>操作</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table><!--table -->
+                    </div>
+                </div><!-- /.span -->
+            </div><!-- /.row -->
+        </div>
+    </div>
+    {% include "message.html" %}
+{% endblock %}
+<!-- /.main-content -->
+</body>
+</html>

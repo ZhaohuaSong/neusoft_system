@@ -1,0 +1,101 @@
+{% extends "mainbase.html" %}
+{% load staticfiles %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+</head>
+<body class="no-skin">
+{% block content %}
+    <div class="main-content">
+        <div class="breadcrumbs" id="breadcrumbs">
+            <script type="text/javascript">
+                try {
+                    ace.settings.check('breadcrumbs', 'fixed')
+                } catch (e) {
+                }
+                  jQuery(function ($) {
+                    $("#btn-back").bind("click",
+                            function () {
+                                window.location.href = "{% url 'cabinetmgr:electricbox.list' %}"
+                            });
+                })
+            </script>
+
+
+            <ul class="breadcrumb">
+                <li>
+                    <i class="ace-icon fa fa-home home-icon"></i>
+                    <a href="#">首页</a>
+                </li>
+
+                <li><a href="#">设备管理模块</a></li>
+                <li><a href="{% url 'cabinetmgr:electricbox.list' %}">idc工单流转</a></li>
+                <li class="active">添加工单</li>
+            </ul><!-- /.breadcrumb -->
+        </div>
+
+         <div class="page-content">
+            <div class="row">
+                <div class="col-xs-12" >
+                    <div class="widget-box col-xs-12">
+                        <div class="widget-header widget-header-blue widget-header-flat">
+                            <h4 class="widget-title lighter">添加工单</h4>
+
+                        </div>
+{#                        <div>#}
+{#                            <button class="btn btn-info btn-sm tooltip-info" id="btn-set" style="float:left; margin:10px 3px 10px 3px;">#}
+{#                                更新主机端口列表#}
+{#                            </button>#}
+{#                        </div>#}
+                        <div class="space-20"></div>
+
+                    <form style="padding:2% " class="form-horizontal" role="form" action="" method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label class="col-sm-4 control-label no-padding-right"> {{ form.operate_id.label }} </label>
+                            <div class="col-sm-8">
+                                {{ form.operate_id }}
+                                <div class="form-group has-error">
+                                    <div class="help-block col-xs-12 col-sm-reset inline">{{ form.operate_id.errors }} </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-4 control-label no-padding-right"> {{ form.ip.label }} </label>
+                            <div class="col-sm-8">
+                                {{ form.ip }}
+                                <div class="form-group has-error">
+                                    <div class="help-block col-xs-12 col-sm-reset inline">{{ form.ip.errors }} </div>
+                                </div>
+                            </div>
+                        </div>
+
+                         <div class="space-20"></div>
+                            <hr>
+
+                          {% include "form_buttons.html" %}<!-- /.form_buttons -->
+                            <div class="space-10"></div>
+
+                    </form>
+
+              </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+{#    <script src="{% static 'js/jquery.bootstrap-duallistbox.min.js' %}" charset="utf-8"></script>#}
+{#    <script>#}
+{#        var demo1 = $('select[name="permission"]').bootstrapDualListbox({#}
+{#            nonSelectedListLabel: '可选择权限',#}
+{#            selectedListLabel: '已选择权限',#}
+{#            preserveSelectionOnMove: 'moved',#}
+{#            moveOnSelect: false,#}
+{#        });#}
+{##}
+{#    </script>#}
+{% endblock %}
+<!-- /.main-content -->
+</body>
+</html>

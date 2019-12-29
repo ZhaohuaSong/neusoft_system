@@ -1,0 +1,270 @@
+{% extends "mainbase.html" %}
+{% load staticfiles %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    {% block title %}
+        <link href="{% static "css/chosen.min.css" %}" rel="stylesheet"/>
+        <script src="{% static "js/chosen.jquery.min.js" %}"></script>
+        <title>兰州市水权交易平台</title>
+    {% endblock %}
+</head>
+<body class="no-skin">
+
+{% block content %}
+
+    <div class="main-content">
+        <div class="breadcrumbs" id="breadcrumbs">
+            <script type="text/javascript">
+                try {
+                    ace.settings.check('breadcrumbs', 'fixed')
+                } catch (e) {
+                }
+                jQuery(function ($) {
+                    $("#btn-back").bind("click",
+                            function () {
+                                window.location.href = "{% url 'sysadmin:permission.list' %}"
+                            });
+                })
+                try {
+                    var current_org_id = "{{ id }}"//保存当前编辑的机构ID
+                }
+                catch (e) {
+                    alert(e)
+                }
+
+            </script>
+            <ul class="breadcrumb">
+                   <li>
+                    <i class="ace-icon fa fa-home home-icon"></i>
+                    <a href="#">首页</a>
+                </li>
+               <li><a href="#">系统管理</a></li>
+                <li><a href="{% url 'sysadmin:permission.list' %}">权限管理</a></li>
+                <li>编辑权限</li>
+
+            </ul><!-- /.breadcrumb -->
+        </div>
+        <div class="page-content">
+             <div class="page-header">
+               <h1>编辑权限</h1>
+            </div><!-- /.page-header -->
+            <div class="row">
+                <div class="col-xs-12">
+
+                        <div class="space-20"></div>
+
+                        <form class="form-horizontal" role="form" action="" method="post">
+                            {% csrf_token %}
+
+                            <div id="home4" class="tab-pane in active " style="margin-left: 26%">
+
+                            </div>
+
+                            <div class="form-group ">
+                                <label class="col-sm-3 control-label no-padding-right"></label>
+
+                                <div class="col-sm-9">
+                                    <span class="label  label-grey arrowed-right label-xlg ">顶级/二级/三级/其他</span>
+                                </div>
+                            </div>
+
+
+                            <div class="form-group ">
+                                <label class="col-sm-3 control-label no-padding-right">权限层级</label>
+
+                                <div class="col-sm-9">
+                                    <div id="click_sellect_item">
+
+                                    </div>
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset "
+                                             id="select_verft">{{ form.id.errors }} </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group ">
+                                <label class="col-sm-3 control-label no-padding-right"> {{ form.name.label }} </label>
+
+                                <div class="col-sm-9">
+                                    {{ form.name }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.name.errors }} </div>
+                                    </div>
+                                </div>
+
+                                <label class="col-sm-3 control-label no-padding-right">  {{ form.url.label }}  </label>
+
+                                <div class="col-sm-9">
+                                    {{ form.url }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline"
+                                             id="absort"> {{form.url.errors}} </div>
+                                    </div>
+                                </div>
+
+                                      <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right" style="padding-top:0px;">  {{ form.type.label }}  </label>
+                                <div class="col-sm-9">
+                                    <input class="ace input-lg" {% if 1 == type %} checked {% endif %} name="type" type="checkbox" />
+                                    <span class="lbl bigger-120"></span>
+                                </div>
+                                <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.type.errors }} </div>
+                                </div>
+                            </div>
+
+                                <div class="col-sm-9" style="display: none">
+                                    {{ form.id }}
+                                </div>
+
+                            </div>
+                            <div class="space-20"></div>
+                            <hr>
+                            <div class="space-10"></div>
+                            {% include "form_buttons.html" %}<!-- /.form_buttons -->
+                            <div class="space-10"></div>
+
+                        </form>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+    </div>
+    </div>
+
+    </div>
+    <script type="text/javascript">
+        $(function () {
+
+
+            {#tab_data# 修改填充下拉菜单数据#}
+
+            var jsondata = {{ json_data|safe }};
+            var box = $('#click_sellect_item');
+            for (i = 0; i < jsondata.length; i++) {
+                if (0 == i) {
+                    box.append("<select  class='select_data_tag' id='form-field-select-" + 0 + "'style='width: 15%;margin-right:5px '> " +
+                            "<option value='-3'>" +
+                            "请选择------------</option><option value='-2'>无(创建一级权限)</option></select>")
+                }
+                else {
+                    box.append("<select  class='select_data_tag' id='form-field-select-" + i + "' style='width: 15%;margin-right:5px;margin-top:5px;'> " +
+                            "<option value='-3'>" +
+                            "请选择------------</option></select>")
+                }
+
+                for (j = 0; j < jsondata[i][0].length; j++) {
+                    if (current_org_id != jsondata[i][0][j][0]) {
+                        var $html = "<option value='" + jsondata[i][0][j][0] + "'>" + jsondata[i][0][j][1] + "</option>"
+                        $("#form-field-select-" + i).append($html)
+                    }
+                }
+                $("#form-field-select-" + i).find("option[value=" + jsondata[i][1] + "]").attr("selected", true);
+            }
+        })
+
+        $(function () {
+            var id_result = -1;
+            $("form").submit(function () {
+                if (id_result != '-3') {
+                    return true
+                } else {
+                    if (id_result == '-3') {
+                        $('#select_verft').text('权限选择不能为空')
+                    }
+                    return false
+                }
+
+            });
+            function ree() {
+
+                $('#auto_tag').val(id_result)
+
+            }
+
+            <!--填充第一个下拉菜单的数据-->
+
+
+            <!--填充剩下下拉菜单的数据-->
+            $(document).on("change", '.select_data_tag', function () {
+
+                var id = $(this).attr('id');
+                var num = id.charAt(id.length - 1);
+                var select_num_tag = parseInt(num) + 1;
+                var productId = $('#' + id).val()
+                id_result = productId;
+
+                ree()
+                var num_list = new Array();
+                $('.select_data_tag').each(function (i) {
+                    var id_list = $(this).attr("id");
+                    num_list[i] = id_list;
+                });
+                var numaa = num_list.length;
+                for (i = 0; i < num_list.length; i++) {
+                    var nums = num_list[i].charAt(num_list[i].length - 1)
+                    if (nums > num) {
+                        $("#" + num_list[i]).remove()
+                    }
+                }
+                if (productId == "-3") {
+                    var sel = $(this);
+                    sel = sel.prev();//
+                    if (sel.index() == 0)//说明此时已经检索到第一个下拉框
+                    {
+                        var a = sel.find("option:selected")
+                        id_result = a.attr("value")
+                        ree();
+                    }
+
+
+                } else {
+
+                    $.ajax({
+                        type: 'POST',
+                        url: '{% url 'sysadmin:permission.add' %}',
+                        data: {"parent_id": productId, "tag": 0},
+                        success: function (data) {
+                            var select_data_list = data['select_data_list']
+                            $('#click_sellect_item').append("<select  class=\"select_data_tag\" id=\"form-field-select-" + select_num_tag + "\" style=\"width: 15%;margin-right:5px;margin-top:5px;\"> " +
+                                    "<option value=\"-3\">" +
+                                    "请选择------------</option> </select>")
+                            for (var i = 0; i < select_data_list.length; i++) {
+
+                                //alert(current_org_id + ' '+ select_data_list[i][0])
+                                if (current_org_id != select_data_list[i][0]) {
+                                    var $html = "<option value=\"" + select_data_list[i][0] + "\">" + select_data_list[i][1] + "</option>"
+                                    $("#form-field-select-" + select_num_tag).append($html)
+                                }
+                            }
+                            if (select_data_list.length == 0) {
+                                $("#form-field-select-" + select_num_tag).remove()
+                            }
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            console.log("error");
+                        },
+                        dataType: 'json'
+                    });
+                }
+
+
+            })
+
+
+        })
+
+
+    </script>
+
+
+{% endblock %}
+<!-- /.main-content -->
+
+</body>
+</html>

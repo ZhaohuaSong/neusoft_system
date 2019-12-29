@@ -1,0 +1,18 @@
+li{list-style-type:none}
+
+.fb-left ul li{
+	width:100%;
+	float:left;
+	background:#d1ecfe;
+	border-bottom:1px solid #fff;
+	border-right:1px solid #fff;
+}
+.fb-left ul li p{
+	padding:5px 0px 5px 0px;
+	margin:0px;
+}
+.fb-left ul li:hover{
+	width:100%;
+	float:left;
+	background:#97cef4;
+}

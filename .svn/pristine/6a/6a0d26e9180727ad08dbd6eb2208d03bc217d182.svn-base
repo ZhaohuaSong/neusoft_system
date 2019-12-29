@@ -1,0 +1,213 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+import json
+from django.db.models import Q
+from ..api.iso_interface import *
+from ..api.system_enum import *
+from ...common.iso.iso_response_code import *
+
+from django.apps import apps
+ProtocolType = apps.get_model(app_label='packmanage', model_name='ProtocolType')
+
+#QiuJL 2017.1.4
+#报文协议内容格式化
+class Protocol:
+    def get_protocol(self, protocol_content):
+        '''
+        获取报文协议参数
+        :param protocol_content:
+        :return:
+        '''
+        dict_protocol = json.loads(protocol_content)  # 转换为字典形式
+        self.operation = dict_protocol['operation']  # 出参
+        dict_protocol_in = dict_protocol['in']  # 入参
+        dict_protocol_out = dict_protocol['out']  # 出参
+        list_protocol_in = list(dict_protocol_in.values())  # 将数据报文规则存储为list
+        list_protocol_out = list(dict_protocol_out.values())  # 将数据报文规则存储为list
+
+        self.bit_index_list_in, self.bit_info_list_in = self.__get_param(list_protocol_in)
+        self.bit_index_list_out, self.bit_info_list_out = self.__get_param(list_protocol_out)
+
+    def __get_param(self, list_protocol):
+        '''
+        :param list_protocol_in:
+        :return:
+        '''
+        bit_index_list=[]
+        bit_info_list = []
+        for dic in list_protocol:
+            bit_index_list.append(dic['bit_index'])
+            bit_info_list.append([dic['bit_index'], dic['field_name']])
+
+        return bit_index_list, bit_info_list
+
+    def get_data_src_for_response(self, data_src):
+        '''
+        获取数据源参数
+        :param data_src:
+        :return:
+        '''
+
+        if len(data_src)==0:
+            return
+        dict_src = json.loads(data_src)
+        self.src_name = dict_src['src_name']
+        self.src_type = dict_src['src_type']
+
+        in_param = dict_src['param_in']
+        out_param = dict_src['param_out']
+
+        self.in_col_index = []
+        for i in range(0, len(in_param)):
+            if self.src_type == DATA_SRC_TYPE_FILE:
+                self.in_col_index.append( in_param[str(i)][0] )
+            elif self.src_type == DATA_SRC_TYPE_DB:
+                v = in_param[str(i)]
+                n = v.rfind('_')
+                self.in_col_index.append(v[0:n])
+
+        self.out_col_index = []
+        for i in range(0, len(out_param)):
+            if self.src_type == DATA_SRC_TYPE_FILE:
+                self.out_col_index.append(out_param[str(i)][0])
+            elif self.src_type == DATA_SRC_TYPE_DB:
+                v = out_param[str(i)]
+                n = v.rfind('_')
+                self.out_col_index.append(v[0:n])
+
+    def get_data_src_fro_request(self, dict_src):
+        '''
+
+        :param data_src:
+        :return:
+        '''
+
+        if len(dict_src) ==0:
+            return
+
+        dict_src = json.loads(dict_src)
+        self.src_name_request = dict_src['src_name']
+        self.src_type_request = dict_src['src_type']
+        in_param = dict_src['param_in']
+        out_param = dict_src['param_out']
+
+        self.in_col_index_request = []
+        for i in range(0, len(in_param)):
+            if self.src_type_request == DATA_SRC_TYPE_FILE:
+                self.in_col_index_request.append(in_param[str(i)][0])
+            elif self.src_type_request == DATA_SRC_TYPE_DB:
+                v = in_param[str(i)]
+                n = v.rfind('_')
+                self.in_col_index_request.append(v[0:n])
+
+        self.out_col_index_request = []
+
+        for i in range(0, len(out_param)):
+            if self.src_type_request == DATA_SRC_TYPE_FILE:
+                self.out_col_index_request.append(out_param[str(i)][0])
+            elif self.src_type_request == DATA_SRC_TYPE_DB:
+                v = out_param[str(i)]
+                n = v.rfind('_')
+                self.out_col_index_request.append(v[0:n])
+
+
+#业务报文内容
+class ProtocoFactory:
+    def init(self, protocol_id, b_request=False):
+        '''
+        :msg_ype
+        :param protocol_id: 协议ID
+        '''
+
+        b_request = False
+        self.b_request = b_request
+        try:
+            proto = ProtocolType.objects.get(Q(protocol_id=protocol_id))
+        except Exception as e:
+            raise Exception(CODE_REQUEST_PROTOCOL_NOT_FIND)
+
+        try:
+            self.pro = Protocol()
+            self.pro.get_protocol(proto.protocol_content)
+            self.pro.get_data_src_for_response(proto.response_datasrc_content)
+
+            if b_request:
+                self.pro.get_data_src_fro_request(proto.request_datasrc_content)
+            else:
+                self.pro.get_data_src_for_response(proto.response_datasrc_content)
+        except Exception as e:
+            raise Exception(CODE_TRANSLATE_ERROR)
+
+        return self
+
+    def get_bit_index_in_param(self):
+        '''
+        获取输入参数列表
+        :return:[65]
+        '''
+        return self.pro.bit_index_list_in
+
+    def get_bit_info_in_param(self):
+        '''
+        获取输入参数域索引信息
+        :return: [{'bit_index':'65' , 'field_name':'身份证号'}]
+        '''
+        return self.pro.bit_info_list_in
+
+    def get_bit_index_out_param(self):
+        '''
+        获取输出参数列表
+        :return:[65,66]
+        '''
+        return self.pro.bit_index_list_out
+
+    def get_bit_info_out_param(self):
+        '''
+        获取输出参数域索引信息
+        :return:[{'bit_index':'65' , 'field_name':'姓名'}， {'bit_index':'66' , 'field_name':'性别'}]
+        '''
+        return self.pro.bit_info_list_out
+
+    def get_operation(self):
+        '''
+        获取操作类型：增删查改0123
+        :return:
+        '''
+        return self.pro.operation
+
+    def get_data_src_name(self):
+        '''
+        获取数据源名称
+        :return:
+        '''
+        if self.b_request:
+            return self.pro.src_name_request
+        return self.pro.src_name
+
+    def get_data_src_type(self):
+        '''
+        获取数据源类型
+        :return:
+        '''
+        if self.b_request:
+            return self.pro.src_type_request
+        return self.pro.src_type
+
+    def get_data_src_in_col_index(self):
+        '''
+        输入参数绑定
+        :return:
+        '''
+        if self.b_request:
+            return self.pro.in_col_index_request
+        return self.pro.in_col_index
+
+    def get_data_src_out_col_index(self):
+        '''
+        输出参数绑定
+        :return:
+        '''
+        if self.b_request:
+            return self.pro.out_col_index_request
+        return self.pro.out_col_index
+

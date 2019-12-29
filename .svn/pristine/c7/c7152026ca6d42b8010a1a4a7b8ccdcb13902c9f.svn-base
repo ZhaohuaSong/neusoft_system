@@ -1,0 +1,89 @@
+jQuery(function ($) {
+
+    //启动服务
+    $("#btn-start").bind("click",
+        function () {
+            show_msg("已经向服务器发送【启动服务】请求，等待回应", 0);
+             $.ajax({
+                                    type: "GET",
+                                    url: url_start,
+                                    data:{},
+                                    dataType: "json",
+                                    success: function (data) {
+                                        if("00"==data["code"]){
+                                            show_msg(data["msg"], 1)
+                                        } 
+                                        else{
+                                            show_msg(data["msg"], 0)
+                                        }                                               
+                                    }
+                                });
+        }); 
+
+    //停止服务
+    $("#btn-stop").bind("click",
+        function () {
+            show_msg("已经向服务器发送【停止服务】请求，等待回应", 0);
+             $.ajax({
+                                    type: "GET",
+                                    url: url_kill,
+                                    data:{},
+                                    dataType: "json",
+                                    success: function (data) {
+                                        if("00"==data["code"]){
+                                            show_msg(data["msg"], 1)
+                                        } 
+                                        else{
+                                            show_msg(data["msg"], 0)
+                                        }                                               
+                                    }
+                                });
+        });
+
+    //停止服务
+    $("#btn-test").bind("click",
+        function () {
+
+             test_local_app_server()
+        });
+
+    //初始化调用
+    test_local_app_server();
+
+    function test_local_app_server(){
+        show_msg("正在测试本地适配器服务程序", 1);
+ 
+             $.ajax({
+                                    type: "GET",
+                                    url: url_test,
+                                    data:{},
+                                    dataType: "json",
+                                    success: function (data) {
+                                        if("00"==data["code"]){
+                                            show_msg(data["desc"], 1)
+                                        } 
+                                        else{
+                                            show_msg(data["desc"], 0)
+                                        }                                        
+                                    }
+                                });
+    }
+
+
+    function show_msg (msg, bSuccess) { 
+        var alert = jQuery("#myAlert");
+        if(!bSuccess){
+            alert.removeClass('alert-success');
+            alert.addClass('alert-warning');
+        }
+        else {
+            alert.addClass('alert-success');
+            alert.removeClass('alert-warning');
+        }
+
+        alert.find("strong").text(msg);
+        alert.css('display','block');
+    }
+
+
+})

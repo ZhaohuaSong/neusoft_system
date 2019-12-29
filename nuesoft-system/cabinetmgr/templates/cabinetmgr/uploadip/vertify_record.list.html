@@ -1,0 +1,104 @@
+{% extends "mainbase.html" %}
+{% load staticfiles %}
+{% load i18n staticfiles %}
+{% load url from future %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% block scripts %}
+
+        <!-- page specific plugin scripts -->
+        <link rel="stylesheet" href="{% static "css/jquery-ui.min.css" %}"/>
+{#        <link rel="stylesheet" href="{% static "css/datatables/buttons.dataTables.min.css" %}"/>#}
+        <!-- jquery scripts -->
+        <script src="{% static "js/dataTables.buttons.min.js" %}"></script>
+        <!-- datatables buttons scripts -->
+        <script src="{% static "js/datatables/buttons.flash.min.js" %}"></script>
+        <script src="{% static "js/datatables/jszip.min.js" %}"></script>
+        <script src="{% static "js/datatables/pdfmake.min.js" %}"></script>
+        <script src="{% static "js/datatables/vfs_fonts.js" %}"></script>
+        <script src="{% static "js/datatables/buttons.html5.min.js" %}"></script>
+        <script src="{% static "js/datatables/buttons.print.min.js" %}"></script>
+
+        <!-- ace scripts -->
+        <script src="{% static "js/buttons.colVis.min.js" %}"></script>
+        <script src="{% static "js/dataTables.select.min.js" %}"></script>
+
+        <script src="{% static "js/jquery-ui.custom.min.js" %}"></script>
+        <script src="{% static "js/jquery.ui.touch-punch.min.js" %}"></script>
+        <script src="{% static "js/bootstrap-colorpicker.min.js" %}"></script>
+        <script src="{% static "js/jquery-ui.min.js" %}"></script>
+        <script src="{% static "js/jquery.easypiechart.min.js" %}"></script>
+
+{#        <script src="assets/js/jquery.easypiechart.min.js"></script>#}
+
+        {#        <script src="{% static "js/jquery.sparkline.index.min.js" %}"></script>#}
+
+        <!-- txnname scripts -->
+        <script src="{% static "js/bootstrap-treeview.min.js" %}"></script>
+        <script type="text/javascript">
+{#            var defaultData ={{ treedata|safe }}; //树形列表数据#}
+            var workorder_id = {{ workorder_id | safe }};
+            var operate_type = {{ operate_type | safe }};
+            var industry_id = {{ industry_id | safe }}
+            var TXNNAMES_LIST_URL = '{% url "cabinetmgr:vertifyrecord.data" workorder_id operate_type industry_id%}';
+        </script>
+        <script src="{% static "js/cabinetmgr/vertify_record.list.js" %}"></script>
+    {% endblock %}
+</head>
+<body class="no-skin">
+{% block content %}
+    <div class="main-content">
+        <div class="breadcrumbs" id="breadcrumbs">
+         <ul class="breadcrumb">
+                <li>
+                    <i class="ace-icon fa fa-home home-icon"></i>
+                    <a href="#">首页</a>
+                </li>
+
+                <li>
+                    <a href="#">机柜管理模块</a>
+                </li>
+                <li class="active">idc工单流转管理</li>
+            </ul><!-- /.breadcrumb -->
+        </div>
+        <div class="page-content">
+            <div class="row">
+                <div style="padding: 0px" class="col-xs-12">
+                    <div class="clearfix" style="padding-top: 10px">
+                        <div class="tableTools-container"></div>
+                    </div>
+                    <div id="sech_item" style="display:none;" role=""></div>
+                    <div class="table-header"> <!--table-header -->
+                        ip列表
+                    </div>
+                    <div>
+                        <table id="dynamic-table" class="table table-striped table-bordered table-hover"><!--table -->
+                            <thead>
+                            <tr>
+                                <th class="hidden-480 center" width='45px'>
+                                    <label class="pos-rel">
+                                        <input type="checkbox" class="ace"/>
+                                        <span class="lbl"></span>
+                                    </label>
+                                </th>
+                                <th class="hidden-480" width='55px'>序号</th>
+                                <th>审核人</th>
+                                 <th>审核内容</th>
+                                <th>审核结果</th>
+                                <th>审核时间</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table><!--table -->
+                    </div>
+                </div><!-- /.span -->
+            </div><!-- /.row -->
+        </div>
+    </div>
+    {% include "message.html" %}
+{% endblock %}
+<!-- /.main-content -->
+</body>
+</html>

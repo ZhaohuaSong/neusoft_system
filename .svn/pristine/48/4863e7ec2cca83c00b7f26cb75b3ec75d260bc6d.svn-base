@@ -1,0 +1,38 @@
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : posp
+Source Server Version : 50628
+Source Host           : localhost:3306
+Source Database       : richdatax
+
+Target Server Type    : MYSQL
+Target Server Version : 50628
+File Encoding         : 65001
+
+Date: 2017-02-19 00:54:52
+*/
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for packmanage_apps_protocoltype
+-- ----------------------------
+DROP TABLE IF EXISTS `packmanage_apps_protocoltype`;
+CREATE TABLE `packmanage_apps_protocoltype` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `app_id` varchar(255) DEFAULT NULL COMMENT '适配器ID',
+  `protocol_id` varchar(255) DEFAULT NULL COMMENT '协议ID',
+  `state` int(11) DEFAULT NULL COMMENT '0=未配置 1=等待确认 2=已配置 3=拒绝',
+  `create_by` varchar(255) DEFAULT NULL,
+  `create_date` varchar(50) DEFAULT NULL COMMENT '创建日期',
+  `request_date` varchar(50) DEFAULT '' COMMENT '发送请求日期',
+  `response_date` varchar(50) DEFAULT '' COMMENT '远程适配器响应日期',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of packmanage_apps_protocoltype
+-- ----------------------------
+INSERT INTO `packmanage_apps_protocoltype` VALUES ('1', '01000001', '5000000000', '0', 'admin', '2017-02-16 10:20:15.651000', '', '');
+INSERT INTO `packmanage_apps_protocoltype` VALUES ('2', '01000001', '1000000000', '0', 'admin', '2017-02-19 00:45:56.105000', '', '');

@@ -1,0 +1,1432 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Author       : ljh
+# @Date         : 2017/1/11
+# @Version      : 0.0.1
+# @Link         :
+
+"默认注释"
+
+from django.http import JsonResponse, HttpResponse
+from django.views.generic import TemplateView
+from models import FilePathName, Filename, FileUpload
+import json
+import datetime
+from django.shortcuts import render
+from django.core.urlresolvers import reverse
+from django.http import HttpResponseRedirect
+from forms import *
+from django.conf import settings
+import pandas as pd
+import os
+from ..vanilla import CreateView
+from pandas import DataFrame
+import copy
+
+allFileNum = 0
+global fname
+page = 0
+
+#返回信息
+#20：文件不存在
+#21：没有输入查询条件
+#22：无匹配列
+#23：列数太多
+#24：当前块无匹配信息
+#-1：继续
+#1：完成
+
+#获取文件名列表
+def printPath():
+    """
+     ===============================================================================
+     function：    获取文件名列表
+     developer:    ljh
+     add-time      2017/1/17
+     ===============================================================================
+    """
+    level = 1
+    path = settings.MEDIA_ROOT+'/uploadfiles'
+    global allFileNum
+    '''''
+    打印一个目录下的所有文件夹和文件
+    '''
+    # 所有文件夹，第一个字段是次目录的级别
+    dirList = []
+    # 所有文件
+    fileList = []
+    # 返回一个列表，其中包含在目录条目的名称(google翻译)
+    files = os.listdir(path)
+    # print files
+    # 先添加目录级别
+    dirList.append(str(level))
+    for f in files:
+        if(os.path.isdir(path + '/' + f)):
+            # 排除隐藏文件夹。因为隐藏文件夹过多
+            if(f[0] == '.'):
+                pass
+            else:
+                # 添加非隐藏文件夹
+                dirList.append(f)
+        if(os.path.isfile(path + '/' + f)):
+            # 添加文件
+            fileList.append(f)
+    return fileList
+
+#获取路径文件名列表
+def GetFileList(dir, fileList):
+    """
+     ===============================================================================
+     function：    获取路径名+文件名列表
+     developer:    ljh
+     add-time      2017/1/17
+     ===============================================================================
+    """
+    newDir = dir
+    if os.path.isfile(dir):
+        fileList.append(dir)
+        # print fileList
+    elif os.path.isdir(dir):
+        for s in os.listdir(dir):
+            #如果需要忽略某些文件夹，使用以下代码
+            #if s == "xxx":
+                #continue
+            # print s
+            newDir=os.path.join(dir,s)
+            # print newDir
+            GetFileList(newDir, fileList)
+    return fileList
+
+#大文件判断函数
+def GetDocSize(path):
+    try:
+        bytes = os.path.getsize(path)
+        try:
+            bytes = float(bytes)
+            kb = bytes / 1024
+        except:
+            print("传入的字节格式不对")
+            return "Error"
+
+        if kb >= 1024:
+            M = kb / 1024
+            if M >= 1024:
+                G = M / 1024
+                return "%.1fG" % (G)
+            else:
+                return "%.0fM" % (M)
+        else:
+            return "%.0fkb" % (kb)
+    except Exception as err:
+        print(err)
+
+#大文件查询
+class BigFileSearch():
+    def __init__(self):
+        self.data = 0 #大文件分块迭代器
+        self.data_judge = 0
+        self.times = True
+
+    #大文件分块
+    def CreateIterator(self, filename, intput, output, chunkSize=1000):
+        """
+         ===============================================================================
+         function：    大文件分块
+         developer:    ljh
+         add-time      2017/2/25
+         ===============================================================================
+        """
+        if self.times == True:
+            self.times =False
+            column = []
+            pack = []
+            filename_list = printPath()
+            path_file_list = GetFileList(settings.MEDIA_ROOT+'/uploadfiles',[])
+            a = 0
+            m = False
+            for i in filename_list:
+                if filename == i:
+                    m = True
+                    break
+                a += 1
+            if m == False:
+                column.append('20')#文件不存在
+                return column
+            # if len(intput) == 0:
+            #     column.append('21')#没有输入查询条件
+            #     return column
+
+            if os.path.splitext(str(filename_list[a]))[1] == '.csv':
+                data_csv = pd.read_csv(path_file_list[a], sep=',', encoding='utf-8', dtype='a', iterator=True)
+                data_csv_judge = pd.read_csv(path_file_list[a], sep=',', encoding='utf-8', dtype='a', iterator=True)
+                self.data = data_csv
+                self.data_judge = data_csv_judge
+                self.data_judge.get_chunk(chunkSize)
+
+            else :
+                data_txt = pd.read_table(path_file_list[a],sep=',',encoding='utf-8', dtype='a', iterator=True)
+                data_txt_judge = pd.read_table(path_file_list[a],sep=',',encoding='utf-8', dtype='a', iterator=True)
+                self.data = data_txt
+                self.data_judge = data_txt_judge
+                self.data_judge.get_chunk(chunkSize)
+
+            bigmespack = []
+            bigmes = []
+            column = []
+            loop = True
+            while loop:
+                chunks = []
+                try:
+                    self.data_judge.get_chunk(chunkSize)
+                    bigmes.append('-1')
+                except:
+                    bigmes.append('1')
+                try:
+                    chunk = self.data.get_chunk(chunkSize)
+                    chunks.append(chunk)
+                    da = pd.concat(chunks, ignore_index=True)
+                    if len(intput) == 0 :
+                        for i in range(len(da)):
+                            column = []
+                            for j in range(len(output)):
+                                try:
+                                    column.append(str(da.ix[i, int(output[j])]))
+                                except:
+                                    column.append(str(da.ix[i, int(output[j])].encode('utf-8')))
+                            bigmespack.append(column)
+                        bigmes.insert(0, bigmespack)
+                        return bigmes
+                    else :
+                        for i in range(len(intput)):
+                            if int(intput.keys()[i]) + 1 > len(da.columns) or int(intput.keys()[i]) < 0:
+                                column.append('22')#无匹配列
+                                return column
+                        for i in range(len(output)):
+                            if int(output[i]) + 1 > len(da.columns) or int(output[i]) < 0:
+                                column.append('22')#无匹配列
+                                return column
+                        if len(da.columns) < len(intput) or len(da.columns) < len(output):
+                            column.append('23')#列数太多
+                            return column
+
+                        context = {}
+                        for j in range(len(intput)):
+                            for i in range(len(da)):
+                                try:
+                                    d = str(da.ix[i, int(intput.keys()[j])])
+                                except:
+                                    d = da.ix[i, int(intput.keys()[j])]
+                                if d == intput[str(intput.keys()[j])].decode('utf-8'):
+                                    context.setdefault(str(j),[]).append(i)
+                        if len(context) != len(intput):
+                            column = []
+                            bigmes.insert(0, column)
+                            return bigmes
+                        tarco = context[context.keys()[0]]
+                        for i in range(len(context)):
+                            if i+1 == len(context):
+                                break
+                            if len(tarco) > len(context[context.keys()[i+1]]):
+                                tarco = []
+                                tarco = context[context.keys()[i+1]]
+                        for i in range(len(tarco)):
+                            column = []
+                            for j in range(len(output)):
+                                try:
+                                    column.append(str(da.ix[tarco[i], int(output[j])]))
+                                except:
+                                    column.append(str(da.ix[tarco[i], int(output[j])].encode('utf-8')))
+                            bigmespack.append(column)
+                        bigmes.insert(0, bigmespack)
+                        return bigmes
+                except StopIteration:
+                    return bigmes
+
+        else :
+
+            bigmespack = []
+            bigmes = []
+            column = []
+            loop = True
+            while loop:
+                chunks = []
+                try:
+                    self.data_judge.get_chunk(chunkSize)
+                    bigmes.append('-1')
+                except:
+                    bigmes.append('1')
+                try:
+                    chunk = self.data.get_chunk(chunkSize)
+                    chunks.append(chunk)
+                    da = pd.concat(chunks, ignore_index=True)
+                    if len(intput) == 0 :
+                        for i in range(len(da)):
+                            column = []
+                            for j in range(len(output)):
+                                try:
+                                    column.append(str(da.ix[i, int(output[j])]))
+                                except:
+                                    column.append(str(da.ix[i, int(output[j])].encode('utf-8')))
+                            bigmespack.append(column)
+                        bigmes.insert(0, bigmespack)
+                        return bigmes
+                    else :
+                        for i in range(len(intput)):
+                            if int(intput.keys()[i]) + 1 > len(da.columns) or int(intput.keys()[i]) < 0:
+                                column.append('22')#无匹配列
+                                return column
+                        for i in range(len(output)):
+                            if int(output[i]) + 1 > len(da.columns) or int(output[i]) < 0:
+                                column.append('22')#无匹配列
+                                return column
+                        if len(da.columns) < len(intput) or len(da.columns) < len(output):
+                            column.append('23')#列数太多
+                            return column
+
+                        context = {}
+                        for j in range(len(intput)):
+                            for i in range(len(da)):
+                                try:
+                                    d = str(da.ix[i, int(intput.keys()[j])])
+                                except:
+                                    d = da.ix[i, int(intput.keys()[j])]
+                                if d == intput[str(intput.keys()[j])].decode('utf-8'):
+                                    context.setdefault(str(j),[]).append(i)
+                        if len(context) != len(intput):
+                            column = []
+                            bigmes.insert(0, column)
+                            return bigmes
+                        tarco = context[context.keys()[0]]
+                        for i in range(len(context)):
+                            if i+1 == len(context):
+                                break
+                            if len(tarco) > len(context[context.keys()[i+1]]):
+                                tarco = []
+                                tarco = context[context.keys()[i+1]]
+                        for i in range(len(tarco)):
+                            column = []
+                            for j in range(len(output)):
+                                try:
+                                    column.append(str(da.ix[tarco[i], int(output[j])]))
+                                except:
+                                    column.append(str(da.ix[tarco[i], int(output[j])].encode('utf-8')))
+                            bigmespack.append(column)
+                        bigmes.insert(0, bigmespack)
+                        return bigmes
+                except StopIteration:
+                    return bigmes
+
+    #响应查询：单词数据量为chunkSize
+    def BigFileResSearch(self, filename, intput, output, chunkSize=1000):
+        return self.CreateIterator(filename, intput, output, chunkSize=chunkSize)
+
+#小文件增删改查
+class SmallFileCtr():
+    def __init__(self):
+        self.num = -1
+        self.mespack = []#小文件数据保存变量
+
+    #小文件查询目标行
+    def GetTargetColumn(self, filename, intput, output):
+        """
+         ===============================================================================
+         function：    查询目标行功能
+         developer:    ljh
+         add-time      2017/2/25
+         ===============================================================================
+        """
+        column = []
+        pack = []
+        filename_list = printPath()
+        path_file_list = GetFileList(settings.MEDIA_ROOT+'/uploadfiles',[])
+
+        a = 0
+        m = False
+        for i in filename_list:
+            if filename == i:
+                m = True
+                break
+            a += 1
+        #文件不存在返回
+        if m == False:
+            column.append('20')#文件不存在
+            return column
+        # if len(intput) == 0:
+        #     column.append('21')#没有输入查询条件
+        #     return column
+
+        if os.path.splitext(str(filename_list[a]))[1] == '.xls':
+            data_xls = pd.read_excel(path_file_list[a],sep=',',encoding='utf-8')
+            return data_xls
+
+    #小文件获取查询全部匹配数据
+    def GetColumn(self, filename, intput, output):
+        """
+         ===============================================================================
+         function：    小文件获取查询全部数据
+         developer:    ljh
+         add-time      2017/2/16
+         ===============================================================================
+        """
+        mespack = []
+        pack = self.GetTargetColumn(filename, intput, output)
+        if 1:
+            data = pack[0]
+            for i in range(len(data)):
+                column = []
+                for j in range(len(data.columns)):
+                    try:
+                        column.append(str(data.ix[i, j]))
+                    except:
+                        column.append(str(data.ix[i, j].encode('utf-8')))
+                mespack.append(column)
+                self.mespack = mespack
+        else :
+            if len(pack) == 1:
+                return pack
+            else:
+                data = pack[0]
+                tarco = pack[1]
+                for i in range(len(tarco)):
+                    column = []
+                    for j in range(len(output)):
+                        try:
+                            column.append(str(data.ix[tarco[i], int(output[j])]))
+                        except:
+                            column.append(str(data.ix[tarco[i], int(output[j])].encode('utf-8')))
+                    mespack.append(column)
+                    self.mespack = mespack
+
+    #小文件数据分块
+    def Separate(self, filename, intput, output, t=1000):
+        """
+         ===============================================================================
+         function：    小文件数据分块
+         developer:    ljh
+         add-time      2017/2/27
+         ===============================================================================
+        """
+        self.num += 1
+        num = self.num
+        data_xls = self.GetTargetColumn(filename, intput, output)
+        self.mespack = data_xls
+        def SameWay(intput, output, num, t=t):
+            bigmespack = []
+            bigmes = []
+            column = []
+            if len(intput) == 0 :
+                for i in range(num):
+                    column = []
+                    for j in range(len(output)):
+                        try:
+                            column.append(str(data_xls.ix[t+i, int(output[j])]))
+                        except:
+                            column.append(str(data_xls.ix[t+i, int(output[j])].encode('utf-8')))
+                    bigmespack.append(column)
+                bigmes.insert(0, bigmespack)
+                return bigmes
+            else :
+                for i in range(len(intput)):
+                    if int(intput.keys()[i]) + 1 > len(data_xls.columns) or int(intput.keys()[i]) < 0:
+                        column.append('22')#无匹配列
+                        return column
+                for i in range(len(output)):
+                    if int(output[i]) + 1 > len(data_xls.columns) or int(output[i]) < 0:
+                        column.append('22')#无匹配列
+                        return column
+                if len(data_xls.columns) < len(intput) or len(data_xls.columns) < len(output):
+                    column.append('23')#列数太多
+                    return column
+
+                context = {}
+                for j in range(len(intput)):
+                    for i in range(num):
+                        try:
+                            d = str(data_xls.ix[t+i, int(intput.keys()[j])])
+                        except:
+                            d = data_xls.ix[t+i, int(intput.keys()[j])]
+                        if d == intput[str(intput.keys()[j])].decode('utf-8'):
+                            context.setdefault(str(j),[]).append(t+i)
+                if len(context) != len(intput):
+                    column = []
+                    bigmes.insert(0, column)
+                    return bigmes
+                tarco = context[context.keys()[0]]
+                print tarco
+                for i in range(len(context)):
+                    if i+1 == len(context):
+                        break
+                    if len(tarco) > len(context[context.keys()[i+1]]):
+                        tarco = []
+                        tarco = context[context.keys()[i+1]]
+                for i in range(len(tarco)):
+                    column = []
+                    for j in range(len(output)):
+                        try:
+                            column.append(str(data_xls.ix[tarco[i], int(output[j])]))
+                        except:
+                            column.append(str(data_xls.ix[tarco[i], int(output[j])].encode('utf-8')))
+                    bigmespack.append(column)
+                bigmes.insert(0, bigmespack)
+                return bigmes
+
+        mespack = self.mespack
+        if len(mespack) <= t:
+            column = SameWay(intput, output, len(mespack), 0)
+            column.append('1')
+            return column
+        else:
+            mes = []
+            n = len(mespack)/t
+            m = float(len(mespack))/t
+            if m != n:
+                if n != num:
+                    column = SameWay(intput, output, t, t=t*num)
+                    column.append('-1')
+                    return column
+                else:
+                    column = SameWay(intput, output, len(mespack) - num*t, t=t*num)
+                    column.append('1')
+                    return column
+            else:
+                if n-1 != num:
+                    column = SameWay(intput, output, num*t, t=t)
+                    column.append('-1')
+                    return column
+                else:
+                    column = SameWay(intput, output, num*t, t=t)
+                    column.append('1')
+                    return column
+
+    #响应查询：单次数据量为t
+    def SmallFileResSearch(self, filename, intput, output, t=1000):
+        # if self.num == -1:
+        #     self.GetColumn(filename, intput, output)
+        #     return self.Separate(filename, intput, output, t=t)
+        # else:
+        return self.Separate(filename, intput, output, t=t)
+
+    #小文件修改
+    def ModifyColumn(self, filename, intput, modify):
+        """
+         ===============================================================================
+         function：    修改功能：修改指定元素
+         developer:    ljh
+         add-time      2017/2/17
+         ===============================================================================
+        """
+        #调用接口可参考如下：
+        # intput={ '1':'是多少', '4':'b'}
+        # modify={'3':'modify', '2':'科比'}
+        # print ModifyColumn('45_text_2017-02-17_133830.533000.csv', intput, modify)
+
+        co = {}
+        column = []
+
+        filename_list = printPath()
+        path_file_list = GetFileList(settings.MEDIA_ROOT+'/uploadfiles',[])
+
+        a = 0
+        m = False
+        for i in filename_list:
+            if filename == i:
+                m = True
+                break
+            a += 1
+        #文件不存在返回
+        if m == False:
+            column.append('20')#文件不存在
+            return column
+        if len(intput) == 0:
+            column.append('21')#没有输入查询条件
+            return column
+
+        if os.path.splitext(str(filename_list[a]))[1] == '.csv':
+            data_csv = pd.read_csv(path_file_list[a], sep=',', encoding='utf-8', dtype='a')
+
+            for i in range(len(intput)):
+                if int(intput.keys()[i]) + 1 > len(data_csv.columns) or int(intput.keys()[i]) < 0:
+                    column.append('22')#无匹配列
+                    return column
+            if len(data_csv.columns) < len(intput):
+                column.append('23')#列数太多
+                return column
+
+            for i in range(len(modify)):
+                if int(modify.keys()[i]) + 1 > len(data_csv.columns) or int(modify.keys()[i]) < 0:
+                    column.append('22')#无匹配列
+                    return column
+            if len(data_csv.columns) < len(modify):
+                column.append('23')#列数太多
+                return column
+
+            context = {}
+            for j in range(len(intput)):
+                for i in range(len(data_csv)):
+                    try:
+                        d = str(data_csv.ix[i, int(intput.keys()[j])])
+                    except:
+                        d = data_csv.ix[i, int(intput.keys()[j])]
+                    if d == intput[str(intput.keys()[j])].decode('utf-8'):
+                        context.setdefault(str(j),[]).append(i)
+            if len(context) != len(intput):
+                column.append('24')#无匹配信息
+                return column
+            tarco = context[context.keys()[0]]
+            for i in range(len(context)):
+                if i+1 == len(context):
+                    break
+                if len(tarco) > len(context[context.keys()[i+1]]):
+                    tarco = []
+                    tarco = context[context.keys()[i+1]]
+            for j in range(len(tarco)):
+                for i in range(len(modify)):
+                    data_csv[data_csv.columns[int(modify.keys()[i])]][tarco[j]] = modify[str(modify.keys()[i])]
+            data_csv.to_csv(settings.MEDIA_ROOT+'/uploadfiles/' + filename, index=False, encoding='utf-8')
+            column.append('1')#修改完成
+            return column
+
+        elif os.path.splitext(str(filename_list[a]))[1] == '.xls':
+            data_xls = pd.read_excel(path_file_list[a],sep=',',encoding='utf-8')
+            for i in range(len(intput)):
+                if int(intput.keys()[i]) + 1 > len(data_xls.columns) or int(intput.keys()[i]) < 0:
+                    column.append('22')#无匹配列
+                    return column
+            if len(data_xls.columns) < len(intput):
+                column.append('23')#列数太多
+                return column
+
+            for i in range(len(modify)):
+                if int(modify.keys()[i]) + 1 > len(data_xls.columns) or int(modify.keys()[i]) < 0:
+                    column.append('22')#无匹配列
+                    return column
+            if len(data_xls.columns) < len(modify):
+                column.append('23')#列数太多
+                return column
+
+            context = {}
+            for j in range(len(intput)):
+                for i in range(len(data_xls)):
+                    try:
+                        d = str(data_xls.ix[i, int(intput.keys()[j])])
+                    except:
+                        d = data_xls.ix[i, int(intput.keys()[j])]
+                    if d == intput[str(intput.keys()[j])].decode('utf-8'):
+                        context.setdefault(str(j),[]).append(i)
+            if len(context) != len(intput):
+                column.append('24')#无匹配信息
+                return column
+            tarco = context[context.keys()[0]]
+            for i in range(len(context)):
+                if i+1 == len(context):
+                    break
+                if len(tarco) > len(context[context.keys()[i+1]]):
+                    tarco = []
+                    tarco = context[context.keys()[i+1]]
+            for j in range(len(tarco)):
+                for i in range(len(modify)):
+                    data_xls[data_xls.columns[int(modify.keys()[i])]][tarco[j]] = modify[str(modify.keys()[i])]
+            data_xls.to_csv(settings.MEDIA_ROOT+'/uploadfiles/' + filename, index=False, encoding='utf-8')
+            column.append('1')#修改完成
+            return column
+
+        else :
+            data_txt = pd.read_table(path_file_list[a],sep=',',encoding='utf-8', dtype='a')
+            for i in range(len(intput)):
+                if int(intput.keys()[i]) + 1 > len(data_txt.columns) or int(intput.keys()[i]) < 0:
+                    column.append('22')#无匹配列
+                    return column
+            if len(data_txt.columns) < len(intput):
+                column.append('23')#列数太多
+                return column
+
+            for i in range(len(modify)):
+                if int(modify.keys()[i]) + 1 > len(data_txt.columns) or int(modify.keys()[i]) < 0:
+                    column.append('22')#无匹配列
+                    return column
+            if len(data_txt.columns) < len(modify):
+                column.append('23')#列数太多
+                return column
+
+            context = {}
+            for j in range(len(intput)):
+                for i in range(len(data_txt)):
+                    try:
+                        d = str(data_txt.ix[i, int(intput.keys()[j])])
+                    except:
+                        d = data_txt.ix[i, int(intput.keys()[j])]
+                    if d == intput[str(intput.keys()[j])].decode('utf-8'):
+                        context.setdefault(str(j),[]).append(i)
+            if len(context) != len(intput):
+                column.append('24')#无匹配信息
+                return column
+            tarco = context[context.keys()[0]]
+            for i in range(len(context)):
+                if i+1 == len(context):
+                    break
+                if len(tarco) > len(context[context.keys()[i+1]]):
+                    tarco = []
+                    tarco = context[context.keys()[i+1]]
+            for j in range(len(tarco)):
+                for i in range(len(modify)):
+                    data_txt[data_txt.columns[int(modify.keys()[i])]][tarco[j]] = modify[str(modify.keys()[i])]
+            data_txt.to_csv(settings.MEDIA_ROOT+'/uploadfiles/' + filename, index=False, encoding='utf-8')
+            column.append('1')#修改完成
+            return column
+
+    #小文件删除
+    def DeleteColumn(self, filename, intput):
+        """
+         ===============================================================================
+         function：    删除功能：删除指定文件元素
+         developer:    ljh
+         add-time      2017/2/17
+         ===============================================================================
+        """
+
+        #调用接口可参考如下：
+        # intput={ '1':'是多少', '4':'b'}
+        # print DeleteColumn('45_text_2017-02-17_133830.533000.csv', intput)
+        column = []
+        pack = self.GetTargetColumn(filename, intput)
+        if len(pack) == 1:
+            return pack
+        else:
+            data = pack[0]
+            tarco = pack[1]
+            num = pack[2]
+            if num == 1 or num == 3:
+                for i in range(len(tarco)):
+                   data = data.drop(tarco[i])
+                data.to_csv(settings.MEDIA_ROOT+'/uploadfiles/' + filename, index=False, encoding='utf-8')
+                column.append('1')#删除完成
+                return column
+            elif num == 2:
+                for i in range(len(tarco)):
+                    data = data.drop(tarco[i])
+                data.to_excel(settings.MEDIA_ROOT+'/uploadfiles/' + filename, index=False, encoding='utf-8')
+                column.append('1')#删除完成
+                return column
+
+    #小文件添加
+    def AddColumn(self, filename, intput):
+        """
+         ===============================================================================
+         function：    添加功能：添加元素到文件
+         developer:    ljh
+         add-time      2017/2/17
+         ===============================================================================
+        """
+
+        #调用接口可参考如下：
+        # intput={ '1':'是多少', '4':'b'}
+        # print AddColumn('45_text_2017-02-17_133830.533000.csv', intput)
+
+        co = {}
+        column = []
+
+        filename_list = printPath()
+        path_file_list = GetFileList(settings.MEDIA_ROOT+'/uploadfiles',[])
+
+        a = 0
+        m = False
+        for i in filename_list:
+            if filename == i:
+                m = True
+                break
+            a += 1
+        #文件不存在返回
+        if m == False:
+            column.append('20')#文件不存在
+            return column
+        if len(intput) == 0:
+            column.append('21')#没有输入查询条件
+            return column
+
+        if os.path.splitext(str(filename_list[a]))[1] == '.csv':
+            data_csv = pd.read_csv(path_file_list[a], sep=',', encoding='utf-8', dtype='a')
+            print data_csv
+            for i in range(len(intput)):
+                if int(intput.keys()[i]) + 1 > len(data_csv.columns) or int(intput.keys()[i]) < 0:
+                    column.append('22')#无匹配列
+                    return column
+            if len(data_csv.columns) < len(intput):
+                column.append('23')#列数太多
+                return column
+
+            context = {}
+            for i in range(len(intput)):
+                context[data_csv.columns[int(intput.keys()[i])]] = intput[str(intput.keys()[i])]
+            add_csv = data_csv.append(context, ignore_index=True)
+            add_csv.to_csv(settings.MEDIA_ROOT+'/uploadfiles/' + filename, index=False, encoding='utf-8')
+            column.append('1')#添加完成
+            return column
+
+        elif os.path.splitext(str(filename_list[a]))[1] == '.xls':
+            data_xls = pd.read_excel(path_file_list[a],sep=',',encoding='utf-8')
+
+            for i in range(len(intput)):
+                if int(intput.keys()[i]) + 1 > len(data_xls.columns) or int(intput.keys()[i]) < 0:
+                    column.append('22')#无匹配列
+                    return column
+            if len(data_xls.columns) < len(intput):
+                column.append('23')#列数太多
+                return column
+
+            context = {}
+            for i in range(len(intput)):
+                context[data_xls.columns[int(intput.keys()[i])]] = intput[str(intput.keys()[i])].decode('utf-8')
+            add_xls = data_xls.append(context, ignore_index=True)
+            add_xls.to_excel(settings.MEDIA_ROOT+'/uploadfiles/' + filename, index=False, encoding='utf-8')
+            column.append('1')#添加完成
+            return column
+
+        else :
+            data_txt = pd.read_table(path_file_list[a],sep=',',encoding='utf-8', dtype='a')
+            for i in range(len(intput)):
+                if int(intput.keys()[i]) + 1 > len(data_txt.columns) or int(intput.keys()[i]) < 0:
+                    column.append('22')#无匹配列
+                    return column
+            if len(data_txt.columns) < len(intput):
+                column.append('23')#列数太多
+                return column
+
+            context = {}
+            for i in range(len(intput)):
+                context[data_txt.columns[int(intput.keys()[i])]] = intput[str(intput.keys()[i])]
+            add_txt = data_txt.append(context, ignore_index=True)
+            add_txt.to_csv(settings.MEDIA_ROOT+'/uploadfiles/' + filename, index=False, encoding='utf-8')
+            column.append('1')#添加完成
+            return column
+
+#增删改查接口
+class UniqueInterface(BigFileSearch, SmallFileCtr):
+    """
+         ===============================================================================
+         function：    统一接口：大文件查询，小文件增删改查
+         developer:    ljh
+         add-time      2017/3/2
+         ===============================================================================
+        """
+    def __init__(self):
+        BigFileSearch.__init__(self)
+        SmallFileCtr.__init__(self)
+        self.size = 15728640
+        self.chunkSize = 10
+
+    #文件大小确定
+    def FileSize(self, filename):
+        path = settings.MEDIA_ROOT+'/uploadfiles/' + filename
+        size = os.path.getsize(path)
+        if size < self.size: #15M
+            return True
+        else:
+            return False
+
+    #查询
+    def SearchColumn(self, filename, intput, output):
+        if os.path.splitext(str(filename))[1] != '.xls':
+            pack = BigFileSearch.BigFileResSearch(self, filename, intput, output, chunkSize=self.chunkSize)
+            return pack
+        else:
+            pack = SmallFileCtr.SmallFileResSearch(self, filename, intput, output, t=self.chunkSize)
+            return pack
+
+    #修改
+    def ModifyColumn(self, filename, intput, modify):
+        filesize = UniqueInterface.FileSize(self, filename)
+        if filesize:
+            return SmallFileCtr.ModifyColumn(self, filename, intput, modify)
+        else:
+            column = []
+            column.append('25')
+            return column
+
+    #添加
+    def AddColumn(self, filename, intput):
+        filesize = UniqueInterface.FileSize(self, filename)
+        if filesize:
+            return SmallFileCtr.AddColumn(self, filename, intput)
+        else:
+            column = []
+            column.append('25')
+            return column
+
+    #删除
+    def DeleteColumn(self, filename, intput):
+        filesize = UniqueInterface.FileSize(self, filename)
+        if filesize:
+            return SmallFileCtr.DeleteColumn(self, filename, intput)
+        else:
+            column = []
+            column.append('25')
+            return column
+
+#文件显示下一页
+class NextPage():
+
+    def Load_xls(self, data_xls, start, l):
+        column = []
+        co = {}
+        a = 0
+        for i in data_xls.columns:
+            co[str(a)] = i
+            a += 1
+        column.append(co)
+        co = {}
+        for i in range(l):
+            for j in range(a):
+                try:
+                    co[str(j)] = str(data_xls.ix[start+i, j])
+                except:
+                    co[str(j)] = str(data_xls.ix[start+i, j].encode('utf-8'))
+            j = 0
+            column.append(co)
+            co = {}
+        context = {}
+        context['page_num'] = '第'+str(page+1)+'页'
+        column.append(context)
+        return JsonResponse(json.dumps(column),safe=False)
+
+    def CreateIterator(self, filename, chunkSize=1000):
+        """
+         ===============================================================================
+         function：    大文件分块
+         developer:    ljh
+         add-time      2017/2/25
+         ===============================================================================
+        """
+        global page
+        page += 1
+        column = []
+        filename_list = printPath()
+        path_file_list = GetFileList(settings.MEDIA_ROOT+'/uploadfiles',[])
+        a = 0
+        for i in filename_list:
+            if filename == i:
+                break
+            a += 1
+
+        if os.path.splitext(str(filename_list[a]))[1] == '.csv':
+            data_csv = pd.read_csv(path_file_list[a], sep=',', encoding='utf-8', dtype='a', iterator=True)
+            data = data_csv
+            chunks = []
+            try:
+                for i in range(page):
+                    chunk = data.get_chunk(chunkSize)
+                chunk = data.get_chunk(chunkSize)
+                chunks.append(chunk)
+                da = pd.concat(chunks, ignore_index=True)
+                context = {}
+                a = 0
+                co = {}
+                for i in da.columns:
+                    co[str(a)] = i
+                    a += 1
+                column.append(co)
+                co = {}
+                for i in range(len(da)):
+                    for j in range(a):
+                        try:
+                            co[str(j)] = str(da.ix[i, j])
+                        except:
+                            co[str(j)] = str(da.ix[i, j].encode('utf-8'))
+                    j = 0
+                    column.append(co)
+                    co = {}
+
+                context['page_num'] = '第'+str(page+1)+'页'
+                column.append(context)
+                return JsonResponse(json.dumps(column),safe=False)
+            except StopIteration:
+                page -= 1
+                print page
+
+        elif os.path.splitext(str(filename_list[a]))[1] == '.xls':
+            data_xls = pd.read_excel(path_file_list[a],sep=',',encoding='utf-8')
+            if len(data_xls) < 10:
+                l = len(data_xls)
+                return self.Load_xls(data_xls, 0, l)
+            else :
+                n = len(data_xls)/10
+                m = float(len(data_xls))/10
+                if n == m :
+                    if page < n:
+                        start = page*10
+                    else :
+                        page -= 1
+                        start = (n-1)*10
+                    return self.Load_xls(data_xls, start, 10)
+                else:
+                    if page < n:
+                        start = page*10
+                        return self.Load_xls(data_xls, start, 10)
+                    else :
+                        page -= 1
+                        start = n*10
+                        return self.Load_xls(data_xls, start, len(data_xls)-start)
+
+        else :
+            data_txt = pd.read_table(path_file_list[a],sep=',',encoding='utf-8', dtype='a', iterator=True)
+            data = data_txt
+            chunks = []
+            try:
+                for i in range(page):
+                    chunk = data.get_chunk(chunkSize)
+                chunk = data.get_chunk(chunkSize)
+                chunks.append(chunk)
+                da = pd.concat(chunks, ignore_index=True)
+                a = 0
+                co = {}
+                for i in da.columns:
+                    co[str(a)] = i
+                    a += 1
+                column.append(co)
+                co = {}
+                for i in range(len(da)):
+                    for j in range(a):
+                        try:
+                            co[str(j)] = str(da.ix[i, j])
+                        except:
+                            co[str(j)] = str(da.ix[i, j].encode('utf-8'))
+                    j = 0
+                    column.append(co)
+                    co = {}
+                context = {}
+                context['page_num'] = '第'+str(page+1)+'页'
+                column.append(context)
+                return JsonResponse(json.dumps(column),safe=False)
+            except StopIteration:
+                page -= 1
+
+#文件显示下一页
+def Next_Page(request):
+    """
+     ===============================================================================
+     function：    下一页
+     developer:    ljh
+     add-time      2017/3/6
+     ===============================================================================
+    """
+    chunkSize = 10
+    nextpage = NextPage()
+    return nextpage.CreateIterator(fname, chunkSize)
+
+#文件显示上一页
+class LastPage():
+
+    def Load_xls(self, data_xls, start, l):
+        column = []
+        co = {}
+        a = 0
+        for i in data_xls.columns:
+            co[str(a)] = i
+            a += 1
+        column.append(co)
+        co = {}
+        for i in range(l):
+            for j in range(a):
+                try:
+                    co[str(j)] = str(data_xls.ix[start+i, j])
+                except:
+                    co[str(j)] = str(data_xls.ix[start+i, j].encode('utf-8'))
+            j = 0
+            column.append(co)
+            co = {}
+        context = {}
+        context['page_num'] = '第'+str(page+1)+'页'
+        column.append(context)
+        return JsonResponse(json.dumps(column),safe=False)
+
+    def CreateIterator(self, filename, chunkSize=1000):
+        """
+         ===============================================================================
+         function：    大文件分块
+         developer:    ljh
+         add-time      2017/2/25
+         ===============================================================================
+        """
+        global page
+        if page == 0:
+            page = 0
+        else :
+            page -= 1
+        column = []
+        filename_list = printPath()
+        path_file_list = GetFileList(settings.MEDIA_ROOT+'/uploadfiles',[])
+        a = 0
+        for i in filename_list:
+            if filename == i:
+                break
+            a += 1
+
+        if os.path.splitext(str(filename_list[a]))[1] == '.csv':
+            data_csv = pd.read_csv(path_file_list[a], sep=',', encoding='utf-8', dtype='a', iterator=True)
+            data = data_csv
+            chunks = []
+            try:
+                for i in range(page):
+                    chunk = data.get_chunk(chunkSize)
+                chunk = data.get_chunk(chunkSize)
+                chunks.append(chunk)
+                da = pd.concat(chunks, ignore_index=True)
+                a = 0
+                co = {}
+                for i in da.columns:
+                    co[str(a)] = i
+                    a += 1
+                column.append(co)
+                co = {}
+                for i in range(len(da)):
+                    for j in range(a):
+                        try:
+                            co[str(j)] = str(da.ix[i, j])
+                        except:
+                            co[str(j)] = str(da.ix[i, j].encode('utf-8'))
+                    j = 0
+                    column.append(co)
+                    co = {}
+                context = {}
+                context['page_num'] = '第'+str(page+1)+'页'
+                column.append(context)
+                return JsonResponse(json.dumps(column),safe=False)
+            except StopIteration:
+                pass
+
+        elif os.path.splitext(str(filename_list[a]))[1] == '.xls':
+            data_xls = pd.read_excel(path_file_list[a],sep=',',encoding='utf-8')
+            if len(data_xls) < 10:
+                l = len(data_xls)
+                return self.Load_xls(data_xls, 0, l)
+            else :
+                start = page*10
+                return self.Load_xls(data_xls, start, 10)
+
+        else :
+            data_txt = pd.read_table(path_file_list[a],sep=',',encoding='utf-8', dtype='a', iterator=True)
+            data = data_txt
+            chunks = []
+            try:
+                for i in range(page):
+                    chunk = data.get_chunk(chunkSize)
+                chunk = data.get_chunk(chunkSize)
+                chunks.append(chunk)
+                da = pd.concat(chunks, ignore_index=True)
+                a = 0
+                co = {}
+                for i in da.columns:
+                    co[str(a)] = i
+                    a += 1
+                column.append(co)
+                co = {}
+                for i in range(len(da)):
+                    for j in range(a):
+                        try:
+                            co[str(j)] = str(da.ix[i, j])
+                        except:
+                            co[str(j)] = str(da.ix[i, j].encode('utf-8'))
+                    j = 0
+                    column.append(co)
+                    co = {}
+                context = {}
+                context['page_num'] = '第'+str(page+1)+'页'
+                column.append(context)
+                return JsonResponse(json.dumps(column),safe=False)
+            except StopIteration:
+                pass
+
+#文件显示上一页
+def Last_Page(request):
+    """
+     ===============================================================================
+     function：    下一页
+     developer:    ljh
+     add-time      2017/3/6
+     ===============================================================================
+    """
+    chunkSize = 10
+    lastpage = LastPage()
+    return lastpage.CreateIterator(fname, chunkSize)
+
+class FileListView(TemplateView):
+    """
+     ===============================================================================
+     function：    显示文件链接列表
+     developer:    ljh
+     add-time      2017/2/4
+     ===============================================================================
+    """
+    template_name = 'filemanage/file.list.html'
+    # print GetDocSize("D:\\csv\\test.csv")
+    #十万行*一列（查单列）：十万条数据查询测试35s，五万条18s，一万3.5s
+    #十万行*五列（查五列）：五十万条数据查询测试120s，二十五万条60s，五万12s
+    #二万行*五列（查五列）：十万条数据查询测试25s，五万条12s，一万2.5s
+    # print datetime.datetime.now()
+    # intput={'1':'222'}
+    # output=['1']
+    # filename = '45_1223_2017-02-18_122758.xls'
+    # modify={'1':'乔丹'}
+    # uniqueinterface = UniqueInterface()
+    # print uniqueinterface.SearchColumn(filename, intput, output)
+    # print uniqueinterface.SearchColumn(filename, intput, output)
+    # print uniqueinterface.SearchColumn(filename, intput, output)
+    # print uniqueinterface.SearchColumn(filename, intput, output)
+    # print uniqueinterface.ModifyColumn(filename, intput, modify)
+    # print uniqueinterface.AddColumn(filename, intput)
+    # print uniqueinterface.DeleteColumn(filename, intput)
+
+    def get_context_data(self, **kwargs):
+
+        context = super(FileListView, self).get_context_data(**kwargs)
+        filename_list = printPath()
+        nodelist = []
+        no = []
+        i = 1
+        for l in filename_list:
+            dict_obj = {}
+            dict_obj['text'] = l
+            dict_obj['id'] = i
+            dict_obj['tags'] = ['0']
+            nodelist.append(dict_obj)
+            no.append(l)
+            i += 1
+
+        context['no'] = no
+        context['treedata'] = json.dumps(nodelist)
+        return context
+
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        return super(FileListView, self).get(request, *args, **kwargs)
+
+    def post(self,request,*args, **kwargs):
+        appname=request.POST.get('id')
+        global fname
+        fname = request.POST.get('table_name')
+        global page
+        have_page = False
+        page = 0
+        co = {}
+        column = []
+        all = {}
+
+        filename_list = printPath()
+        path_file_list = GetFileList(settings.MEDIA_ROOT+'/uploadfiles',[])
+        if os.path.splitext(str(filename_list[int(appname)-1]))[1] == '.csv':
+            data_csv = pd.read_csv(path_file_list[int(appname)-1],sep=',',encoding='utf-8', dtype='a', iterator=True)
+            if os.path.getsize(path_file_list[int(appname)-1]) >= 5697252 :
+                all['all_page'] = '大于10000页'
+            else :
+                data_len = pd.read_table(path_file_list[int(appname)-1],sep=',',encoding='utf-8', dtype='a')
+                print len(data_len)
+                all_page = 0
+                l1 = len(data_len)/10
+                l2 = float(len(data_len))/10
+                if l1 == l2:
+                    all_page = l1
+                else :
+                    all_page = l1 + 1
+                all['all_page'] = '共'+str(all_page)+'页'
+            try:
+                chunks = []
+                chunk = data_csv.get_chunk(10)
+                chunks.append(chunk)
+                da = pd.concat(chunks, ignore_index=True)
+                context = {}
+                a = 0
+                co = {}
+                for i in da.columns:
+                    co[str(a)] = i
+                    a += 1
+                column.append(co)
+                co = {}
+                for i in range(len(da)):
+                    for j in range(a):
+                        try:
+                            co[str(j)] = str(da.ix[i, j])
+                        except:
+                            co[str(j)] = str(da.ix[i, j].encode('utf-8'))
+                    j = 0
+                    column.append(co)
+                    co = {}
+                have_page = True
+            except:
+                pass
+
+        elif os.path.splitext(str(filename_list[int(appname)-1]))[1] == '.xls':
+            try:
+                data_xls = pd.read_excel(path_file_list[int(appname)-1],sep=',',encoding='utf-8')
+                if os.path.getsize(path_file_list[int(appname)-1]) >= 5697252 :
+                    all['all_page'] = '大于10000页'
+                else :
+                    data_len = pd.read_excel(path_file_list[int(appname)-1],sep=',',encoding='utf-8')
+                    all_page = 0
+                    l1 = len(data_len)/10
+                    l2 = float(len(data_len))/10
+                    if l1 == l2:
+                        all_page = l1
+                    else :
+                        all_page = l1 + 1
+                    all['all_page'] = '共'+str(all_page)+'页'
+                a = 0
+                for i in data_xls.columns:
+                    co[str(a)] = i
+                    a += 1
+                column.append(co)
+                co = {}
+                l = len(data_xls)
+                if l > 10:
+                    l = 10
+                else:
+                    l = l
+                for i in range(l):
+                    for j in range(a):
+                        co[str(j)] = str(data_xls.ix[i, j])
+                    j = 0
+                    column.append(co)
+                    co = {}
+                have_page = True
+            except:
+                pass
+        else :
+            data_txt = pd.read_table(path_file_list[int(appname)-1],sep=',',encoding='utf-8', dtype='a', iterator=True)
+            if os.path.getsize(path_file_list[int(appname)-1]) >= 5697252 :
+                all['all_page'] = '大于10000页'
+            else :
+                data_len = pd.read_table(path_file_list[int(appname)-1],sep=',',encoding='utf-8', dtype='a')
+                all_page = 0
+                l1 = len(data_len)/10
+                l2 = float(len(data_len))/10
+                if l1 == l2:
+                    all_page = l1
+                else :
+                    all_page = l1 + 1
+                all['all_page'] = '共'+str(all_page)+'页'
+            try:
+                chunks = []
+                chunk = data_txt.get_chunk(10)
+                chunks.append(chunk)
+                da = pd.concat(chunks, ignore_index=True)
+                context = {}
+                a = 0
+                co = {}
+                for i in da.columns:
+                    co[str(a)] = i
+                    a += 1
+                column.append(co)
+                co = {}
+                for i in range(len(da)):
+                    for j in range(a):
+                        try:
+                            co[str(j)] = str(da.ix[i, j])
+                        except:
+                            co[str(j)] = str(da.ix[i, j].encode('utf-8'))
+                    j = 0
+                    column.append(co)
+                    co = {}
+                have_page = True
+            except :
+                pass
+
+        context=self.get_context_data()
+        con = {}
+        if have_page :
+            con['page_num'] = '第'+str(page+1)+'页'
+        else :
+            con['page_num'] = '第'+str(page)+'页'
+
+
+        column.append(con)
+        column.append(all)
+        return JsonResponse(json.dumps(column),safe=False)
+
+def UpLoadFileConfig(request):
+    '''
+    ============================================================================
+    developer:  ljh
+    add-time:   2016.12.19
+    note:       文件上传
+    ============================================================================
+    '''
+    context = {}
+    var_id = request.session.get('user_id')
+    # file_path_name = FilePathName()
+    file_upload = FileUpload()
+    file_name = Filename()
+
+    if request.method == 'POST':
+        form = UpLoadFileForm(request.POST, request.FILES)
+        if form.is_valid():
+            print datetime.datetime.now()
+            f = form.cleaned_data['filename']
+            file_upload.file_standard_name = "%s_%s_%s%s" % (var_id, os.path.splitext(str(f))[0], datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S"), os.path.splitext(str(f))[1])
+            destination = open(settings.MEDIA_ROOT+'/uploadfiles/'+file_upload.file_standard_name,'wb+')
+            i = 0
+            for chunk in f.chunks():
+                destination.write(chunk)
+                i += 1
+            destination.close()
+            print i
+
+            file_name.file_name = f
+            file_name.save()
+            file_upload.save()
+            print datetime.datetime.now()
+            context['result'] = '操作成功！'
+            context['form'] = form
+            return HttpResponseRedirect(reverse('filemanage:file.list'), context)
+        elif str(form.errors) == '<ul class="errorlist"><li>filename<ul class="errorlist"><li>1</li></ul></li></ul>':#未选择文件
+            print "====================================form.is_invalid()=========================================="
+            for field in form:
+                print field.errors
+            print "====================================form.is_invalid()=========================================="
+            return render(request, 'filemanage/upload.fail.list.html', context)
+        elif str(form.errors) == '<ul class="errorlist"><li>filename<ul class="errorlist"><li>0</li></ul></li></ul>':#文件已存在
+            return render(request, 'filemanage/upload.fail.one.list.html', context)
+        elif str(form.errors) == '<ul class="errorlist"><li>filename<ul class="errorlist"><li>2</li></ul></li></ul>':#文件格式不正确
+            return render(request, 'filemanage/upload.fail.two.list.html', context)
+    elif request.method == 'GET':
+        try:
+            form = UpLoadFileForm
+            context['form'] = form
+            context['imgPath'] = ''
+        except Exception as e:
+            print "++++++++++++++++++++++++<<<<<<<<<<<<<<<Exception>>>>>>>>>>>>>>>>>>>>>>>>>++++++++++++++++++"
+            pass
+        return render(request, 'filemanage/upload_file.html', context)
+
+#处理空格
+def DEAL_SPACE(context):
+    if context is not None:
+        return context.lstrip().rstrip()
+    else:
+        return context
+
+class DeleteFileConfig(CreateView):
+    '''
+    ============================================================================
+    developer:  ljh
+    add-time:   2016/2/18
+    note:       文件删除
+    ============================================================================
+    '''
+
+    form_class = DeleteFileConfigForm
+    template_name = 'filemanage/delete.file.html'
+
+    def form_valid(self, form):
+        self.save(form)
+        return HttpResponseRedirect(reverse('filemanage:file.list'))
+
+    def save(self, form):
+        file_standard_name = DEAL_SPACE(form.cleaned_data['file_standard_name'])
+
+        os.remove(settings.MEDIA_ROOT+'/uploadfiles/' + file_standard_name)#删除文件
+        s = FileUpload.objects.get(file_standard_name=file_standard_name).file_standard_name[3:]
+        s1 = FileUpload.objects.get(file_standard_name=file_standard_name).file_standard_name[-4:]
+        file_name = s[:-22]
+        file_name += s1
+
+        Filename.objects.get(file_name=file_name).delete()#删除防重复上传控制信息
+        FileUpload.objects.get(file_standard_name=file_standard_name).delete()#删除文件路径
+

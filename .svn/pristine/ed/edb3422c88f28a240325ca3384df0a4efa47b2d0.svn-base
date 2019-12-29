@@ -1,0 +1,38 @@
+td.details-control {
+    background: url('../images/details_open.png') no-repeat center center;
+    cursor: pointer;
+}
+tr.shown td.details-control {
+    background: url('../images/details_close.png') no-repeat center center;
+}
+.list_miss{
+    display:none
+}
+.upload_name{
+    float:left;
+    padding-left:15px;
+}
+
+.upload_image_errors{
+    display:block;
+    margin-top:10px;
+}
+
+.upload_image{
+    position:relative;
+}
+
+.image_thumb{
+    width:400px;
+    margin-left:20px;
+
+}
+
+.sys_image_thumb img{
+    width:400px;
+}
+
+.upload_image span{
+    width:200px;
+}
+

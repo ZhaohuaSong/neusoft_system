@@ -1,0 +1,52 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+
+import os,sys
+sys.path.append(os.path.dirname(os.path.abspath("__file__")))
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.local')
+import django
+django.setup()
+
+from django.apps import apps
+procData = apps.get_model(app_label='richdataserver', model_name='ProcData')
+
+import cx_Oracle
+def DCNCallback(message):
+    print "Notification:"
+    for tab in message.tables:
+        print "Table:", tab.name
+        for row in tab.rows:
+            if row.operation & cx_Oracle.OPCODE_INSERT:
+                print "INSERT of rowid:", row.rowid
+            if row.operation & cx_Oracle.OPCODE_DELETE:
+                print "DELETE of rowid:", row.rowid
+            if row.operation & cx_Oracle.OPCODE_UPDATE:
+                print "UPDATE of rowid:", row.rowid
+
+class MonitorProcess():
+    def __init__(self, PID, dburl, tables):
+        self.PID = PID
+        self.dburl = dburl
+        self.tables = tables
+    def run(self,dburl,tables):
+        print 'test.....'
+        con = cx_Oracle.Connection(dburl,events = True)
+        subscriptionCUD = con.subscribe(callback = DCNCallback,
+            operations = cx_Oracle.OPCODE_INSERT | cx_Oracle.OPCODE_UPDATE | cx_Oracle.OPCODE_DELETE,
+            rowids = True)
+        for tablename in tables:
+            subscriptionCUD.registerquery('select * from '+tablename)
+        while True:
+            pass
+    def start(self):
+        proc = procData()
+        proc.trigger_id = int(sys.argv[1])
+        proc.proc_id = str(self.PID)
+        proc.save()
+        self.run(self.dburl,self.tables)
+
+
+
+
+

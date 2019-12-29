@@ -1,0 +1,28 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# from __future__ import print_function
+# import sys
+# from gevent import socket
+# from PackData import PackData
+#
+# address = ('localhost', 7000)
+# message = ' '.join(sys.argv[1:])
+# sock = socket.socket(type=socket.SOCK_DGRAM)
+# sock.connect(address)
+# packdata = PackData();
+# message = packdata.send_message()
+# print('Sending %s bytes to %s:%s' % ((len(message), ) + address))
+# sock.send(message.encode())
+# data, address = sock.recvfrom(8192)
+# sock.close()
+# print('%s:%s: got %r' % (address + (data, )))
+
+import json
+
+if __name__ == '__main__':
+
+   a =[["65","姓名","李四"],["64","性别","男"]]
+   for info in a:
+
+       print info[1]

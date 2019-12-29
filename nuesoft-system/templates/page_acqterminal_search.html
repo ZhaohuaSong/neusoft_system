@@ -1,0 +1,51 @@
+{% load staticfiles %}
+<!-- -->
+<!-- page specific plugin scripts -->
+<script src="{% static "js/jquery.bootstrap-duallistbox.min.js" %}"></script>
+<script src="{% static "js/jquery.raty.min.js" %}"></script>
+<script src="{% static "js/bootstrap-multiselect.min.js" %}"></script>
+<script src="{% static "js/select2.min.js" %}"></script>
+<script src="{% static "js/jquery-typeahead.js" %}"></script>
+<script src="{% static "js/selectbox/selectbox.js" %}"></script>
+
+<!-- page specific plugin scripts -->
+<link href="{% static 'css/bootstrap-duallistbox.min.css' %}" rel="stylesheet">
+<link href="{% static 'css/bootstrap-multiselect.min.css' %}" rel="stylesheet">
+<link href="{% static 'css/select2.min.css' %}" rel="stylesheet">
+<link href="{% static 'css/ace-skins.min.css' %}" rel="stylesheet">
+<link href="{% static 'css/ace-rtl.min.css' %}" rel="stylesheet">
+
+<div id="ace-settings-box">
+    <div class="pull-left width-100">
+        <div style="width:100%; float:left;">
+
+            <span class="am-icon-md am-icon-clock-o"></span>
+            <div class="col-sm-8">
+                <div class="form-group">
+                    <div class="col-xs-12 col-sm-9">
+                    <span class="selection">
+                        <select multiple="" id="select-acq-mid" name="state" class="select2 select2-hidden-accessible" data-placeholder="请点击选择" style="width: 200px;"
+                                tabindex="-1" aria-hidden="true">
+                            {% for data in acq_mid_list %}
+                                <option mid="{{ data.acq_mid }}" value="{{ data.acq_mid }}">{{ data.m_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </span>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="input-group col-sm-4" style="float: right;">
+
+                <input class="form-control" id="in-search" name="keywords" placeholder="输入要查询的内容" type="text">
+                <div class="input-group-btn" style="padding-left: 10px">
+                    <button class="btn btn-info btn-sm tooltip-info" id="btn-search">
+                        查询
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div><!-- /.pull-left -->
+    <!-- /.pull-left -->
+</div><!-- /.ace-settings-box -->

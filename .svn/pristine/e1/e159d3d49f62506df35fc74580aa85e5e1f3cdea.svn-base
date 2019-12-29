@@ -1,0 +1,84 @@
+
+<!--
+统一翻页控制模板
+2016 9 18 QiuJL
+page   当前页
+query  查询内容
+
+-->
+								<span>{{ data_nums }}条, 共{{ max_page }}页</span>											 
+								<ul class="pagination pull-right no-margin ">									
+									<li
+										{% if page_objects.has_previous %} 
+											class="prev" {% else %} class="prev disabled" 
+										{% endif %}	
+										title="首页"  >
+										<a 
+											{% if page_objects.has_previous %} 
+												href="?page={{ first_page }}&query={{ search_context }}" 
+											{% else %} 
+												href="#" 
+											{% endif %}>
+											<i class="ace-icon fa fa-angle-double-left"></i>
+										</a>
+									</li>
+
+									<li 
+										{% if page_objects.has_previous %} 
+											class="prev" 
+										{% else %} 
+											class="prev disabled" 
+										{% endif %}	
+										title="上一页">
+										<a 
+											{% if page_objects.has_previous %} 
+												href="?page={{ page_objects.previous_page_number }}&query={{ search_context }}" 
+											{% else %} 
+												href="#" 
+											{% endif %}>
+											<i class="ace-icon fa fa-angle-left"></i>
+										</a>
+									</li>
+
+                   					{% for index in page_range %}
+                    	   			<li 
+                    	   				{% ifequal index current_page %} 
+                    	   					class="active" 
+                    	   				{% endifequal %}>
+                        				<a  href="?page={{ index }}&query={{ search_context }}">{{ index }}</a>
+                        			</li>                        			
+                        			{% endfor %}
+
+                        			<li 
+                        				{% if page_objects.has_next %} 
+                        					class="next" 
+                        				{% else %} 
+                        					class="next disabled" 
+                        				{% endif %}title="下一页">
+										<a 
+											{% if page_objects.has_next %} 
+												href="?page={{ page_objects.next_page_number }}&query={{ search_context }}" 
+											{% else %} 
+												href="#" 
+											{% endif %}>
+											<i class="ace-icon fa fa-angle-right"></i>
+										</a>
+									</li>
+
+									<li 
+										{% if page_objects.has_next %} 
+											class="next" 
+										{% else %} 
+											class="next disabled" 
+										{% endif %}title="尾页">
+										<a 
+											{% if page_objects.has_next %} 
+												href="?page={{ last_page }}&query={{ search_context }}" 
+											{% else %} 
+												href="#" 
+											{% endif %}>										
+											<i class="ace-icon fa fa-angle-double-right"></i>
+										</a>
+									</li> 
+								</ul>						
+						  

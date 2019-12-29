@@ -1,0 +1,104 @@
+<!-- #通用的消息提醒Dialog Qiailin -->
+<div id="dialog-message-null" class="hide">
+    <p>
+    </p>
+    <p>
+        请选中要删除的信息!
+    </p>
+</div><!-- #dialog-message-null -->
+<div id="dialog-message" class="hide">
+    <p >
+    </p>
+    <p id="lb_msg_context">
+        请确认是否删除选中的信息？
+    </p>
+</div><!-- #dialog-message-delete-->
+<div id="dialog-message-update" class="hide">
+    <p>
+    </p>
+    <p>
+        请确选择要更新的信息？
+    </p>
+</div><!-- #dialog-message-update-->
+
+<div id="dialog-message-cancel" class="hide">
+    <p>
+    </p>
+    <p>
+        请确选择要注销的会员！
+    </p>
+</div><!-- #dialog-message-cancel-->
+
+<div id="dialog-message-audit" class="hide">
+    <p>
+    </p>
+    <p>
+        请选择需要审核的信息！
+    </p>
+</div><!-- #dialog-message-update-->
+
+<script type="text/javascript">
+
+//确认对话框
+function confirm_dialog (msg_title, msg, ok_function, cancel_function) {
+
+    var dialog = $("#dialog-message");
+        var lb_context = dialog.find('p#lb_msg_context');
+        lb_context.text(msg);
+
+
+        dialog.removeClass('hide').dialog({
+            modal: true,
+            title: msg_title,
+            title_html: true,
+            buttons:
+            [
+                {
+                    text: "取消",
+                            "class": "btn btn-minier",
+                            click: function () {
+                                $(this).dialog("close");
+                                cancel_function();
+                            }
+                },
+                {
+                            text: "确定",
+                            "class": "btn btn-primary btn-minier",
+                            click: function () {
+                                $(this).dialog("close");
+                                ok_function();
+                            }
+                }
+            ]
+        });
+}
+
+//提醒对话框
+function alert_dialog ( msg) {
+
+    var dialog = $("#dialog-message");
+        var lb_context = dialog.find('p#lb_msg_context');
+        lb_context.text(msg);
+
+
+        dialog.removeClass('hide').dialog({
+                    modal: true,
+                    title: "操作提示：",
+                    title_html: true,
+                    buttons: [
+                        {
+                            text: "确定",
+                            "class": "btn btn-primary btn-minier",
+                            click: function () {
+                                $(this).dialog("close");
+                            }
+                        }
+                    ]
+                });
+}
+
+
+
+</script>
+
+

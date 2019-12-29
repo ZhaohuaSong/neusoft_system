@@ -1,0 +1,13 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+from django.db import models
+
+
+class FieldList(models.Model):
+    name = models.CharField(max_length=255, blank=True, null=True)  # 数据库名或者文件名
+    column = models.CharField(max_length=255, blank=True, null=True)  # 字段名
+    type = models.CharField(max_length=100, blank=True, null=True)  # 类型：0.数据库；1.文件
+
+    class Meta:
+        managed = False
+        db_table = 'field_list'

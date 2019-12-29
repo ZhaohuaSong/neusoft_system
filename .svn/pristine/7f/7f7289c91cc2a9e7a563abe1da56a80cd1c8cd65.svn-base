@@ -1,0 +1,190 @@
+/*************************************************
+
+2016-10-11
+QiuJL
+机构签到管理（自定义报文管理）
+*************************************************/ 
+
+
+//增加域信息事件
+jQuery("#btn_add_fld").on('click', function(){
+
+    var fld_index = jQuery("#fld_index  option:selected").text();//域索引
+
+    
+
+    var fld_value = jQuery("#fld_value").val();//域值
+
+    var acq_name  = jQuery("#acq_name  option:selected").text();
+    var txn_name  = jQuery("#txn_name  option:selected").text();
+
+    if("----------" == acq_name)
+    {
+        alert("请选择受理机构");
+        return;
+    }
+
+    var json_data = {}; 
+    json_data["fld_index"] = fld_index;
+    json_data["fld_value"] = fld_value;
+    json_data["acq_name"]  = acq_name;
+    json_data["txn_name"]  = txn_name;
+   
+    var url = "add";
+    var postdata = JSON.stringify(json_data);
+    $.post( url, postdata, function(data, status){
+        if(status=="success"){
+            get_fld();
+        }  
+    }); 
+});
+
+$('#acq_name').change(function(){
+    // get_txn_list();
+     get_fld();
+})
+
+$('#txn_name').change(function(){
+    get_fld();
+})
+
+//获取当前机构的交易类型
+function get_txn_list(){
+    var acq_name  = jQuery("#acq_name  option:selected").text(); 
+ 
+    var url = "txn_list/";  url+="?acq_name="; url+=acq_name;
+    $.get( url, function(data, status){
+            if(status=="success"){
+                var json = JSON.parse(data); //后台发送过来的数据包
+
+                var txn_list = json["txn_list"];
+
+                var txn_select = jQuery("#txn_name");
+                txn_select.empty();
+
+
+                if(json["ret"]==true){
+                    for(var i=0; i<txn_list.length; i++){//循环遍历生成交易类型下拉框
+                         var option = jQuery("<option/>");
+                         option.text(txn_list[i]);
+                         option.appendTo(txn_select);
+                    }
+                }
+                else{
+                     
+                }
+            }
+    })
+}
+
+
+//检索出当前条件的域信息
+function get_fld(){
+    var acq_name  = jQuery("#acq_name  option:selected").text();
+    var txn_name  = jQuery("#txn_name  option:selected").text();
+
+    var url = "?acq_name="; url+=acq_name; url+="&txn_name="; url+=txn_name;
+    $.get( url, function(data, status){
+            if(status=="success"){
+                var json = JSON.parse(data); //后台发送过来的数据包
+
+                var table = $("#fld_table");
+                create_table(json["data"], table)
+            }
+    })
+}
+
+//生成表格
+function create_table(json, tb){
+	try{    					
+		tb.empty();		
+    	for(var i=0;i<json.length;i++){ 
+            var data = json[i];
+            tr = create_tr(data);
+            tr.appendTo(tb);
+        }  
+    }
+    catch(e){
+    	alert(e)
+    } 				
+};
+
+//生成tr元素
+function create_tr(data){
+
+	var tr = ctrate_tr();
+    tr.attr("id", data.id);  
+    
+     
+    // var td = ctrate_td();
+    // td.appendTo(tr);
+
+    var td = ctrate_td();
+    td.text(data.fld_index)
+    td.appendTo(tr);
+    var td = ctrate_td();
+    td.text(data.fld_value)
+    td.appendTo(tr);
+    var td = ctrate_td();
+     
+    td.appendTo(tr);
+
+    var btn = jQuery("<div class='hidden-sm hidden-xs action-buttons'><a class='red' onclick='delete_fld(this)'><i class='ace-icon fa fa-trash-o bigger-130'></i></a>                                            </div> ")
+    btn.appendTo(td)
+       
+    return tr;
+} 
+
+function ctrate_tr(){
+	return jQuery("<tr/>");
+}
+
+function ctrate_td(){
+	return jQuery("<td/>");
+}
+
+//删除一条域信息
+function delete_fld(obj){
+    var tr = $(obj).closest("tr");
+    var id = tr.attr("id");
+
+    var json_data = {}; 
+    json_data["id"] = id; 
+   
+    var url = "del";
+    var postdata = JSON.stringify(json_data);
+    $.post( url, postdata, function(data, status){
+        if(status=="success"){
+            
+            if(data=="True")
+                tr.remove();
+            else
+                alert(data)
+        }  
+    });
+}
+
+//向Posp发送报文
+jQuery("#send_pack_btn").on('click', function(){
+    var acq_name  = jQuery("#acq_name  option:selected").text();
+    var txn_name  = jQuery("#txn_name  option:selected").text();
+
+    if(acq_name=="----------"){
+        alert("请选择受理机构");
+        returns;
+    }
+
+    var url = "sendpack?acq_name="; url+=acq_name; url+="&txn_name="; url+=txn_name;
+    $.get( url, function(data, status){
+            if(status=="success"){
+                var json = JSON.parse(data); //后台发送过来的数据包
+
+                if("True"==json["ret"])
+                {
+                    alert("发送成功")
+                }
+                else
+                    alert(json['msg'])
+            }
+    })
+})

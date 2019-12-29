@@ -1,0 +1,20 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+from django.db import models
+
+
+class Message(models.Model):
+    ACTIVE_CHOICE = (
+        (0, u'未读'),
+        (1, u'已读'),
+    )
+    sender = models.CharField(max_length=64)
+    sub = models.CharField(max_length=255)
+    type = models.IntegerField(choices=ACTIVE_CHOICE)  # 已读、未读
+    data = models.TextField()
+    time = models.CharField(max_length=32, blank=True, null=True, verbose_name='发送时间')  # 操作时间
+    recipients = models.CharField(max_length=255, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'message'

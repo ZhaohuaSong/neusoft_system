@@ -1,0 +1,214 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2017/1/6 下午3:33
+# @Author  : czw@rich-f.com
+# @Site    : www.rich-f.com
+# @File    : views_dbdetails.py
+# @Software: PyCharm
+# @Function: 数据库视图细节模型
+
+import logging
+from django.views.generic import TemplateView
+from models import DbConfig
+import json
+from dbconfig import dbengine
+import base64
+from django.http import JsonResponse
+from dbutils import get_model_data,crud_model_data
+
+from django.views.generic.detail import SingleObjectMixin
+
+_logger = logging.getLogger('loggers')
+
+
+class DBSourceListView(TemplateView):
+    """
+    ===============================================================================
+    function：    显示数据源数据库表
+    developer:    Rich.Chen
+    add-time      2017/12/23
+    ===============================================================================
+    """
+
+    template_name = 'dbadmin/dbsource.list.html'
+
+    def get(self, request, *args, **kwargs):
+
+        dbconfig_list = DbConfig.objects.all()
+
+        nodelist = []
+        # 第1层取数据源名称
+        for l_parent in dbconfig_list:
+            parent_obj = {}
+            parent_obj['text'] = l_parent.appname
+            parent_obj['id'] = l_parent.dbname
+            config = {}
+            config['host'] = l_parent.dbhost
+            config['port'] = l_parent.dbport
+            config['user'] = l_parent.dbusername
+            config['password'] = base64.b64decode(l_parent.dbpassword)  # 解码
+            config['dbname'] = l_parent.dbname
+            config['dbtype'] = l_parent.dbtype
+            mydb = dbengine(config)
+            table_list = mydb.get_tables()
+            parent_obj['tags'] = [table_list.__len__()]
+            # 取第2层表的数据
+            child_nodes = []
+            for t_child in table_list:
+                child_obj = {}
+                child_obj['text'] = t_child
+                child_nodes.append(child_obj)
+            parent_obj['nodes'] = child_nodes
+            nodelist.append(parent_obj)
+
+        context = self.get_context_data()
+        context['request'] = request
+        context['treedata'] = json.dumps(nodelist)
+
+        return self.render_to_response(context)
+
+
+class DBTableListView(TemplateView):
+    template_name = 'dbadmin/dbsource.list.html'
+
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        context['request'] = request
+
+        print context['sech_item']
+
+
+class DBTableTreeMixin(object):
+
+    #取数据库源的表，组装成树形
+    def get_table_treedata(self):
+        message=''
+        dbconfig_list = DbConfig.objects.all()
+        nodelist = []
+        # 第1层取数据源名称
+        for l_parent in dbconfig_list:
+            parent_obj = {}
+            parent_obj['text'] = l_parent.appname
+            parent_obj['id'] = l_parent.appname
+            parent_obj['dbname'] = l_parent.dbname
+            config = {}
+            config['host'] = l_parent.dbhost
+            config['port'] = l_parent.dbport
+            config['user'] = l_parent.dbusername
+            config['password'] = base64.b64decode(l_parent.dbpassword)  # 解码
+            config['dbname'] = l_parent.dbname
+            config['dbtype'] = l_parent.dbtype
+            try:
+                mydb = dbengine(config)
+                table_list = mydb.get_tables()
+                parent_obj['tags'] = [table_list.__len__()]
+                # 取第2层表的数据
+                child_nodes = []
+                for t_child in table_list:
+                    child_obj = {}
+                    child_obj['id']=l_parent.appname #把appname传递到下1层
+                    child_obj['text'] = t_child
+                    child_nodes.append(child_obj)
+                parent_obj['nodes'] = child_nodes
+                nodelist.append(parent_obj)
+                mydb.close()
+            except:
+                message =message+parent_obj['text']+'-数据库连接失败;'
+                pass
+
+        return json.dumps(nodelist),message
+
+    #根据数据源和表名，取字段列表
+    def get_columns_list(self,appname,tablename):
+
+        #只取1条记录，不用get是避免数据库数据中重复
+        dbsource=DbConfig.objects.filter(appname=appname)[0]
+
+        config = {}
+        config['host'] = dbsource.dbhost
+        config['port'] = dbsource.dbport
+        config['user'] = dbsource.dbusername
+        config['password']=base64.b64decode(dbsource.dbpassword)
+        config['dbname'] = dbsource.dbname
+        config['dbtype'] = dbsource.dbtype
+        mydb = dbengine(config)
+        columns=mydb.get_columns_bytable(table_name=tablename)
+
+        return columns,config['dbname']
+
+
+
+class DBTable_View(DBTableTreeMixin, TemplateView):
+
+    template_name = 'dbadmin/dbsource.list.html'
+
+    def get_context_data(self, **kwargs):
+
+        context = super(DBTable_View, self).get_context_data(**kwargs)
+
+        context['treedata'],context['message']=self.get_table_treedata()
+
+        return context
+
+    def get(self, request, *args, **kwargs):
+
+        #context = self.get_context_data()
+
+        return super(DBTable_View, self).get(request, *args, **kwargs)
+
+    def post(self,request,*args, **kwargs):
+
+        appname=request.POST.get('id')
+
+        table_name=request.POST.get('table_name')
+
+        columns={}
+
+        if appname is not None:
+
+            columns,dbname=self.get_columns_list(appname,table_name)
+
+            attr = []
+            for col in columns:
+                if not col.get('name')=='id':
+                    attr.append(col.get('name'))
+            jsonobj = {}
+            jsonobj['dbname']=dbname
+            jsonobj['sql']='select * from '+table_name
+
+            datalist = crud_model_data(json.loads(json.dumps(jsonobj)))
+        result ={}
+        result['columns'] = columns
+        result['datalist'] = datalist.get('result','')
+        result['dbname'] = dbname
+        result['table_name'] = table_name
+        return JsonResponse(json.dumps(result),safe=False)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

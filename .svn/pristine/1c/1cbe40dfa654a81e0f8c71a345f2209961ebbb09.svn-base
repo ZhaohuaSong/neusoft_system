@@ -1,0 +1,154 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2016/12/27 下午6:06
+# @Author  : qiujunli
+# @Site    :
+# @File    : views_apps.py
+# @Software: PyCharm
+# @Function: 应用程序视图模型
+
+from django.shortcuts import render
+from django.http import HttpResponseRedirect
+from django.core.urlresolvers import reverse
+from django.views.generic import TemplateView
+from ..vanilla import CreateView
+from django.http import JsonResponse
+from forms import FormLoaclApp
+import logging
+import socket
+
+_logger = logging.getLogger('loggers')
+
+from models import   LocalApp
+
+from forms import FormApp
+
+
+# Create your views here.
+
+class LocalAppView(TemplateView):
+    template_name = 'packmanage/packmanage.localapp.html'
+
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data(**kwargs)
+        try:
+            context['localapp'] = LocalApp.objects.all()[0]
+        except:
+            pass
+        return self.render_to_response(context)
+
+class EditLocalAppView(CreateView):
+    '''
+    创建视图
+    '''
+    form_class = FormLoaclApp
+    template_name = 'packmanage/packmanage.localapp.form.html'
+
+
+    def get(self, request, *args, **kwargs):
+        try:
+            app = LocalApp.objects.all()[0]
+            form = FormLoaclApp(initial={'app_name':app.app_name,
+                                         'app_id': app.app_id,
+                                         'local_ip': app.local_ip,
+                                         'local_port': app.local_port,
+                                         })
+        except:
+            form = FormLoaclApp()
+
+        context = self.get_context_data(form=form)
+        return self.render_to_response(context)
+
+
+    # 成功后跳转
+    def form_valid(self, form):
+        self.save(form)
+        return HttpResponseRedirect(reverse('packmanage:apps.localapp'))
+
+    # 保存
+    def save(self, form):
+        app_name = form.cleaned_data['app_name']
+        app_id = form.cleaned_data['app_id']
+        local_ip = form.cleaned_data['local_ip']
+        local_port = form.cleaned_data['local_port']
+
+        try:
+            app = LocalApp.objects.all()[0]
+        except:
+            app = LocalApp()
+
+        app.app_id = app_id
+        app.app_name = app_name
+        app.local_ip = local_ip
+        app.local_port = local_port
+        app.save()
+
+def test_local_app(request):
+    '''
+    测试本地适配器运行状态
+    :param request:
+    :return:
+    '''
+
+    # from pack.pack_ctrl import *
+    # from api.handle.handle_data_exchange_request import *
+    # iso = PackCtrl().get_test_dataexchange_data('6000010001')
+    #
+    # iso_8583 = ISO8583()
+    # iso_8583.setNetworkISO(iso)
+    # DataExchangeRequest().handle(iso_8583)
+
+
+
+
+
+    try:
+        app = LocalApp.objects.all()[0]
+    except:
+        return JsonResponse({'code': '01', 'desc': '本地适配器基本信息丢失，请先进行配置!'})
+
+    return check_server(app.local_ip, app.local_port)
+
+def check_server(ip, port):
+    if isinstance(ip, unicode): ip = ip.encode("utf-8")
+    if isinstance(port, unicode): port = port.encode("utf-8")
+
+    sk = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sk.settimeout(10)
+
+    try:
+        # code = sk.connect_ex((ip, int(port)))
+        # if 0!=code and 10061!=code:#服务器忙碌  Connection refused  如果错误码不是这样 那么重新来一次
+        sk.connect((ip, int(port)))
+        sk.sendall('test')
+        data = sk.recv(8192)
+        if 'ok'==data:
+            context = {'code': '00', 'desc': '本地适配器服务运行状态良好!'}
+        else:
+            context = {'code': '01', 'desc': '本地适配器服务运行失败!'}
+    except Exception as e:
+        context = {'code': '01', 'desc': '本地适配器服务运行异常：%s!'%str(e)}
+    finally:
+        sk.close()
+        return JsonResponse(context)
+
+# def start_app(request):
+#     '''
+#     启动服务
+#     :param request:
+#     :return:
+#     '''
+#
+#     name_dict = {'code': '00', 'desc': '操作成功!'}
+#     return JsonResponse(name_dict)
+#
+#
+# def stop_app(request):
+#     '''
+#     停止服务
+#     :param request:
+#     :return:
+#     '''
+#
+#     name_dict = {'code': '00', 'desc': '操作成功!'}
+#     return JsonResponse(name_dict)

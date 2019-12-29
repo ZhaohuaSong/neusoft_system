@@ -1,0 +1,106 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2017/2/16 10:55
+# @Author  : qiujunli
+# @Site    :
+# @File    : data_src_interface.py
+# @Software: PyCharm
+# @Function: 数据源接口总汇，所有数据源类型的接口都经过这个类进行分发处理，所有数据源接口唯一
+from ..system_enum import *
+from external_interface import *
+
+
+class IDataSrc:
+    def __init__(self, data_src_type):
+        '''
+        :param data_src_type: 数据源类型
+        '''
+        data_src_type = str(data_src_type)
+        self.data_src_type = data_src_type
+        self.f_src = FileSrc()
+        self.db_src = DBSrc()
+
+    def init(self, data_src_type):
+        '''
+        重新初始化
+        :param data_src_type:
+        :return:
+        '''
+        data_src_type = str(data_src_type)
+        self.data_src_type = data_src_type
+        # self.f_src = FileSrc()
+        # self.db_src = DBSrc()
+
+    def get_all_src_list(self, bChange=False):
+        '''
+        获取数据源列表[('55', '测试人员数据表')]或者[('qqq.text', 测试人员文件)]
+        :return:
+        '''
+        if self.data_src_type == DATA_SRC_TYPE_FILE:
+            return self.f_src.get_file_list()
+        elif self.data_src_type == DATA_SRC_TYPE_DB:
+            return  self.db_src.get_db_src_list(bChange)
+
+    def get_cols_name_list(self, src_name, datasrc_business=DATA_SRC_DB_SINGLE):
+        '''
+        获取数据源字段名[('name', '姓名'), ('phone', '电话')]
+        :param src_name:
+        :return:([k],[v]), ([k],[v])返回两个参数第一个是入参，第二个是出参，k表示这个字段的索引或者真实字段名
+        '''
+        if self.data_src_type == DATA_SRC_TYPE_FILE:
+            return self.f_src.get_cols_name_list(src_name)
+        elif self.data_src_type == DATA_SRC_TYPE_DB:
+            return self.db_src.get_cols_name_list(src_name, datasrc_business)
+
+    def query(self, src_name, in_param_dic, out_param_index, index=1, nums=100):
+        '''
+        查询
+        :param src_name: 数据源名称
+        :param in_param_dic: {'1':'张三', '2':'男'}或者{'name':'张三', 'sex':'男'} 查询条件
+        :param out_param_index: [1,2,3,4,5]或者['name', 'phone', 'addr']要查询的内容
+        :param index: 当前数据块索引
+        :param nums: 输出多少条数据
+        :return:
+        '''
+        if self.data_src_type == DATA_SRC_TYPE_FILE:
+            return self.f_src.search(src_name, in_param_dic, out_param_index)
+        elif self.data_src_type == DATA_SRC_TYPE_DB:
+            return self.db_src.search(src_name, in_param_dic, out_param_index)
+
+    def add(self, src_name, in_param_dic, is_over=False):
+        '''
+        增加
+        :param src_name: 数据源名称
+        :param in_param_dic: 添加列表['1':'张三', '2':'181584552556']或者['name':'张三', 'phone':'181584552556']
+        :param is_over: 是否结束本轮
+        :return:
+        '''
+        if self.data_src_type == DATA_SRC_TYPE_FILE:
+            return self.f_src.add(src_name, in_param_dic)
+        elif self.data_src_type == DATA_SRC_TYPE_DB:
+            return self.db_src.add(src_name, in_param_dic, is_over)
+
+    def delete(self, src_name, in_param_dic):
+        '''
+        删除
+        :param src_name: 数据源名称
+        :param in_param_dic:
+        :return: 删除条件列表['1':'张三', '2':'181584552556']或者['name':'张三', 'phone':'458554655']
+        '''
+        if self.data_src_type == DATA_SRC_TYPE_FILE:
+            return self.f_src.delete(src_name, in_param_dic)
+        elif self.data_src_type == DATA_SRC_TYPE_DB:
+            return self.db_src.delete(src_name, in_param_dic)
+
+    def updata(self, src_name, in_param_dic, out_param_dic):
+        '''
+        更新操作
+        :param src_name:数据源名称
+        :param in_param_dic:['1':'张三', '2':'181584552556']或者['name':'张三', 'phone':'458554655']
+        :param out_param_dic:['1':'李四']或者['name':'李四']
+        :return:
+        '''
+        if self.data_src_type == DATA_SRC_TYPE_FILE:
+            return self.f_src.updata(src_name, in_param_dic, out_param_dic)
+        elif self.data_src_type == DATA_SRC_TYPE_DB:
+            return self.db_src.updata(src_name, in_param_dic, out_param_dic)

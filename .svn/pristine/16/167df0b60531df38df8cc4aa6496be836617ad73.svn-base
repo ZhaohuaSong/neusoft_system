@@ -1,0 +1,201 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2016/12/27 下午6:06
+# @Author  : qiujunli
+# @Site    :
+# @File    : views_apps.py
+# @Software: PyCharm
+# @Function: 应用程序视图模型
+
+from django.shortcuts import render
+from django.http import HttpResponseRedirect
+from django.core.urlresolvers import reverse
+from ..common.datatables.views import BaseDatatableView
+from django.views.generic import TemplateView
+from ..vanilla import CreateView, QUpdateView
+
+from django.http import JsonResponse
+from django.db.models import Q
+import datetime
+import json
+import socket
+import logging
+_logger = logging.getLogger('loggers')
+
+from models import Apps, TriggerType
+from forms import FormApp
+
+# Create your views here.
+
+class ListAppsView(TemplateView):
+    template_name = 'packmanage/packmanage.apps.list.html'
+
+    def get(self, request, *args, **kwargs):
+        opt = request.GET.get('option', None)
+        if opt is not None and opt == u'check_ip':
+            id = request.GET.get('id')
+            try:
+                app = Apps.objects.get(id=id)
+            except:
+                context = {'code': '01', 'desc': '该应用程序在不存在!'}
+                return JsonResponse(context)
+
+            ip = app.app_ip
+            port = app.app_port
+            return check_server(ip, port)
+
+        return super(ListAppsView, self).get(request, *args, **kwargs)
+
+class JsonAppsView(BaseDatatableView):
+    model = Apps
+    columns = ['id', 'id', 'app_name', 'app_ip', 'app_port', 'app_triggertype', 'app_state', 'create_by', 'id', 'id', ]
+    order_columns = ['id', 'id', 'app_name', 'app_ip', 'app_port', 'app_triggertype', 'app_state', 'create_by', 'id', 'id', ]
+
+    #重写基类方法——当前页面数据加工
+    def get_json(self, response):
+        data_list = response['data']
+        for data in data_list:
+            app_triggertype = data[5]
+            data[5] = TriggerType.objects.get(trigger_id=app_triggertype).trigger_name
+        return super(JsonAppsView, self).get_json(response)
+
+    #基类的基础查询条件
+    def format_base_search_Q(self, search):
+        q = Q()
+        q_list = TriggerType.objects.filter(trigger_name__contains=search)
+        for data in q_list:
+            q |= Q(app_triggertype=data.trigger_id)
+
+        if search == u'正常使用':
+            q |= Q(app_state=1)
+        elif search == u'已停用':
+            q |= Q(app_state=0)
+        return q
+
+
+#检测IP地址
+def check_server(ip, port):
+    if isinstance(ip, unicode): sek_pink = ip.encode("utf-8")
+    if isinstance(port, unicode): sek_pink = port.encode("utf-8")
+
+    sk = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sk.settimeout(2)
+    try:
+        sk.connect((ip, int(port)))
+        context = {'code': '00', 'desc': '测试通过!'}
+    except Exception as e:
+        context = {'code': '01', 'desc': '连接服务器失败：%s!' % str(e)}
+    finally:
+        sk.close()
+        return JsonResponse(context)
+
+class CreateAppView(CreateView):
+    '''
+    创建视图
+    '''
+    form_class = FormApp
+    template_name = 'packmanage/packmanage.apps.form.html'
+
+    def get(self, request, *args, **kwargs):
+        opt = request.GET.get('option', None)
+        if opt is not None and opt == u'check_ip':
+            ip = request.GET.get('ip')
+            port = request.GET.get('port')
+            return check_server(ip, port)
+
+        return super(CreateAppView, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        self.user = request.user
+        return super(CreateAppView, self).post(request, *args, **kwargs)
+
+
+    #成功后跳转
+    def form_valid(self, form):
+        self.save(form)
+        return HttpResponseRedirect(reverse('packmanage:apps.list'))
+
+    #保存
+    def save(self, form):
+        app_name  = form.cleaned_data['app_name']
+        app_ip    = form.cleaned_data['app_ip']
+        app_port  = form.cleaned_data['app_port']
+        app_note  = form.cleaned_data['remarks']
+        app_state = form.cleaned_data['app_state']
+        app_triggertype = form.cleaned_data['app_triggertype']
+
+        app = Apps()
+        app.app_name = app_name
+        app.app_ip = app_ip
+        app.app_port = app_port
+        app.app_state = app_state
+        app.app_triggertype = app_triggertype
+        app.create_by = self.user.username
+        app.create_date = datetime.datetime.now()
+        app.update_date = app.create_date
+        app.remarks = app_note
+        app.save()
+
+        app.app_id = app.id#设置app_ID 暂时让命名规则跟主键一样
+        app.save()
+
+class EditAppView(QUpdateView):
+    '''
+    编辑视图
+    '''
+    model = Apps
+    form_class = FormApp
+    template_name = 'packmanage/packmanage.apps.form.html'
+
+
+    def get(self, request, *args, **kwargs):
+        opt = request.GET.get('option', None)
+        if opt is not None and opt == u'check_ip':
+            ip = request.GET.get('ip')
+            port = request.GET.get('port')
+            return check_server(ip, port)
+
+        return super(EditAppView, self).get(self, request, *args, **kwargs)
+
+    def get_success_url(self):
+        return reverse('packmanage:apps.list')
+
+    def save(self, form):
+        app_name = form.cleaned_data['app_name']
+        app_ip = form.cleaned_data['app_ip']
+        app_port = form.cleaned_data['app_port']
+        app_note = form.cleaned_data['remarks']
+        app_state = form.cleaned_data['app_state']
+        app_triggertype = form.cleaned_data['app_triggertype']
+
+        app = self.object
+        app.app_name = app_name
+        app.app_ip   = app_ip
+        app.app_port = app_port
+        app.remarks = app_note
+        app.app_state = app_state
+        app.app_triggertype = app_triggertype
+        app.update_date = datetime.datetime.now()
+        app.save()
+
+def apps_delete(request):
+    '''
+    批量删除
+    :param request:
+    :return:
+    '''
+    json_data = json.loads(request.GET.get('ids'))
+    list_id_del = json_data['ids']
+
+    sql = Q()
+
+    for id in list_id_del:
+        sql = sql | Q(id=id)
+
+    qs = Apps.objects.filter(sql)
+    if 0 != len(qs):
+        qs.delete()
+
+
+    name_dict = {'code': '00', 'desc': '删除成功!'}
+    return JsonResponse(name_dict)

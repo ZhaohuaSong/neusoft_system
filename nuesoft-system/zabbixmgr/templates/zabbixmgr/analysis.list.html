@@ -1,0 +1,281 @@
+{% extends "mainbase.html" %}
+{% load staticfiles %}
+{% load i18n staticfiles %}
+{% load url from future %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% block scripts %}
+
+        <!-- page specific plugin scripts -->
+        <link rel="stylesheet" href="{% static "css/jquery-ui.min.css" %}"/>
+{#        <link rel="stylesheet" href="{% static "css/datatables/buttons.dataTables.min.css" %}"/>#}
+        <!-- jquery scripts -->
+        <script src="{% static "js/dataTables.buttons.min.js" %}"></script>
+        <!-- datatables buttons scripts -->
+        <script src="{% static "js/datatables/buttons.flash.min.js" %}"></script>
+        <script src="{% static "js/datatables/jszip.min.js" %}"></script>
+        <script src="{% static "js/datatables/pdfmake.min.js" %}"></script>
+        <script src="{% static "js/datatables/vfs_fonts.js" %}"></script>
+        <script src="{% static "js/datatables/buttons.html5.min.js" %}"></script>
+        <script src="{% static "js/datatables/buttons.print.min.js" %}"></script>
+
+        <!-- ace scripts -->
+        <script src="{% static "js/buttons.colVis.min.js" %}"></script>
+        <script src="{% static "js/dataTables.select.min.js" %}"></script>
+
+        <script src="{% static "js/jquery-ui.custom.min.js" %}"></script>
+        <script src="{% static "js/jquery.ui.touch-punch.min.js" %}"></script>
+        <script src="{% static "js/bootstrap-colorpicker.min.js" %}"></script>
+        <script src="{% static "js/jquery-ui.min.js" %}"></script>
+        <script src="{% static "js/jquery.easypiechart.min.js" %}"></script>
+        <script src="/static/js/zabbixmgr/highcharts.js"></script>
+        <script src="/static/js/My97DatePicker/WdatePicker.js"></script>
+
+{#        <script src="assets/js/jquery.easypiechart.min.js"></script>#}
+
+        {#        <script src="{% static "js/jquery.sparkline.index.min.js" %}"></script>#}
+
+        <!-- txnname scripts -->
+
+        <script type="text/javascript">
+            var group_dict = {{ group_dict | safe }};
+            var port_dict = {{ port_dict | safe }};
+            var industry_id = {{ industry_id | safe }};
+            var TXNNAMES_LIST_URL = '{% url "zabbixmgr:analysis.data" industry_id%}';
+            var TABPAGE_LIST_URL = '{% url "zabbixmgr:tabpagedata.data" %}';
+        </script>
+        <script src="{% static "js/zabbixmgr/trafficdata.list.js" %}"></script>
+
+        <script>
+            $(function () {
+                var t = {{ text_title | safe }};
+                var c = eval(t);
+                var val = {{ value | safe }};
+                var val2 = {{ value2 | safe }};
+                var ipr = {{ in_peak_rate | safe }};
+                var opr = {{ out_peak_rate | safe }};
+                var v = eval(val);
+                var b = eval(t);
+                var v2 = eval(val2);
+                $('#container').highcharts({
+                    chart: {
+                        type: 'line', //可选图形
+                        margin: [ 50, 50, 100, 80]
+                    },
+                    title: {
+                        text: b
+                    },
+                    xAxis: {
+                        categories: {{ clock | safe }},
+                        tickInterval:{{ tickinterval | safe }}, // 刻度值
+                        labels: {
+                            x:-50,
+                            y:20,
+                            rotation: 0,
+                            align: 'left',
+                            style: {
+                                fontSize: '8px',
+                                fontFamily: 'Verdana, sans-serif'
+                            }
+                        }
+                    },
+                    yAxis: {
+                        min: 0,
+                        minPadding: 0,
+                        maxPadding: 0,
+                        tickInterval:{{ interval | safe }}, // 刻度值
+                        title: {
+                            text: {{ units | safe }}
+                        },
+                        labels: {
+                            formatter:function() {
+{#                                return ''+Highcharts.dateFormat('%Y-%m-%d %H:%M',this.value);#}
+                                return this.value;
+                            }
+                        },
+                        plotLines:[{
+                            value:0,
+                            width:1,
+                            color:'#808080'
+                        }]
+                    },
+                    legend: {
+                        layout:'vertical',
+                        align:'center',
+                        verticalalign:'left',
+                        borderwidth:0,
+{#                        enabled: false,#}
+                        x:10,
+                        y:10
+                    },
+
+                    plotOptions: {
+                        area: {
+                            fillColor: {
+                                linearGradient: {
+                                    x1: 0,
+                                    y1: 0,
+                                    x2: 0,
+                                    y2: 1
+                                },
+                                stops: [
+                                    [0, Highcharts.getOptions().colors[0]],
+                                    [1, Highcharts.Color(Highcharts.getOptions().colors[0]).setOpacity(0).get('rgba')]
+                                ]
+                            },
+                            marker: {
+                                radius: 0
+                            },
+                            lineWidth: 0,
+                            states: {
+                                hover: {
+                                    lineWidth: 1
+                                }
+                            },
+                            threshold: null
+                        }
+                    },
+                    tooltip: {
+                        pointFormat: '数值: <b>{point.y:.2f}</b>'
+                    },
+                    series: [{
+                        type:'area',
+                        name: ipr,
+                        data: v,
+                        dataLabels: {
+                            enabled: false,
+                            rotation: -90,
+                            color: '#FFFFFF',
+                            align: 'right',
+                            x: 4,
+                            y: 10,
+                            style: {
+                                fontSize: '13px',
+                                fontFamily: 'Verdana, sans-serif',
+                                textShadow: '0 0 3px black'
+                            }
+                        }
+                    },
+                        {
+{#                            type: 'area',#}
+                            name: opr,
+                            data: v2,
+                            dataLabels: {
+                                enabled: false,
+                                rotation: -90,
+                                color: '#FFFFFF',
+                                align: 'right',
+                                x: 4,
+                                y: 10,
+                                style: {
+                                    fontSize: '13px',
+                                    fontFamily: 'Verdana, sans-serif'
+                                    //                  textShadow: '0 0 3px black'
+                                }
+                            }
+                        }
+                    ]
+                });
+            });
+            </script>
+
+    {% endblock %}
+</head>
+<body class="no-skin">
+{% block content %}
+    <div class="main-content">
+        <div class="breadcrumbs" id="breadcrumbs">
+         <ul class="breadcrumb">
+                <li>
+                    <i class="ace-icon fa fa-home home-icon"></i>
+                    <a href="/zabbixmgr/outtrafficchartshow">首页</a>
+                </li>
+
+                <li>
+                    <a href="#">用户及端口列表</a>
+                </li>
+                <li class="active">流量趋势</li>
+            </ul><!-- /.breadcrumb -->
+        </div>
+        <div class="page-content">
+
+            <div  id="ace-settings-box">
+    <div class="pull-left width-100">
+        <div style="width:100%; border-bottom:1px #dedede dashed; float:left">
+            <div class="input-group col-sm-12" style="margin-top: 20px; float: right;">
+                <script type="text/javascript">
+                     var arrData = {{ arrData | safe }};
+                </script>
+                <script src="/static/js/zabbixmgr/select_box.js"></script>
+                用户：<input type="text" name="makeupCo" id="makeupCo" class="makeinp" onfocus="setfocus(this)" oninput="setinput(this);" placeholder="请选择或输入"/>
+                端口：<input type="text" name="makeupCo" id="makeupCo_1" class="makeinp" onfocus="setfocus_1(this)" oninput="setinput_1(this);" placeholder="请选择或输入"/>
+                时间粒度：<input  id="in-search" style="margin-right:20px;" name="keywords" placeholder="请选择时间粒度" type="text" list="companys" size="14" maxlength="32" autocomplete="off" aria-required="true" tabindex="1" class="fieldValInit">
+                <datalist id="companys">
+                  <option value="1分钟">
+                  <option value="5分钟">
+                  <option value="10分钟">
+                  <option value="1小时">
+                  <option value="1天">
+                </datalist>
+                起始时间：<input  id="in-search_1" style="margin-right:20px;" name="keywords" placeholder="请选择起始时间" type="text" onClick="WdatePicker({maxDate:'#F{$dp.$D(\'in-search_2\')}'})" size="14" maxlength="32" class="fieldValInit" autocomplete="off" aria-required="true" tabindex="2">
+                终止时间：<input  id="in-search_2" name="keywords" placeholder="请选择结束时间" type="text" onClick="WdatePicker({minDate:'#F{$dp.$D(\'in-search_1\')}', maxDate:'%y-%M-%d-%h'})" size="14" maxlength="32" class="fieldValInit" autocomplete="off" aria-required="true" tabindex="3">
+                <select name="makeupCoSe" id="typenum" onchange="changeF(this)" size="3" style="display:none; width:190px;margin-left:40px"></select>
+                <select name="makeupCoSe" id="typenum_1" onchange="changeF_1(this)" size="3" style="display:none; width:270px;margin-left:240px"></select>
+                <div class="input-group-btn" style="padding-left: 10px">
+                    <button class="btn btn-info btn-sm tooltip-info" id="btn-traffic_search">
+                        查询
+                    </button>
+                </div>
+            </div>
+
+
+        </div>
+    </div><!-- /.pull-left -->
+
+    <!-- /.pull-left -->
+</div><!-- /.ace-settings-box -->
+
+
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="clearfix" style="padding-top: 10px">
+                        <div class="tableTools-container"></div>
+                    </div>
+                    <div class="table-header"> <!--table-header -->
+                        峰值流入流出趋势
+                    </div>
+                    <div id="container" style="min-width:700px;height:400px"></div>
+                    <div class="table-header"> <!--table-header -->
+                        数据列表
+                    </div>
+                    <div class="table-header"> <!--table-header -->
+                        <ul id="myTab" class="nav nav-tabs">
+                            <li class="active">
+                                <a href="#1" data-toggle="tab">
+                                    用户标签
+                            </a>
+                            </li>
+                            <li >
+                                <a href="#2" data-toggle="tab">
+                                    端口标签
+                            </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div id="myTabContent" class="tab-content">
+                        <div class="tab-pane fade in active" id="1">
+                            {% include "zabbixmgr/dynamic_table.html" %}
+                        </div>
+                        <div class="tab-pane fade in" id="2">
+                            {% include "zabbixmgr/time_interval_search.html" %}
+                            {% include "zabbixmgr/dynamic_table_1.html" %}
+                </div><!-- /.span -->
+            </div><!-- /.row -->
+        </div>
+    </div>
+    {% include "message.html" %}
+{% endblock %}
+<!-- /.main-content -->
+</body>
+</html>

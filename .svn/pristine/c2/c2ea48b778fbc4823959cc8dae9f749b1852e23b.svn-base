@@ -1,0 +1,11 @@
+#!/usr/bin/env python
+#-*- coding: utf-8 -*-
+
+from __future__ import unicode_literals
+
+from django.apps import AppConfig
+
+
+class DjangoGeventDeployConfig(AppConfig):
+    name = 'richDataX-system.django_gevent_deploy'
+    verbose_name = "django_gevent_deploy"

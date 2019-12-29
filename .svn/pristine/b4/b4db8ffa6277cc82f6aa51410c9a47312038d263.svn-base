@@ -1,0 +1,35 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
+from ...common.iso.iso_8583 import *
+from instance.instance_factory import *
+class DataInterface:
+    def __init__(self):
+        self.instance = None
+
+    # 00=求情 01=响应
+    def receive(self, iso_net):
+        iso_net = format_str_to_assic(iso_net)
+        iso = ISO8583()
+        iso.setNetworkISO(iso_net)
+        msgtype = iso.get_msg_type()
+        protocol_id = iso.get_TPDU()
+
+
+
+        self.instance = InstanceFactory().get_instance(protocol_id)
+
+        if '00'==msgtype:#请求报文
+            iso_hex = self.request(iso)
+            return iso_hex
+        elif '01'==msgtype:#响应报文
+            return self.response(iso)
+
+    #请求处理
+    def request(self, iso):
+        return self.instance.request(iso)
+        pass
+
+    #响应处理
+    def response(self, iso):
+        return self.instance.response(iso)

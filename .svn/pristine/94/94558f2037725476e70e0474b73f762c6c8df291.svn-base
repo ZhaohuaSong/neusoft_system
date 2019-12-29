@@ -1,0 +1,177 @@
+﻿#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
+"""
+QiuJL
+2016-7-7、
+翻译8583应答码
+"""
+
+
+################################################################################################
+# CResCode8583类
+# 8583应答码管理类
+################################################################################################
+
+
+
+
+
+class ErrorCode(object):
+    def __init__(self, code=None):
+        self.code = code
+
+    def get_msg(self):
+        return self._RESPONSE_CODE.get(self.code, '交易失败，没找到对应的错误码：[%s]' % self.code)
+
+    _RESPONSE_CODE = {}
+    _RESPONSE_CODE['00'] = ['交易成功']
+    _RESPONSE_CODE['01'] = ['交易失败,请联系发卡行']
+    _RESPONSE_CODE['02'] = ['交易失败,请联系发卡行']
+    _RESPONSE_CODE['03'] = ['商户未登记或无收单关系']
+    _RESPONSE_CODE['04'] = ['没收卡,请联系收单行']
+    _RESPONSE_CODE['05'] = ['不予承兑,交易失败,请联系发卡行']
+    _RESPONSE_CODE['06'] = ['发卡行故障,交易失败,请联系发卡行']
+    _RESPONSE_CODE['07'] = ['特殊条件下没收卡,请联系收单行']
+    _RESPONSE_CODE['09'] = ['重新提交交易请求,交易失败,请重试']
+    _RESPONSE_CODE['11'] = ['测试']
+    _RESPONSE_CODE['12'] = ['无效交易,发卡行不支持的交易']
+    _RESPONSE_CODE['13'] = ['无效金额,请重试']
+    _RESPONSE_CODE['14'] = ['无效卡号,请联系发卡行']
+    _RESPONSE_CODE['15'] = ['无发卡方,此发卡行未开通业务']
+    _RESPONSE_CODE['19'] = ['刷卡读取数据有误,交易失败,请联系发卡行']
+    _RESPONSE_CODE['20'] = ['无效应答,交易失败,请联系发卡行']
+    _RESPONSE_CODE['21'] = ['不做处理,交易失败,请联系发卡行']
+    _RESPONSE_CODE['22'] = ['操作有误,请重试']
+    _RESPONSE_CODE['23'] = ['不可接受的交易费,交易失败,请联系发卡行']
+    _RESPONSE_CODE['25'] = ['运营中心找不到记录,交易失败,请联系发卡行']
+    _RESPONSE_CODE['30'] = ['格式错误或无效卡类型,交易失败,请重试']
+    _RESPONSE_CODE['31'] = ['此发卡方未与开通业务,此卡不能受理']
+    _RESPONSE_CODE['32'] = ['出错']
+    _RESPONSE_CODE['33'] = ['过期的卡,可以没收,请联系发卡行']
+    _RESPONSE_CODE['34'] = ['cvn错误,作弊嫌疑']
+    _RESPONSE_CODE['38'] = ['pin错误,密码错误次数超限']
+    _RESPONSE_CODE['40'] = ['未到生效期,交易失败,请联系发卡行']
+    _RESPONSE_CODE['39'] = ['无此帐户,可能刷卡操作有误,交易失败,请联系发卡行']
+    _RESPONSE_CODE['41'] = ['挂失的卡,可以没收,请联系收单行']
+    _RESPONSE_CODE['42'] = ['发卡行找不到此帐户,交易失败,请联系发卡方']
+    _RESPONSE_CODE['43'] = ['被窃卡,可以没收,请联系收单行']
+    _RESPONSE_CODE['51'] = ['余额不足']
+    _RESPONSE_CODE['54'] = ['过期的卡']
+    _RESPONSE_CODE['55'] = ['密码错误']
+    _RESPONSE_CODE['57'] = ['该卡在同商户已有授权']
+    _RESPONSE_CODE['58'] = ['终端无效，请联系收单行或银联']
+    _RESPONSE_CODE['59'] = ['有作弊嫌疑，卡片校验错误']
+    _RESPONSE_CODE['61'] = ['超出限制,一次交易的金额太大']
+    _RESPONSE_CODE['62'] = ['超出账户金额限制']
+    _RESPONSE_CODE['64'] = ['原始金额不正确']
+    _RESPONSE_CODE['65'] = ['超出取款次数限制']
+    _RESPONSE_CODE['68'] = ['交易超时,请重试']
+    _RESPONSE_CODE['75'] = ['密码错误次数超限']
+    _RESPONSE_CODE['90'] = ['日期切换正在处理,交易失败,请稍后重试']
+    _RESPONSE_CODE['91'] = ['网络故障,交易失败,请稍后重试']
+    _RESPONSE_CODE['92'] = ['网络故障,交易失败,请稍后重试']
+    _RESPONSE_CODE['94'] = ['流水重复,交易失败,请稍后重试']
+    _RESPONSE_CODE['96'] = ['网络中心出现故障,交易失败,请稍后重试']
+    _RESPONSE_CODE['97'] = ['终端未登记,请联系收单行或银联']
+    _RESPONSE_CODE['98'] = ['无应答,交易超时,请重试']
+    _RESPONSE_CODE['99'] = ['pin错误,校验错,请重新签到']
+    _RESPONSE_CODE['A0'] = ['mac错误,校验错,请重新签到']
+
+    # 汇卡错误代码
+    _RESPONSE_CODE['Q1'] = ['机构未配置']
+    _RESPONSE_CODE['Q2'] = ['机构配置错']
+    _RESPONSE_CODE['Q3'] = ['机构未开通']
+    _RESPONSE_CODE['30'] = ['报文头异常']
+    _RESPONSE_CODE['F0'] = ['流水号重复']
+    _RESPONSE_CODE['W1'] = ['无效交易ID']
+    _RESPONSE_CODE['W2'] = ['参数错误']
+    _RESPONSE_CODE['W3'] = ['订单已支付']
+    _RESPONSE_CODE['C6'] = ['商户订单号重复']
+    _RESPONSE_CODE['W4'] = ['商户无权限']
+    _RESPONSE_CODE['W7'] = ['二维码已过期']
+    _RESPONSE_CODE['51'] = ['余额不足']
+    _RESPONSE_CODE['W5'] = ['不支持卡类型']
+    _RESPONSE_CODE['W6'] = ['订单已关闭']
+    _RESPONSE_CODE['W8'] = ['订单已撤销']
+    _RESPONSE_CODE['96'] = ['银行系统异常']
+    _RESPONSE_CODE['Z1'] = ['用户支付中']
+    _RESPONSE_CODE['Z2'] = ['授权码参数错误']
+    _RESPONSE_CODE['Z3'] = ['授权码参数错误']
+    _RESPONSE_CODE['25'] = ['订单不存在']
+    _RESPONSE_CODE['99'] = ['其他错误']
+    _RESPONSE_CODE['WA'] = ['转入退款']
+    _RESPONSE_CODE['WB'] = ['未支付']
+    _RESPONSE_CODE['W6'] = ['已关闭']
+    _RESPONSE_CODE['W8'] = ['已撤销']
+    _RESPONSE_CODE['WB'] = ['未支付']
+    _RESPONSE_CODE['WC'] = ['支付失败']
+    _RESPONSE_CODE['98'] = ['通讯超时']
+    _RESPONSE_CODE['25'] = ['原始交易找不到']
+    _RESPONSE_CODE['55'] = ['密码错误,请重试']
+
+    # 出现异常后返回给终端的应答码
+    _RESPONSE_CODE['TY'] = ['异常报文']
+    _RESPONSE_CODE['T0'] = ['平台TPDU无效']
+    _RESPONSE_CODE['T2'] = ['响应报文接收失败']
+    _RESPONSE_CODE['T3'] = ['保存请求、响应报文失败']
+    _RESPONSE_CODE['T4'] = ['TCP 连接池异常']
+    _RESPONSE_CODE['T5'] = ['TCP 连接异常']
+    _RESPONSE_CODE['T6'] = ['交易ID 映射处理 HANDLER 异常']
+    _RESPONSE_CODE['T7'] = ['REQUEST HANDLER 处理异常']
+    _RESPONSE_CODE['T8'] = ['CALLBACK HANDLER 处理异常']
+    _RESPONSE_CODE['T9'] = ['保存请求报文数据异常']
+    _RESPONSE_CODE['T10'] = ['商户号、终端号异常']
+    _RESPONSE_CODE['TA'] = ['Appl找不到']
+    _RESPONSE_CODE['TB'] = ['数据库异常']
+    _RESPONSE_CODE['TC'] = ['平台商户终端找不到']
+    _RESPONSE_CODE['TD'] = ['appl域名信息为空']
+
+
+    def is_success(self, code):
+        bSucc = False
+        if False == self._RESPONSE_CODE.has_key(code):
+            msg = '交易失败，没找到对应的错误码：[%s]' % code
+            return (bSucc,msg)
+
+        msg = ('%s [%s]') % (self._RESPONSE_CODE[code][0], code)
+        if code == '00':
+            bSucc = True
+        else:
+            bSucc = False
+            #return msg
+        return (bSucc,msg)
+
+    # 获取交易成功码
+    def get_succ_code(self):
+        return '00'
+
+    # TPDU 错误码
+    def get_tpdu_code(self):
+        return '97'
+
+    # 第三方网络超时 故障
+    def get_net_code(self):
+        return '98'
+
+    # 无商户号、终端号
+    def get_no_tid_mid_code(self):
+        return '58'
+
+    # MAC验证错误
+    def get_mac_code(self):
+        return 'A0'
+
+    # 无效的报文
+    def get_invalid_pack_code(self):
+        return 'T0'
+
+    # 没有找到消息对应的功能
+    def get_no_function(self):
+        return 'T1'
+
+    def get_response_pack(self):
+        self.code = 'T2'
+
+    def get_txn_message_error(self):
+        self.code = 'T3'

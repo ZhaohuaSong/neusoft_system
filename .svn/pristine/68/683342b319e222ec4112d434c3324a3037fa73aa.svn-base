@@ -1,0 +1,161 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+from protocol import ProtocoFactory
+from ...common.iso.iso_8583 import *
+from ...common.iso.iso_tool import *
+from ..api.iso_interface import *
+from ..api.iso_msg_type import *
+from ..models import LocalApp
+from ..api.system_enum import *
+
+
+# QiuJL 2017.1.5 报文接口处理文件
+# 入口参数：一维数组 list，以及协议ID
+class PackCtrl:
+    def __init__(self):
+        self.protocofactory = ProtocoFactory()
+
+    def create_pack(self, protocol_id, data_list):
+        '''
+        :author QiuJL 2017.1.5
+        :param protocol_id: 协议ID
+        :param data_list: 一维数组，data_list=['李四', '男', '18127858207']
+        :param bHex 是否hex格式，存储到数据库，网络传输也是如此传输，收到网络报文后再assic
+        :return: 要发送的报文
+        '''
+
+        # 根据协议ID获取列表所存放的域顺序信息
+
+        iso = ISO8583()
+        iso.setTPDU(protocol_id)  # 协议ID就是TPDU
+
+
+        self.protocofactory.init(protocol_id)
+        bit_index = self.protocofactory.get_bit_index_out_param()  # 输出参数
+
+
+        # 报文填值
+        try:
+            for index in range(0, len(bit_index)):
+                iso.setBit(int(bit_index[index]), data_list[index])
+        except Exception as e:
+            raise Exception('组织报文出现异常:' + str(e))
+
+        # 返回要发送的网络报文信息
+        iso = iso.getNetworkISO()
+        return iso
+
+    def get_pack_content(self, assic_iso, bHex=True):
+        '''
+        获取报文内容
+        :param assic_iso:
+        :param bHex:
+        :return:
+        '''
+        if bHex:
+            assic_iso = format_str_to_assic(assic_iso)
+
+        i8583 = ISOInterface(iso_net=assic_iso)
+        msg_type = i8583.get_msg_type()
+
+
+        if MSG_DATAEXCHANGE == msg_type:  # 数据交换
+            return self.__get_pack_content_for_data_exchange(i8583.get_iso_8583())
+        else:
+            return self.__get_pack_content_for_protocol_config(i8583.get_iso_8583())
+
+    def get_operation(self):
+        '''
+        返回操作类型
+        :return:
+        '''
+        try:
+            return PROTOCOL_OPERATOR_TYPE[str(self.protocofactory.get_operation())]
+        except:
+            return '报文协议配置'
+
+    def __get_pack_content_for_data_exchange(self, iso_8583):
+        '''
+        数据交换的报文格式
+        :param assic_iso:
+        :param bHex:
+        :return:
+        '''
+        try:
+            i8583 = ISOInterface(iso_8583=iso_8583)
+            protocol_id = i8583.get_protocol_id()
+            bit_info_list = self.protocofactory.init(protocol_id).get_bit_info_in_param()
+            bit_info_list_out = self.protocofactory.init(protocol_id).get_bit_info_out_param()
+            for d in bit_info_list_out:
+                bit_info_list.append(d)
+            list_dic = []
+            for info in bit_info_list:
+                bit_index = int(info[0])
+                value = iso_8583.getBitAssicValue(bit_index)
+                dic = {'bit': bit_index, 'name': info[1], 'value': value}
+                list_dic.append(dic)
+            return list_dic, None
+        except Exception as e:
+            raise Exception('解析报文异常:' + str(e))
+
+    def __get_pack_content_for_protocol_config(self, iso_8583):
+        '''
+        格式化报文规则配置请求
+        :param hex_iso:
+        :return: 返回入参、出参
+        '''
+        i8583 = ISOInterface(iso_8583=iso_8583)
+        protocol_id = i8583.get_protocol_id()#协议ID
+
+        protocol_content = i8583.get_protocol_content()
+        if protocol_content is None or len(protocol_content) == 0:
+            return [], []
+
+
+        dict_protocol = json.loads(protocol_content)
+        list_in = list(dict_protocol['in'].values())
+        list_out = list(dict_protocol['out'].values())
+        new_in = []
+        new_out = []
+        for data in list_in:
+            dic = {'bit': data['bit_index'], 'value': '', 'name': data['field_name']}
+            new_in.append(dic)
+
+        for data in list_out:
+            dic = {'bit': data['bit_index'], 'value': '', 'name': data['field_name']}
+            new_out.append(dic)
+
+        return new_in, new_out
+
+
+    def get_test_dataexchange_data(self, protocol_id):
+        '''
+        测试报文
+        :param protocol_id:协议ID
+        :return:
+        '''
+        # 1、获取条件参数个数
+
+        pro = ProtocoFactory()
+        pro.init(protocol_id)
+        list_in_param_index = pro.get_bit_index_in_param()
+
+        # 2、从数据源获取条件参数的值 list 此处模拟
+        list_in_value = []
+        for i in list_in_param_index:
+            list_in_value.append('条件参数'+i)
+
+        # 3、组织报文
+        local_app = LocalApp.objects.all()[0]
+        local_app_id = local_app.app_id
+
+        iso = ISO8583()
+        i8538 = ISOInterface(iso_8583=iso)
+        i8538.set_msg_type(MSG_DATAEXCHANGE)
+        i8538.set_app_id(local_app_id)
+        i8538.set_protocol_id(protocol_id)
+
+        for i in range(0, len(list_in_param_index)):
+            i8538.set_index_value(list_in_param_index[i], list_in_value[i])
+
+        return i8538.get_iso_8583().getNetworkISO()

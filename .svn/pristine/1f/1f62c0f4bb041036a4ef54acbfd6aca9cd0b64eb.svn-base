@@ -1,0 +1,152 @@
+/*
+SQLyog Ultimate v11.24 (32 bit)
+MySQL - 5.7.11-log : Database - richdatax
+*********************************************************************
+*/
+
+/*!40101 SET NAMES utf8 */;
+
+/*!40101 SET SQL_MODE=''*/;
+
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+CREATE DATABASE /*!32312 IF NOT EXISTS*/`richdatax` /*!40100 DEFAULT CHARACTER SET utf8 */;
+
+USE `richdatax`;
+
+/*Table structure for table `req_stu` */
+
+DROP TABLE IF EXISTS `req_stu`;
+
+CREATE TABLE `req_stu` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(64) DEFAULT NULL COMMENT '请求姓名数据源',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
+
+/*Data for the table `req_stu` */
+
+insert  into `req_stu`(`id`,`name`) values (1,'小云'),(2,'小白'),(3,'小梅'),(4,'小雪');
+
+/*Table structure for table `sql_name` */
+
+DROP TABLE IF EXISTS `sql_name`;
+
+CREATE TABLE `sql_name` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `dbname` varchar(64) DEFAULT NULL COMMENT '数据库名',
+  `sqlname` varchar(128) DEFAULT NULL COMMENT 'sql描述',
+  `sqlcontent` varchar(2046) DEFAULT NULL COMMENT '动态sql语句',
+  `sqltype` varchar(4) DEFAULT NULL COMMENT 'C-新增;U-更改;R-查询;D-删除',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=55 DEFAULT CHARSET=utf8;
+
+/*Data for the table `sql_name` */
+
+insert  into `sql_name`(`id`,`dbname`,`sqlname`,`sqlcontent`,`sqltype`) values (41,'richdatax','新增学生姓名请求数据源','req_stu','C'),(42,'richdatax','编辑学生姓名请求数据源','req_stu','U'),(43,'richdatax','删除学生姓名请求数据源','req_stu','D'),(44,'richdatax','新增小学生信息表','student','C'),(45,'richdatax','编辑小学生信息表','student','U'),(46,'richdatax','删除小学生信息表','student','D'),(47,'richdatax','新增学生班级','stu_room','C'),(48,'richdatax','编辑学生班级','stu_room','U'),(49,'richdatax','删除学生班级','stu_room','D'),(50,'richdatax','新增教师数据','teacher','C'),(51,'richdatax','编辑教师数据','teacher','U'),(52,'richdatax','删除教师数据','teacher','D'),(53,'richdatax','学生姓名请求数据源','select * from req_stu','R'),(54,'richdatax','联合查询老师学生班级数据','select a.stu_name,a.stu_sex,a.stu_age,c.t_name,b.room_name from student a,stu_room b,teacher c where a.room_id = b.id and a.room_id=c.room_id','R');
+
+/*Table structure for table `sql_params` */
+
+DROP TABLE IF EXISTS `sql_params`;
+
+CREATE TABLE `sql_params` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `sql_name_id` int(11) DEFAULT NULL COMMENT 'sql_id',
+  `field_name` varchar(64) DEFAULT NULL COMMENT '输入参数字段',
+  `field_opt` varchar(64) DEFAULT NULL COMMENT '操作符',
+  `field_link` varchar(64) DEFAULT NULL COMMENT '连接符',
+  `field_type` varchar(2) DEFAULT NULL COMMENT '1-输入参数;2-输出参数',
+  `data_type` varchar(64) DEFAULT NULL COMMENT '数据类型',
+  `field_memo` varchar(64) DEFAULT NULL COMMENT '字段描述',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=109 DEFAULT CHARSET=utf8;
+
+/*Data for the table `sql_params` */
+
+insert  into `sql_params`(`id`,`sql_name_id`,`field_name`,`field_opt`,`field_link`,`field_type`,`data_type`,`field_memo`) values (77,41,'name','','','1','VARCHAR','学生姓名'),(78,42,'id','=','','1','INTEGER','根据学生ID进行修改'),(79,42,'name','=','','2','VARCHAR','修改学生姓名'),(80,43,'id','=','','1','INTEGER','根据学生ID进行删除'),(81,44,'stu_name','','','1','VARCHAR','学生姓名'),(82,44,'room_id','','','1','INTEGER','学生年级(请输入数字,1-一年级;2-二年级;3-三年级，依此类推)'),(83,44,'stu_age','','','1','INTEGER','学生年龄'),(84,44,'stu_sex','','','1','VARCHAR','学生性别'),(85,45,'id','=','','1','INTEGER','根据学生id修改'),(86,45,'stu_name','=','','2','VARCHAR','学生姓名'),(87,45,'stu_sex','=','','2','VARCHAR','学生性别(1-男;2-女)'),(88,45,'stu_age','=','','2','INTEGER','学生年龄'),(89,46,'id','=','','1','INTEGER','根据学生id删除'),(90,47,'room_name','','','1','VARCHAR','学生班级'),(91,48,'id','=','','1','INTEGER','根据班级id修改'),(92,48,'room_name','=','','2','VARCHAR','修改班级名称'),(93,49,'id','=','','1','INTEGER','根据班级id删除'),(94,50,'t_name','','','1','VARCHAR','教师姓名'),(95,50,'room_id','','','1','INTEGER','班级id(1-一年级;2-二年级)'),(96,50,'t_sex','','','1','VARCHAR','教师性别(1-男;2-女)'),(97,51,'id','=','','1','INTEGER','根据教师id修改'),(98,51,'t_name','=','','2','VARCHAR','教师姓名'),(99,51,'room_id','=','','2','INTEGER','教师班级'),(100,52,'id','=','','1','INTEGER','根据教师id删除'),(101,53,'id','=','','2','','输出请求id'),(102,53,'name','=','','2','','输出请求姓名'),(103,54,'stu_name','=','','1','','根据学生名称查询'),(104,54,'t_name','=','','2','','教师姓名'),(105,54,'stu_name','=','','2','','学生姓名'),(106,54,'stu_age','=','','2','','学生年龄'),(107,54,'stu_sex','=','','2','','学生性别'),(108,54,'room_name','=','','2','','班级名称');
+
+/*Table structure for table `sql_service` */
+
+DROP TABLE IF EXISTS `sql_service`;
+
+CREATE TABLE `sql_service` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `service_name` varchar(256) DEFAULT NULL COMMENT '多表复杂业务描述',
+  `dbname` varchar(64) DEFAULT NULL COMMENT '数据库名称',
+  `create_time` varchar(32) DEFAULT NULL COMMENT '创建时间',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8;
+
+/*Data for the table `sql_service` */
+
+insert  into `sql_service`(`id`,`service_name`,`dbname`,`create_time`) values (6,'新增学生,教师数据','richdatax','2017-03-06 15:04:45');
+
+/*Table structure for table `sql_service_detail` */
+
+DROP TABLE IF EXISTS `sql_service_detail`;
+
+CREATE TABLE `sql_service_detail` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `sql_name_id` int(11) DEFAULT NULL COMMENT '单业务sql编号',
+  `sql_service_id` int(11) DEFAULT NULL COMMENT '业务主表编号',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8;
+
+/*Data for the table `sql_service_detail` */
+
+insert  into `sql_service_detail`(`id`,`sql_name_id`,`sql_service_id`) values (18,44,6),(19,50,6);
+
+/*Table structure for table `stu_room` */
+
+DROP TABLE IF EXISTS `stu_room`;
+
+CREATE TABLE `stu_room` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `room_name` varchar(64) DEFAULT NULL COMMENT '培训班班级名称',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
+
+/*Data for the table `stu_room` */
+
+insert  into `stu_room`(`id`,`room_name`) values (1,'一年级'),(2,'二年级');
+
+/*Table structure for table `student` */
+
+DROP TABLE IF EXISTS `student`;
+
+CREATE TABLE `student` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `stu_name` varchar(256) DEFAULT NULL COMMENT '学生姓名',
+  `stu_sex` varchar(2) DEFAULT NULL COMMENT '学生性别',
+  `stu_age` int(11) DEFAULT NULL COMMENT '学生年龄',
+  `create_time` timestamp NULL DEFAULT NULL COMMENT '入学时间',
+  `room_id` int(11) DEFAULT NULL COMMENT '所属培训班',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8;
+
+/*Data for the table `student` */
+
+insert  into `student`(`id`,`stu_name`,`stu_sex`,`stu_age`,`create_time`,`room_id`) values (1,'小明','1',6,'2017-03-06 14:22:52',1),(2,'小军','1',6,'2017-03-06 14:23:14',1),(3,'小李','1',6,'2017-03-06 14:23:27',1),(4,'小梅','2',6,'2017-03-06 14:23:38',1),(5,'小云','2',6,'2017-03-06 14:23:51',1),(6,'小白','2',6,'2017-03-06 14:24:12',1),(7,'小森','1',7,'2017-03-06 14:24:34',2),(8,'小红','2',7,'2017-03-06 14:24:46',2),(9,'小雪','2',7,'2017-03-06 14:25:04',2),(10,'李强','1',7,'2017-03-06 14:25:40',2),(11,'雷大','1',7,'2017-03-06 14:26:00',2);
+
+/*Table structure for table `teacher` */
+
+DROP TABLE IF EXISTS `teacher`;
+
+CREATE TABLE `teacher` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `t_name` varchar(64) DEFAULT NULL COMMENT '老师名字',
+  `t_sex` varchar(2) DEFAULT NULL COMMENT '老师性别',
+  `room_id` int(11) DEFAULT NULL COMMENT '所属班级',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
+
+/*Data for the table `teacher` */
+
+insert  into `teacher`(`id`,`t_name`,`t_sex`,`room_id`) values (1,'张天师','1',1),(2,'李珍','2',2);
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;

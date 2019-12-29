@@ -1,0 +1,124 @@
+{% extends "mainbase.html" %}
+{% load staticfiles %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% block scripts %}
+        <script src="{% static "js/jquery.bootstrap-duallistbox.min.js" %}"></script>
+        <script src="{% static "js/jquery.raty.min.js" %}"></script>
+        <script src="{% static "js/bootstrap-multiselect.min.js" %}"></script>
+        <script src="{% static "js/select2.min.js" %}"></script>
+        <script src="{% static "js/jquery-typeahead.js" %}"></script>
+        <script src="{% static "js/selectbox/selectbox.js" %}"></script>
+        <!-- page specific plugin scripts -->
+        <link href="{% static 'css/bootstrap-duallistbox.min.css' %}" rel="stylesheet">
+        <link href="{% static 'css/bootstrap-multiselect.min.css' %}" rel="stylesheet">
+        <link href="{% static 'css/select2.min.css' %}" rel="stylesheet">
+        <link href="{% static 'css/ace-skins.min.css' %}" rel="stylesheet">
+        <link href="{% static 'css/ace-rtl.min.css' %}" rel="stylesheet">
+ 
+    {% endblock %}
+</head>
+<body class="no-skin">
+{% block content %}
+    <div class="main-content">
+        <div class="breadcrumbs" id="breadcrumbs">
+            <script type="text/javascript">
+                try {
+                    ace.settings.check('breadcrumbs', 'fixed')
+                } catch (e) {
+                }
+                jQuery(function ($) {
+                    $("#btn-back").bind("click",
+                            function () {
+                                window.location.href = "{% url 'packmanage:protocoltype.list' %}"
+                            });
+                })
+            </script>
+            <ul class="breadcrumb">
+                <li>
+                    <i class="ace-icon fa fa-home home-icon"></i>
+                    <a href="#">首页</a>
+                </li>
+
+                <li><a href="#">数据报文管理</a></li>
+                <li><a href="{% url 'packmanage:protocoltype.list' %}">报文协议管理</a></li>
+                <li class="active">编辑</li>
+            </ul><!-- /.breadcrumb -->
+        </div>
+
+        <div class="page-content"> 
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="widget-box">
+                        <div class="widget-header widget-header-blue widget-header-flat">
+                            <h4 class="widget-title lighter">报文协议</h4>
+                        </div>
+                        <div class="space-20"></div>
+
+                        <form class="form-horizontal" role="form" action="" method="post">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right"> {{ form.protocol_name.label }} </label>
+                                <div class="col-sm-9">
+                                    {{ form.protocol_name }}
+                                    <div style="margin-top:5px;margin-left:5px;color:red">{{ form.protocol_name.errors }}</div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right"> {{ form.protocol_id.label }}  </label>
+                                <div class="col-sm-9">
+                                    {{ form.protocol_id }}
+                                    <div style="margin-top:5px;margin-left:5px;color:red">{{ form.protocol_id.errors }}</div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right"> {{ form.protocol_msgtype.label }} </label>
+                                <div class="col-sm-3">
+                                    {{ form.protocol_msgtype }}
+                                    <div style="margin-top:5px;margin-left:5px;color:red">{{ form.protocol_msgtype.errors }}</div>
+                                </div>
+                            </div> 
+ 
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right"> {{ form.remarks.label }} </label>
+                                <div class="col-sm-9">
+                                    {{ form.remarks }}
+                                    <div style="margin-top:5px;margin-left:5px;color:red">{{ form.remarks.errors }}</div>
+                                </div>
+                            </div>  
+
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right"> {{ form.protocol_srctype.label }} </label>
+                                <div class="col-sm-3">
+                                    {{ form.protocol_srctype }}
+                                    <div style="margin-top:5px;margin-left:5px;color:red">{{ form.protocol_srctype.errors }}</div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right"> {{ form.protocol_state.label }} </label>
+                                <div class="col-sm-3">
+                                    {{ form.protocol_state }}
+                                    <div style="margin-top:5px;margin-left:5px;color:red">{{ form.protocol_state.errors }}</div>
+                                </div>
+                            </div>
+
+
+                            <hr/>
+                            <div class="space-10"></div>
+                            {% include "form_buttons.html" %}<!-- /.form_buttons -->
+                            <div class="space-30"></div>
+                        </form>
+                        {% include "message.html" %}<!-- /.form_buttons -->
+                    </div>
+                </div><!-- /.col -->
+            </div><!-- /.row -->
+        </div>
+    </div>
+{% endblock %}
+<!-- /.main-content -->
+</body>
+</html>

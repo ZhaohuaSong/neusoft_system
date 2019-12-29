@@ -1,0 +1,77 @@
+<div class="widget-box col-xs-12 step_2 hidden" >
+    <div class="widget-header widget-header-blue widget-header-flat">
+        <h4 class="widget-title lighter">请求报文协议配置——输出参数</h4>
+    </div>
+    <div class="space-20"></div>
+
+    <div class="form-horizontal">
+        
+         <div class="form-group ">
+            <label class="col-sm-3 control-label no-padding-right"> 数据源类型 </label>
+            <div class="col-sm-3">
+                <select id="sel-datasrc" class="select2  form-control" data-placeholder="请点击选择" tabindex="-1"
+                        aria-hidden="true">
+                    <option value="-1">--------</option>
+                    {% for k,v in datasrc_list.items %}
+                        <option value="{{ k }}">{{ v }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div> 
+        <hr/>
+
+        <div class="form-group o-file hidden">
+            <label class="col-sm-3 control-label no-padding-right">数据源名称</label>
+            <div class="col-sm-8">
+                            <select id="sel-file" class="select2  form-control" data-placeholder="请点击选择"
+                                    tabindex="-1" aria-hidden="true">
+                                <option value="-1">--------</option>
+                                {% for data in file_list %}
+                                    <option value="{{ data.0 }}">{{ data.1 }}</option>
+                                {% endfor %}
+                            </select>
+            </div>
+        </div> 
+
+        <div class="form-group o-db hidden">
+            <label class="col-sm-3 control-label no-padding-right">数据源名称</label>
+            <div class="col-sm-8">
+                            <select id="sel-db" class="select2  form-control " data-placeholder="请点击选择"
+                                    tabindex="-1" aria-hidden="true">
+                                <option value="-1">--------</option>
+                                {% for data in db_list %}
+                                    <option value="{{ data.0 }}">{{ data.1 }}</option>
+                                {% endfor %}
+                            </select>
+            </div>
+        </div>
+
+        <div class="form-group o-db o-file hidden">
+            <label class="col-sm-3 control-label no-padding-right"> 数据源字段 </label>
+            <div class="col-sm-8">
+                 <table id="tb_data_src_colom" class="table table-striped table-bordered">
+                    <thead>
+                    <tr>
+                        <td width="85px">索引</td>
+                        <td>数据源字段名称</td> 
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="space-20"></div>
+        <hr class="o-file hidden o-db"/>
+        <div class="form-group o-1-pre hidden">
+            <label class="col-sm-3 control-label no-padding-right"></label>
+            <div class="col-sm-9">
+                <button id="btn-back-step1" class="btn btn-success btn-sm popover-success">上一步</button>
+                <button id="btn-go-step3" class="btn btn-success btn-sm popover-success">下一步</button>
+            </div>
+        </div>
+ 
+        <div class="space-10"></div>
+    </div>
+</div> 
+            

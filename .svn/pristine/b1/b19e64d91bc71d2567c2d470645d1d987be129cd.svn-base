@@ -1,0 +1,328 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+import logging
+from django.contrib.auth import login, logout
+from django.http import HttpResponseRedirect
+from django.shortcuts import render_to_response,render
+
+from ..common.page_context import *
+from ..common.randomString import randomString
+from ..common.superEmail import superMail
+from forms import LoginForm, ForgotForm, RegisterForm, CreateUserForm, EditUserForm,UserPasswordForm
+from models import SysUser, SysLog
+from django.shortcuts import render, redirect
+from django.http import HttpResponse, HttpResponseRedirect
+from django.contrib.auth.decorators import login_required
+from django.db.models import Q
+from models import SysUser
+# from systemmanager.models import Signal
+from .models import SysOrg
+from forms import ChangeUserForm, PasswordForm, AvatarForm
+from django.contrib import messages
+from django.core.urlresolvers import reverse
+from PIL import Image
+from django.conf import settings
+
+_logger = logging.getLogger('loggers')
+
+
+def login_(request):
+    """
+    登录
+    :param request:
+    :return:
+    """
+    context = {}
+    # sys_platform = SysPlatform.objects.get(merchant_code=sysconst.MERCHANT_CODE)
+    # context['name'] = sys_platform.name
+    # context['logo_path'] = sys_platform.logo_path
+
+    if request.method == 'POST':
+        form = LoginForm(request, request.POST)
+        forgotForm= ForgotForm(request, request.POST)
+        if form.is_valid():
+            user = form.get_user()  # 获取用户实例
+            if user:
+                request.session['user_id'] = user.id
+                login(request, user)
+                if form.get_auto_login():  # set session
+                    request.session.set_expiry(None)
+                return HttpResponseRedirect(reverse('sysadmin:home'))
+        context['form'] = form
+        context['forgotForm'] = forgotForm
+    else:
+        form = LoginForm()
+        forgotForm= ForgotForm()
+        context['form'] = form
+        context['forgotForm'] = forgotForm
+
+    return render(request, 'login.html', context)
+
+
+
+def login_user(request):
+    """
+    登录
+    :param request:
+    :return:
+    """
+    context = {}
+
+    if request.method == 'POST':
+        form = LoginForm(request, request.POST)
+        if form.is_valid():
+            user = form.get_user()  # 获取用户实例
+            if user:
+                request.session['user_id'] = user.id
+                login(request, user)
+                if form.get_auto_login():  # set session
+                    request.session.set_expiry(None)
+                return HttpResponseRedirect('/richtrading-system?type=1')
+        context['form'] = form
+    else:
+        form = LoginForm()
+        context['form'] = form
+
+    return render(request, 'login_user.html', context)
+
+
+def forgot_(request):
+    """
+    忘记密码
+    :param request:
+    :return:
+    """
+    context = {}
+    if request.method == 'POST':
+        forgotForm = ForgotForm(request, request.POST)
+        if forgotForm.is_valid():
+            email = request.POST.get('Email', '')
+            randompasswd = randomString(8).random_str()  # 产生随机密码
+            # 取对应的用户数据,用随机密码改用户密码
+            u = SysUser.objects.get(email=email)
+            u.set_password(randompasswd)
+            u.save()
+            # 发送邮箱  # <p>你的密码已经改成: %s<p>
+            subject = u"兰州排污权交易平台密码重置邮件"
+            text = u'亲爱的用户:兰州排污权交易平台密码重置邮件,您的密码已经改成:%s,请及时登录兰州排污权交易平台修改密码' % randompasswd
+            html = """<p><b>亲爱的用户，欢迎加入兰州排污权交易平台!</b></p>
+                    <p>你的密码已经改成: %s<p>
+                    <p>请及时登录<a method="post" href="http://127.0.0.1:8070/userchangePwd">兰州排污权交易平台</a>修改密码</p>""" % randompasswd
+            smail = superMail([email], subject, text, html)  # 采用默认的settings.DEFAULT_FROM_EMAIL发送
+            if smail.sendMail():
+                return HttpResponseRedirect('/login/')
+
+        context['forgotForm'] = forgotForm
+    else:
+        form = ForgotForm()
+        context['form'] = form
+
+    return HttpResponseRedirect('/login/')
+
+
+def registration_(request):
+    """
+    新用户注册
+    :param request:
+    :return:
+    """
+    context = {}
+    if request.method == 'POST':
+        print('post................')
+        form = RegisterForm(request, request.POST)
+        if form.is_valid():
+            sys_user = SysUser()
+            sys_user.set_password(request.POST.get('pwd1', ''))
+            sys_user.email = request.POST.get('Email', '')
+            sys_user.mobile = request.POST.get('mobile', '')
+            sys_user.username = request.POST.get('username', '')
+            sys_user.save();
+
+        context['form'] = form
+
+    else:
+        form = RegisterForm()
+        context['form'] = form
+
+    return render(request, 'registration.html', context)
+
+
+def logout_(request):
+    """
+    注销退出
+    :param request:
+    :return:
+    """
+    logout(request)
+    return HttpResponseRedirect('/login/')
+
+
+def syslog_list(request):
+    '''
+    ============================================================================
+    function:   syslog_list
+    developer: zzm
+    add-time:  2016.10.12
+    note:操作记录
+    ============================================================================
+    '''
+    page_items = 5  # 页面数据条数
+    current_page = request.GET.get('page', 1)  # 默认第一页
+    try:
+        current_page = int(current_page)
+    except:
+        current_page = 1
+    object_list = SysLog.objects.all()
+    context = PageContext(current_page, page_items).get_context(object_list)
+    return render(request, 'sysadmin/syslog.list.html', context)
+
+
+def syslog_list_search(request):
+    '''
+    ============================================================================
+    function:   操作日志记录查询
+    developer: changkun
+    add-time:  2016.9.12
+    note:机构onse('sysadmin/user.list.edit.html', kwvars, RequestContext(request))
+    ============================================================================
+    '''
+    page_items = 10  # 页面数据条数
+    current_page = request.POST.get('page', 1)  # 默认第一页
+    try:
+        current_page = int(current_page)
+    except:
+        current_page = 1
+
+    search_context = request.POST.get('query')
+    if search_context is not None and len(search_context) != 0:  #
+        object_list = None
+        sql = Q(user_name__icontains=search_context) | Q(user_mobile__icontains=search_context) | Q(user_role_name__icontains=search_context) | Q(
+            sys_org_name__contains=search_context) | Q(handle_url__contains=search_context) | Q(sys_timestamp__contains=search_context)
+        object_list = SysLog.objects.filter(sql)
+        context = PageContext(current_page, page_items).get_context(object_list)
+        context['search_context'] = search_context
+        return render(request, 'sysadmin/syslog.list.html', context)
+    else:
+        return HttpResponseRedirect(reverse('sysadmin:syslog_list'))
+
+
+def main_page(request):
+    context={}
+    # sys_platform = SysPlatform.objects.get(merchant_code=sysconst.MERCHANT_CODE);
+    # context['merchant_code']=sys_platform.merchant_code
+    # context['name']=sys_platform.name
+    # context['logo_path']=sys_platform.logo_path
+    # context['type']=request.GET.get('type','')
+    # print context
+    return render(request, 'home.html', context)
+
+
+@login_required(login_url="/")
+def userInfo(request):
+    """
+===============================================================================
+    function：    个人信息
+    developer:    Rich.Chen
+    add-time      2015/9/3
+===============================================================================
+    """
+    context = {}
+    user = request.user
+
+    if user.is_authenticated:
+        if user.sys_org_id is None or user.sys_org_id == '':
+            context['sysOrgName'] = '目前还没有绑定公司单位'
+            context['mid'] = '目前还没有指定支付商户号'
+        else:
+            orgDetail = SysOrg.objects.filter(id=user.sys_org_id)
+            context['sysOrgName'] = orgDetail[0].org_name
+
+        if request.method == 'POST':
+            form = ChangeUserForm(request, request.POST)
+            if form.is_valid():
+                user.username = request.POST.get('username', '')
+                user.sys_orgid = request.POST.get('sys_orgid', '')
+                user.desc = request.POST.get('desc', '')
+                user.sex = request.POST.get('sex', '')
+                user.phone = request.POST.get('phone', '')
+                user.save()
+                messages.success(request, '个人信息更新成功.')
+                # return HttpResponseRedirect('/success/?url=%s' % str(request.path))
+                #return HttpResponseRedirect(reverse('sysadmin:user.list'))
+            context['form'] = form
+        else:
+            # 给表单默认赋值
+            form = ChangeUserForm(
+                initial={'username': user.username, 'phone': user.mobile, 'sex': user.sex, 'desc': user.desc,
+                         'sys_org_id': user.sys_org_id})
+            context['form'] = form
+
+    context['us'] = user
+
+    return render(request, 'userinfo.html', context)
+
+
+@login_required(login_url="/")
+def changePwd(request):
+    """更改密码"""
+    context = {}
+    user = request.user
+    context['form'] = PasswordForm()
+    if request.method == 'POST':
+        form = PasswordForm(user, request.POST)
+        if form.is_valid():
+            newpwd = form.cleaned_data.get('password1', None)
+            if newpwd:
+                user.set_password(newpwd)
+                user.save()
+
+                return HttpResponseRedirect(reverse('sysadmin:user.list'))
+
+        context['form'] = form
+    return render(request, 'changepwd.html', context)
+def userChangePwd(request):
+    """更改密码"""
+    context = {}
+    context['form'] = UserPasswordForm()
+    if request.method == 'POST':
+        email = request.POST.get('email', '')
+        user=SysUser.objects.get(email=email)
+        form = UserPasswordForm(user, request.POST)
+        if form.is_valid():
+            newpwd = form.cleaned_data.get('password1', None)
+            if newpwd:
+                user.set_password(newpwd)
+                user.save()
+
+                return HttpResponseRedirect('/login/')
+
+        context['form'] = form
+    return render(request, 'sysadmin/userrechangepwd.html', context)
+
+@login_required(login_url="/")
+def setAvatar(request):
+    """设置头像"""
+    context = {}
+    user = request.user
+    context['form'] = AvatarForm()
+    context['pic'] = ['avatar/%s.jpg' % str(i) for i in range(1, 36)]
+    if request.method == 'POST':
+        form = AvatarForm(request.POST, request.FILES)
+        if form.is_valid():
+            avatar = request.FILES['avatar']
+            user.avatar = form.cleaned_data['avatar']
+            user.save()
+            return HttpResponseRedirect(reverse('sysadmin:user.userInfo'))
+        context['form'] = form
+    return render(request, 'avatar.html', context)
+
+
+def globar_setting(request):
+    return {'MEDIA_URL': settings.MEDIA_URL}
+
+
+def login_data(request):
+    if request.path == "/login/"or request.path == "/forgotpw/"or request.path == "/userchangePwd":
+        return {'USERNAME': request.user.username, 'IMG_URL': None}
+    else:
+        return {'USERNAME': request.user.username, 'IMG_URL': request.user.avatar}

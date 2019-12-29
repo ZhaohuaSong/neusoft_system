@@ -1,0 +1,73 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2016/12/27 下午6:06
+# @Author  : qiujunli
+# @Site    :
+# @File    : views_apps.py
+# @Software: PyCharm
+# @Function: 应用程序视图模型
+
+from django.shortcuts import render
+from django.http import HttpResponseRedirect
+from django.core.urlresolvers import reverse
+from django.views.generic import TemplateView
+from ..vanilla import CreateView
+from forms import *
+from django.http import JsonResponse
+import logging
+import socket
+
+_logger = logging.getLogger('loggers')
+
+from models_resource_catalog import   CentralNodeIPPort
+
+class CentralList(TemplateView):
+    template_name = 'source_catalog/resource_central_ip_port.html'
+
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data(**kwargs)
+        try:
+            context['central'] = CentralNodeIPPort.objects.all()[0]
+        except:
+            pass
+        return self.render_to_response(context)
+
+class EditCentralList(CreateView):
+    '''
+    创建视图
+    '''
+    form_class = FormCentralIPPort
+    template_name = 'source_catalog/resource_central_node_ip_port_form.html'
+
+    def get(self, request, *args, **kwargs):
+        try:
+            app = CentralNodeIPPort.objects.all()[0]
+            form = FormCentralIPPort(initial={'central_node_ip': app.central_node_ip,
+                                         'central_node_port': app.central_node_port,
+                                         })
+        except:
+            form = FormCentralIPPort()
+
+        context = self.get_context_data(form=form)
+        return self.render_to_response(context)
+
+
+    # 成功后跳转
+    def form_valid(self, form):
+        self.save(form)
+        return HttpResponseRedirect(reverse('source_catalog:central.list'))
+
+    # 保存
+    def save(self, form):
+        central_node_ip = form.cleaned_data['central_node_ip']
+        central_node_port = form.cleaned_data['central_node_port']
+
+        try:
+            app = CentralNodeIPPort.objects.all()[0]
+        except:
+            app = CentralNodeIPPort()
+
+        app.central_node_ip = central_node_ip
+        app.central_node_port = central_node_port
+        app.save()
+

@@ -1,0 +1,73 @@
+<h4 class="lighter block blue col-sm-12">表格/文件信息</h4>
+
+<div class="col-xs-12 no-padding">
+    <div class="form-group col-sm-6">
+        <label class="control-label col-sm-4 no-padding-right"> {{ form.resource_id.label }}</label>
+
+        <div class="col-sm-8">
+            {{ form.resource_id  }}
+            <div class="form-group has-error">
+                <div class="help-block col-xs-12 col-sm-reset inline">{{ form.resource_id.errors }} </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group col-sm-6">
+        <label class="control-label col-sm-4 no-padding-right"> {{ form.resource_name.label }}</label>
+
+        <div class="col-sm-8">
+            {{ form.resource_name }}
+            <div class="form-group has-error">
+                <div class="help-block col-xs-12 col-sm-reset inline">{{ form.resource_name.errors }} </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="col-xs-12 no-padding">
+    <div class="form-group col-sm-6">
+        <label class="control-label col-sm-4 no-padding-right"> {{ form.category_name.label }}</label>
+
+        <div class="col-sm-8">
+            {{ form.category_name }}
+            <div class="form-group has-error">
+                <div class="help-block col-xs-12 col-sm-reset inline">{{ form.category_name.errors }} </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group col-sm-6">
+        <label class="control-label col-sm-4 no-padding-right">{{ form.power.label }}</label>
+
+        <div class="col-sm-8">
+            {{ form.power }}
+            <div class="form-group has-error">
+                <div class="help-block col-xs-12 col-sm-reset inline">{{ form.power.errors }} </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="col-xs-12 no-padding">
+    <div class="form-group col-sm-6">
+        <label class="control-label col-sm-4 no-padding-right"> {{ form.update.label }}</label>
+
+        <div class="col-sm-8">
+            {{ form.update }}
+            <div class="form-group has-error">
+                <div class="help-block col-xs-12 col-sm-reset inline">{{ form.update.errors }} </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group col-sm-6">
+        <label class="control-label col-sm-4 no-padding-right">{{ form.resource_type.label }}</label>
+
+        <div class="col-sm-8">
+            {{ form.resource_type }}
+            <div class="form-group has-error">
+                <div class="help-block col-xs-12 col-sm-reset inline">{{ form.resource_type.errors }} </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,81 @@
+jQuery(function ($) {
+
+    //start function 检测通讯
+    $("#btn-check-ip").bind("click",
+        function () {
+            var url = window.location.href + "?option=check_ip";
+
+            var ip = jQuery("input[name=app_ip]").val();
+            var port = jQuery("input[name=app_port]").val();
+
+            if(!reg_verify(ip))
+            {
+                show_msg("IP地址无效", false);
+                return;
+            }
+
+            if(port.length == 0)
+            {
+                show_msg("端口号不能为空", false);
+                return;
+            }
+
+            url += "&ip=";
+            url += ip;
+            url += "&port=";
+            url += port;
+
+            show_msg('正在联机测试中，请稍等...', true)
+
+
+            var this_btn = $(this)
+            this_btn.attr('disabled', true);
+
+            $.ajax({
+                type: "GET",
+                url: url,
+                success: function (data) {
+                    if (data["code"] == "00") {
+                        show_msg(data["desc"], true)
+                    }
+                    else { 
+                        show_msg(data["desc"], false)
+                    }
+
+                    this_btn.attr('disabled', false);
+                }
+            }); 
+            
+        }
+    )
+    //end function
+    //start function 校验IP地址是否正确
+    function reg_verify(addr) {
+        var reg = /^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])(\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])){3}$/;
+        if (addr.match(reg)) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+    //end 校验IP地址
+
+    function show_msg (msg, bSuccess) {
+    
+
+        var alert = jQuery("#myAlert");
+        if(!bSuccess){
+            alert.removeClass('alert-success');
+            alert.addClass('alert-warning');
+        }
+        else {
+            alert.addClass('alert-success');
+            alert.removeClass('alert-warning');
+        }
+
+        alert.find("strong").text(msg);
+        alert.css('display','block');
+    }
+
+})

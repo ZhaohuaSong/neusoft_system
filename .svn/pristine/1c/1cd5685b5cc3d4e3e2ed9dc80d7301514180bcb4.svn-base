@@ -1,0 +1,528 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+
+from sqlalchemy.orm import  create_session
+from sqlalchemy import  create_engine
+from sqlalchemy.sql import text
+from dbconfig import makeword
+from models import DbConfig,SqlName,SqlParams,SqlService,SqlServiceDetail
+import base64
+import re
+import os
+import traceback
+from redisco.containers import List
+
+os.environ['NLS_LANG']='SIMPLIFIED CHINESE_CHINA.UTF8'
+
+def create_connection(dbname):
+    db =  DbConfig.objects.get(dbname=dbname)
+    if str(db.dbtype) == 'MySQL':
+            db.myscheme = 'mysql+pymysql://' + db.dbusername + ':' + base64.b64decode(db.dbpassword) + '@' + db.dbhost + ':' + db.dbport + '/' + db.dbname + '?charset=utf8'
+    elif str(db.dbtype) == 'Oracle':
+            db.myscheme='oracle://'+db.dbusername+':'+base64.b64decode(db.dbpassword)+'@'+db.dbhost+':'+db.dbport+'/'+db.dbname
+    elif str(db.dbtype) == 'MS SQLSERVER':
+            db.myscheme = 'mssql+pymssql://' + db.dbusername + ':' + base64.b64decode(db.dbpassword) + '@' + db.dbhost + ':' + db.dbport + '/' + db.dbname
+    e = create_engine(db.myscheme, pool_size=10, max_overflow=-1, pool_recycle=1200)
+    return e
+
+def get_model_data(jsonobj):
+    response={}
+    result = []
+    dbname =  jsonobj.get('dbname','')
+    e = create_connection(dbname)
+    session = create_session(bind=e, autocommit=False, autoflush=True)
+    try:
+        for req_json in jsonobj:
+            field = req_json.get('field')
+            arr = []
+            kwargs = {}
+            for f in field:
+                arr.append(f.get('name',''))
+                if f.get('q_value',''):
+                    kwargs.update({
+                    '{0}'.format(f.get('name','')):f.get('q_value',''),
+                    })
+            Word =  makeword(e,tablename=req_json.get('table_name'),wordColumns=arr,)
+            w = session.query(Word).filter_by(**kwargs).all()
+            for word in w:
+                obj={}
+                for attr in arr:
+                   obj[attr]=word.__getattribute__(attr)
+                result.append(obj)
+        session.close()
+        response['code']='00'
+        response['status'] = 'success'
+        response['msg'] = 'query ok'
+        response['result'] = result
+        return response
+    except:
+        response['code']='99'
+        response['status'] = 'fail'
+        response['msg'] = 'query fail'
+        return response
+
+
+
+def add_model_data(jsonobj):
+    response={}
+    dbname =  jsonobj.get('dbname','')
+    sql =  jsonobj.get('sql','')
+    e = create_connection(dbname)
+    connection = e.connect()
+    try:
+        connection.execute(text(sql))
+        connection.close()
+        response['code']='00'
+        response['status'] = 'success'
+        response['msg'] = 'add ok'
+        return response
+    except:
+        response['code']='99'
+        response['status'] = 'fail'
+        response['msg'] = 'add fail'
+        return response
+
+
+def edit_model_data(jsonobj):
+    response = {}
+    result=[]
+    dbname =  jsonobj.get('dbname','')
+    e = create_connection(dbname)
+    # e = create_engine('mysql+pymysql://root:123456@127.0.0.1:3306/richdatax?charset=utf8')
+    session = create_session(bind=e, autocommit=False, autoflush=True)
+    tables = jsonobj.get('tables','')
+    for req_json in tables:
+        field = req_json.get('field')
+        arr = []
+        kwargs = {}
+        for f in field:
+            arr.append(f.get('name',''))
+            if f.get('q_value',''):
+                kwargs.update({
+                '{0}'.format(f.get('name','')):f.get('q_value',''),
+                })
+        Word =  makeword(e,tablename=req_json.get('table_name'),wordColumns=arr,)
+        try:
+            word = session.query(Word).filter_by(**kwargs).one()
+        except:
+            response['code']='99'
+            response['status']='fail'
+            response['msg']='no data'
+            return response
+        if word:
+            obj={}
+            for f in field:
+                if f.get('u_value',''):
+                    word.__setattr__(f.get('name',''),f.get('u_value',''))
+                obj[f.get('name','')] = word.__getattribute__(f.get('name',''))
+            result.append(obj)
+            session.commit()
+            session.close()
+            response['result'] = result
+            response['code']='00'
+            response['status'] = 'success'
+            response['msg'] = 'ok'
+            return response
+
+
+
+def delete_model_data(jsonobj):
+    response = {}
+    dbname =  jsonobj.get('dbname','')
+    e = create_connection(dbname)
+    # e = create_engine('mysql+pymysql://root:123456@127.0.0.1:3306/richdatax?charset=utf8')
+    session = create_session(bind=e, autocommit=False, autoflush=True)
+    for req_json in jsonobj:
+        field = req_json.get('field')
+        arr = []
+        kwargs = {}
+        for f in field:
+            arr.append(f.get('name',''))
+            if f.get('q_value',''):
+                kwargs.update({
+                '{0}'.format(f.get('name','')):f.get('q_value',''),
+                })
+        Word =  makeword(e,tablename=req_json.get('table_name'),wordColumns=arr,)
+        try:
+            session.query(Word).filter_by(**kwargs).delete()
+            response['code']='00'
+            response['status']='success'
+            response['msg']='delete success'
+            return response
+        except:
+            response['code']='99'
+            response['status']='fail'
+            response['msg']='delete fail'
+            return response
+
+def crud_model_data(jsonobj):
+    response={}
+    result = []
+    dbname =  jsonobj.get('dbname','')
+    sql =  jsonobj.get('sql','')
+    pageindex = jsonobj.get('pageindex','')
+    pagesize = jsonobj.get('pagesize','')
+    try:
+        e = create_connection(dbname)
+        connection = e.connect()
+    except Exception,e:
+        response['code']='99'
+        response['status'] = 'fail'
+        response['msg'] =repr(e)
+        return response
+    try:
+        if bool(re.search('insert', sql, re.IGNORECASE)) or bool(re.search('update', sql, re.IGNORECASE)) or bool(re.search('delete', sql, re.IGNORECASE)):
+            message = connection.execute(text(sql))
+            connection.close()
+            response['msg'] = 'data operation success'
+        else:
+            m = re.search('from', sql, re.IGNORECASE)
+            count_sql = 'select count(*) '+sql[m.start():len(sql)]
+            count_result = connection.execute(text(count_sql)).fetchall()
+            total = count_result[0][0]
+            paging_sql = sql
+            if pageindex != '' and pagesize != '' and pageindex.isdigit() and pagesize.isdigit() and int(pageindex) >=1 and int(pagesize) >=1:
+                if e.name == 'mysql':
+                    offset = (int(pageindex)-1) * int(pagesize)
+                    paging_sql = 'select temp.* from ('+sql+') as temp limit ' + str(offset)+','+str(pagesize)
+                if e.name == 'oracle':
+                    offset = (int(pageindex)-1) * int(pagesize) + 1
+                    ending = int(pageindex) * int(pagesize)
+                    paging_sql = 'select * from (select temp.*,rownum rnum from ('+sql+') temp where rownum <='+str(ending)+') where rnum>='+str(offset)
+                if e.name == 'mssql':
+                    offset = (int(pageindex)-1) * int(pagesize)
+                    ending = int(pageindex) * int(pagesize)
+            resultProxy = connection.execute(text(paging_sql))
+            query_result = resultProxy.fetchall()
+            if e.name == 'mssql' and offset>=0 and ending>=0:
+                query_result = query_result[offset:ending]
+            columns = resultProxy._metadata.keys
+            for row in query_result:
+                obj={}
+                index = 0
+                for row_cell in row:
+                    if e.name == 'oracle' and columns[index] == 'rnum':
+                        pass
+                    else:
+                        obj[columns[index]] = str(row_cell)
+                    index = index + 1
+                result.append(obj)
+
+            connection.close()
+            response['result'] = result
+            # response['columns'] = columns
+            response['msg'] = 'data query success'
+            response['total'] = total
+        response['code']='00'
+        response['status'] = 'success'
+        return response
+    except Exception,e:
+        response['code']='99'
+        response['status'] = 'fail'
+        response['msg'] = repr(e)
+        return response
+
+
+def query_data_source():
+    '''
+    [{'sqlnameid':'数据源id','sqlname':'数据源名称'}]
+    查询业务数据源
+    :return:
+    '''
+    context=[]
+    sqlnames =  SqlName.objects.filter(sqltype="R")
+    for sqlname in sqlnames:
+        result ={}
+        result['sqlname'] = sqlname.sqlname
+        result['sqlnameid'] = sqlname.id
+        context.append(result)
+    return context
+
+
+def query_data_mul_source():
+    '''
+    多数据源变更列表
+    :return:
+    '''
+    context=[]
+    sqlservices = SqlService.objects.all()
+    for sqlservice in sqlservices:
+        result = {}
+        result['service_name'] = sqlservice.service_name
+        result['service_id'] = sqlservice.id
+        context.append(result)
+    return context
+
+def query_data_field(sqlnameid):
+    '''
+    输入数据源id
+    输出{'params_in':{'cloumn':'输入字段中文描述'},'params_out':{'cloumn':'输出字段中文描述'}}
+    :param sqlnameid:
+    :return:
+    '''
+    sqlparamslist_in =  SqlParams.objects.filter(sql_name_id=sqlnameid,field_type='1')
+    sqlparamslist_out =  SqlParams.objects.filter(sql_name_id=sqlnameid,field_type='2')
+    sqlname = SqlName.objects.get(id=sqlnameid)
+    jsonobj={}
+    jsonobj['dbname']=sqlname.dbname
+    jsonobj['sql']=sqlname.sqlcontent
+    context ={}
+    a ={}
+    b ={}
+    for sqlparams in sqlparamslist_in:
+        a[sqlparams.field_name] = sqlparams.field_memo
+    for sqlparams in sqlparamslist_out:
+        b[sqlparams.field_name] = sqlparams.field_memo
+    context['params_in'] = a
+    context['params_out'] = b
+    return context
+
+
+def query_data_mul_field(sqlserviceid):
+    '''
+    根据多业务查询多表输入，输出参数
+    :param sqlserviceid:
+    :return:
+    '''
+    context =[]
+    sqlServiceDetails = SqlServiceDetail.objects.filter(sql_service_id=sqlserviceid)
+    for detail in sqlServiceDetails:
+        sqlparamslist_in =  SqlParams.objects.filter(sql_name_id=detail.sql_name_id,field_type='1')
+        sqlparamslist_out =  SqlParams.objects.filter(sql_name_id=detail.sql_name_id,field_type='2')
+        sqlname = SqlName.objects.get(id=detail.sql_name_id)
+        jsonobj={}
+        jsonobj['dbname']=sqlname.dbname
+        jsonobj['sql']=sqlname.sqlcontent
+        result ={}
+        a ={}
+        b ={}
+        result['sqlnameid'] = detail.sql_name_id
+        for sqlparams in sqlparamslist_in:
+            a[sqlparams.field_name] = sqlparams.field_memo
+        for sqlparams in sqlparamslist_out:
+            b[sqlparams.field_name] = sqlparams.field_memo
+        result['params_in'] = a
+        result['params_out'] = b
+        context.append(result)
+    return context
+
+
+
+def query_data_result(sqlnameid,params_in=None,params_out=None,page_index=None,page_size='10'):
+    '''
+    输入{'sqlnameid':数据源id,'params_in':{'column1':'value','column2':'value',},params_out:"column1,column2,column3"}params为必须选择字段参数与参数值,
+    输出数据源[{}]多条
+    :param sqlnameid:
+    :param params:
+    :return:
+    '''
+    sqlname = SqlName.objects.get(id=sqlnameid)
+    jsonobj={}
+    jsonobj['dbname'] = sqlname.dbname
+    if params_out:
+        if str(params_out).__contains__(","):
+            params_out_arr = str(params_out).split(",")
+            cols = ""
+            for out in params_out_arr:
+                cols = cols+"tmp."+out+","
+            cols = cols[0:len(cols)-1]
+        else:
+            cols=params_out
+        sql ="select "+cols+" from (" +sqlname.sqlcontent+") tmp"
+    else:
+        sql ="select * from (" +sqlname.sqlcontent+") tmp"
+    sqlparamslist =  SqlParams.objects.filter(sql_name_id=sqlnameid,field_type='1').order_by("id")
+    filterstr = ''
+    if sqlparamslist:
+        for sqlparams in sqlparamslist:
+            filterstr=filterstr+" tmp."+sqlparams.field_name+sqlparams.field_opt+'\''+unicode(params_in.get(sqlparams.field_name,''))+'\''+sqlparams.field_link
+        if filterstr:
+          sql = sql+' where '+filterstr
+    jsonobj['sql']=sql
+    if page_index:
+        jsonobj['pageindex'] = page_index
+    if page_size:
+        jsonobj['pagesize'] = page_size
+
+    # print '----------sql------------------'
+    # print sql
+    # print '-------------------------------'
+    return crud_model_data(jsonobj)
+
+def insert_table(sqlnameid,params_in,isover):
+    add_sql(sqlnameid,params_in)
+    if isover:
+        lst = List(sqlnameid)
+        sqls = lst.members
+        print '-----------sqls-----------'
+        sqlServiceDetails = SqlServiceDetail.objects.filter(sql_service_id=sqlnameid)
+        sqlname = SqlName.objects.get(id=sqlServiceDetails[0].sql_name_id)
+        jsonobj={}
+        jsonobj['dbname'] = sqlname.dbname
+        jsonobj['sqls'] = sqls
+        lst.clear()
+        return batch_cud(jsonobj)
+    else:
+        pass
+    response={}
+    response['code']='00'
+    response['status'] = 'success'
+    return response
+    #return crud_model_data(jsonobj)
+
+
+def add_sql(sqlserviceid,params_in):
+    '''
+    构建通用基本新增sql语句
+    :param sqlnameid:
+    :param params_in:
+    :return:
+    '''
+    print '---------------add_sql------------------'
+    sqlServiceDetails = SqlServiceDetail.objects.filter(sql_service_id=sqlserviceid)
+    sqlname = SqlName.objects.get(id=sqlServiceDetails[0].sql_name_id)
+    jsonobj={}
+    jsonobj['dbname'] = sqlname.dbname
+    sqlparamslist =  SqlParams.objects.filter(sql_name_id=sqlServiceDetails[0].sql_name_id,field_type='1').order_by("id")
+    field = ''
+    fvalues = ''
+    for sqlparams in sqlparamslist:
+
+      field = field+"`"+sqlparams.field_name+"`"+','
+      fvalues = fvalues+"'"+params_in.get(sqlparams.field_name)+"'"+','
+    if sqlparamslist.__len__()>1:
+        sql = 'insert into '+sqlname.sqlcontent +'('+field[0:len(field)-1]+') values('+fvalues[0:len(fvalues)-1]+')'
+    else:
+        sql = 'insert into '+sqlname.sqlcontent +' ('+sqlparamslist[0].field_name+') values('+params_in.get(sqlparamslist[0].field_name)+')'
+    jsonobj['sql']=sql
+    #print '--------------sql------------------'
+    #print sql
+    lst = List(sqlserviceid)
+    lst.append(sql)
+    return jsonobj
+
+
+def update_table(sqlserviceid,params_in,params_out):
+    sqlServiceDetails = SqlServiceDetail.objects.filter(sql_service_id=sqlserviceid)
+    jsonobj = update_sql(sqlServiceDetails[0].sql_name_id,params_in,params_out)
+    return crud_model_data(jsonobj)
+
+def update_sql(sqlnameid,params_in,params_out):
+    '''
+    构建通用编辑sql
+    :param sqlnameid:
+    :param params_in:
+    :param params_out:
+    :return:
+    '''
+    sqlname = SqlName.objects.get(id=sqlnameid)
+    jsonobj={}
+    jsonobj['dbname'] = sqlname.dbname
+    sqlparamslist_out =  SqlParams.objects.filter(sql_name_id=sqlnameid,field_type='2').order_by("id")
+    sqlparamslist_in =  SqlParams.objects.filter(sql_name_id=sqlnameid ,field_type="1").order_by('id')
+    field = ''
+    where_str = ''
+    for sqlparams in sqlparamslist_out:
+      field = field+"`"+sqlparams.field_name+"`='"+params_out.get(sqlparams.field_name,'')+"',"
+    field = ' set '+field[0:len(field)-1]
+    i=0
+    for sqlparams in sqlparamslist_in:
+      if  len(sqlparamslist_in)==1:
+        where_str= where_str+"`"+sqlparams.field_name+"`='"+params_in.get(sqlparams.field_name,'')+"' "
+      elif len(sqlparamslist_in)>1:
+        if i == len(sqlparamslist_in)-1:
+            where_str= where_str+"`"+sqlparams.field_name+"`='"+params_in.get(sqlparams.field_name,'')+"' "
+        else:
+            where_str= where_str+"`"+sqlparams.field_name+"`='"+params_in.get(sqlparams.field_name,'')+"' and "
+      i = i+1
+    sql = 'update '+sqlname.sqlcontent +field+' where '+where_str
+    jsonobj['sql'] = sql
+    return jsonobj
+
+def delete_table(sqlserviceid,params_in):
+    sqlServiceDetails = SqlServiceDetail.objects.filter(sql_service_id=sqlserviceid)
+    jsonobj = del_sql(sqlServiceDetails[0].sql_name_id,params_in)
+    return crud_model_data(jsonobj)
+
+
+def del_sql(sqlnameid,params_in):
+    sqlname = SqlName.objects.get(id=sqlnameid)
+    jsonobj={}
+    jsonobj['dbname'] = sqlname.dbname
+    sqlparamslist_in =  SqlParams.objects.filter(sql_name_id=sqlnameid,field_type='1').order_by("id")
+    where_str = ''
+    i=0
+    for sqlparams in sqlparamslist_in:
+      if  len(sqlparamslist_in)==1:
+        where_str= where_str+"`"+sqlparams.field_name+"`='"+params_in.get(sqlparams.field_name,'')+"' "
+      elif len(sqlparamslist_in)>1:
+          if i==len(sqlparamslist_in)-1:
+            where_str= where_str+"`"+sqlparams.field_name+"`='"+params_in.get(sqlparams.field_name,'')+"' "
+          else:
+            where_str= where_str+"`"+sqlparams.field_name+"`='"+params_in.get(sqlparams.field_name,'')+"' and "
+      i=i+1;
+    sql =  'delete from '+ sqlname.sqlcontent +' where '+where_str
+    jsonobj['sql']=sql
+    return jsonobj
+
+def batch_mul_cud(arr):
+    '''
+    多sql执行. arr必须以数组方式传入，如：[{"sqlnameid":"1","params_in":{"column1":"","column2":"","column3":""},"params_out":{...}},{"sqlnameid":"2","params_in":{"column1":"","column2":"","column3":""},"params_out":{...}}]
+    :param arr:
+    :return:
+    '''
+    jsonobj={}
+    b =[]
+    for a in arr:
+        sqlname =  SqlName.objects.get(id=a.get('sqlnameid',''))
+        if sqlname.sqltype=='C':
+           add_jsonobj =  add_sql(sqlnameid=a.get('sqlnameid',''),params_in=a.get('params_in',''))
+           b.append(add_jsonobj.get('sql'))
+        elif sqlname.sqltype=='U':
+           edit_jsonobj =  update_sql(sqlnameid=a.get('sqlnameid',''),params_in=a.get('params_in',''),params_out=a.get('params_out',''))
+           b.append(edit_jsonobj.get('sql'))
+        elif sqlname.sqltype=='D':
+           del_jsonobj = del_sql(sqlnameid=a.get('sqlnameid',''),params_in=a.get('params_in',''))
+           b.append(del_jsonobj.get('sql'))
+    jsonobj['dbname']   = add_jsonobj.get('dbname')
+    jsonobj['sqls']  = b
+    return batch_cud(jsonobj)
+
+def batch_cud(jsonobj):
+    response={}
+    dbname =  jsonobj.get('dbname','')
+    sqls =  jsonobj.get('sqls','')
+    #print 'sqls>>>>>>>>>>>>'+str(sqls)
+    try:
+        e = create_connection(dbname)
+        connection = e.connect()
+    except Exception,e:
+        response['code']='99'
+        response['status'] = 'fail'
+        response['msg'] =repr(e)
+        return response
+    try:
+        trans = connection.begin()
+        count = 1
+        for sql in sqls:
+            connection.execute(text(sql))
+            if count % 10000 == 0:
+                trans.commit()
+                trans = connection.begin()
+            count = count + 1
+        trans.commit()
+        connection.close()
+        response['msg'] = 'data operation success'
+        response['code']='00'
+        response['status'] = 'success'
+        return response
+    except Exception,e:
+        trans.rollback()
+        connection.close()
+        response['code']='99'
+        response['status'] = 'fail'
+        response['msg'] = repr(e)
+        return response
+
+

@@ -1,0 +1,141 @@
+jQuery(function ($) {
+
+     $("#btn_add").bind("click",
+        function () {
+             var protocol_id=$("select#sel_protocol option:selected").attr("value"); 
+             if(protocol_id=="")
+                {alert_dialog("请选择报文协议"); return;}
+              
+             var url = window.location.href;
+             url += "&protocol_id=";  url += protocol_id;
+             url += "&option=";  url +="add_protocol";
+
+             $.post( url, function(data, status){
+
+                if(data["code"]=="00"){
+                    add_protocol_tr(data)
+                }
+                else
+                    alert_dialog(data["desc"])
+
+             })
+         }
+    );
+
+     function add_protocol_tr(data){
+        var tb = jQuery("#table_protocol");
+        var l =tb.find("tbody").children("tr").length;
+        var tr = jQuery('<tr id="' + data["protocol_id"] + '" class="content"><td>' + l + '</td>\
+                            <td>' + data["protocol_name"] + '</td>\
+                            <td>' + data["protocol_id"] + '</td>\
+                            <td  class="center state">未配置</td>\
+                            <td  class="request_date"></td>\
+                            <td></td>\
+                            <td class="center">\
+                                <button type="button" class="btn btn-white btn-danger btn-sm btn_config"\
+                                        style="height:25px">发送\
+                                </button>\
+                            </td>\
+                            <td class="center">\
+                                <button type="button" class="btn btn-white btn-danger btn-sm btn_delete"\
+                                        style="height:25px">删除\
+                                </button>\
+                            </td>\
+                        </tr>');
+        tb.append(tr);
+
+
+        tr.find("button.btn_delete").on("click", function(){
+                 delete_tr($(this));
+         });
+
+        tr.find("button.btn_config").on("click", function(){
+                 send_config($(this));
+         });
+     }
+
+     $(".btn_delete").click(function(){
+            delete_tr($(this));
+     })
+
+     function delete_tr(btn){
+            confirm_dialog("删除确认", "是否确定删除？", function(){
+
+                var tr = btn.closest("tr");
+                var id = tr.attr("id");
+
+                var url = window.location.href;
+                url += "&protocol_id=";  url += id;
+                url += "&option=";  url +="del_protocol";
+
+                $.post( url, function(data, status){
+
+                    if(data["code"]=="00"){
+                        tr.remove();
+                    }
+                    else
+                        alert_dialog(data["desc"])
+                })
+
+            }, function(){}) 
+     }
+
+     $(".btn_config").click(function(){
+            send_config($(this));
+     })
+
+     function send_config(btn){
+        confirm_dialog("发送报文协议配置请求确认", "是否确定向当前适配器发送报文协议配置求情？", function(){
+
+                var tr = btn.closest("tr");
+                var id = tr.attr("id");
+
+                var url = window.location.href;
+                url += "&protocol_id=";  url += id;
+                url += "&option=";  url +="config_protocol";
+
+                $.post( url, function(data, status){
+                    if(data["code"]=="00")
+                        tr.find("td.state").text("等待确认");
+                    tr.find("td.request_date").text(data["request_date"]);
+                    alert_dialog(data["desc"])
+                })
+
+            }, function(){}) 
+     }
+
+ 
+
+    // //提交按钮事件
+    // $('#btn_submit').click(function(){
+    //     var arr_data = {};
+    //     var i="0";
+    //     $('tr.content').each(function(){
+    //         var tr = $(this); 
+    //         var json_data = {};//一行格式数据 
+    //         json_data["field_name"] = tr.find("input.field_name").val();
+    //         json_data["bit_index"]  = tr.find("input.bit_index").val(); 
+    //         json_data["b_in_param"] = tr.find("input.b_in_param").is(':checked');
+    //         json_data["b_out_param"]= tr.find("input.b_out_param").is(':checked');
+ 
+    //         arr_data[i] = json_data;
+    //         i=i+"0";
+    //     }); 
+
+
+    //     /////////////////
+    //     var postdata = JSON.stringify(arr_data);
+    //     var url = window.location.href;
+    //     $.post( url, postdata, function(data, status){
+    //         if(status=="success"){
+    //             //var json = JSON.parse(data);//返回的json数据 
+    //             alert(data["desc"])
+    //         }  
+    //     }); 
+    //     /////////////////
+    // });
+    // //函数结束
+
+})
+
+

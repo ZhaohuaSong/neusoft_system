@@ -1,0 +1,747 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2016/12/23 下午6:06
+# @Author  : czw@rich-f.com
+# @Site    : www.rich-f.com
+# @File    : views.py
+# @Software: PyCharm
+# @Function: 视图模型
+import logging
+from django.shortcuts import redirect, reverse
+from django.http import JsonResponse,HttpResponse
+from django.views.generic import TemplateView
+from django.db.models.query_utils import Q
+from models import SysDict, DbConfig,SqlName,SqlParams
+from forms import DBConfigForm,SqlServiceForm,SqlNameForm
+from ..common.datatables.views import BaseDatatableView
+from ..vanilla import CreateView, UpdateView
+import json
+from dbconfig import dbengine,makeword
+from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import render
+from dbutils import get_model_data,add_model_data,edit_model_data,delete_model_data,crud_model_data,query_data_source,\
+    query_data_result,query_data_field,insert_table,update_table,delete_table,query_data_mul_source,query_data_mul_field,batch_mul_cud
+from models import SqlService,SqlServiceDetail
+import datetime
+# Create your views here.
+
+_logger = logging.getLogger('loggers')
+
+
+class DBConfigListView(TemplateView):
+    """
+     ===============================================================================
+     function：    显示数据链接列表
+     developer:    Rich.Chen
+     add-time      2016/12/23
+     ===============================================================================
+    """
+
+    template_name = 'dbadmin/dbconfig.list.html'
+
+    def get(self, request, *args, **kwargs):
+        sys_dict_list = SysDict.objects.filter(dict_type='dbtype')
+        nodelist = []
+        # 从数据字典组成JSON数据给树形控件
+        for l in sys_dict_list:
+            dict_obj = {}
+            dict_obj['text'] = l.dict_name
+            dict_obj['id'] = l.dict_id
+            dict_obj['tags'] = ['0']
+            nodelist.append(dict_obj)
+
+        context = self.get_context_data()
+        context['request'] = request
+        context['treedata'] = json.dumps(nodelist)
+
+        return self.render_to_response(context)
+
+
+class DBConfigtListJson(BaseDatatableView):
+    """
+    ===============================================================================
+    function：    显示数据链接列表数据
+    developer:    Rich.Chen
+    add-time      2016/12/23
+    Note:         通用的操作类
+    ===============================================================================
+    """
+
+    model = DbConfig
+
+    columns = ['id', 'id', 'appname', 'dbtype', 'dbname', 'dbhost', 'dbport', 'id', ]
+    order_columns = ['id', 'appname', 'dbtype', 'dbname', 'dbhost', 'dbport', 'id', ]
+
+    def filter_queryset(self, qs):
+
+        id = self._querydict.get('id')
+
+        if id is None:
+            return super(DBConfigtListJson, self).filter_queryset(qs).all()
+        else:
+            # 注意DB树没有上级节点，所以没有parent_id这个参数
+            # return super(DBConfigtListJson, self).filter_queryset(qs).filter(Q(parent_id=id) | Q(id=id))
+            return super(DBConfigtListJson, self).filter_queryset(qs).filter(Q(dbtype=id))
+
+
+
+class CreateDBConfig(CreateView):
+    """
+    ===============================================================================
+    function：    创建数据链接
+    developer:    Rich.Chen
+    add-time      2016/12/29
+    Note:
+    ===============================================================================
+    """
+
+    form_class = DBConfigForm
+    template_name = 'dbadmin/dbconfig.form.html'
+
+    def get(self, request, *args, **kwargs):
+        opt = request.GET.get('option', None)
+        if opt is not None:
+            config = {}
+            config['host'] = request.GET.get('dbhost')
+            config['port'] = request.GET.get('dbport')
+            config['user'] = request.GET.get('dbusername')
+            config['password'] = request.GET.get('dbpassword')
+            config['dbname'] = request.GET.get('dbname')
+            config['dbtype'] = request.GET.get('dbtype')
+            return check_dbserver(config)
+
+        return super(CreateDBConfig, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        return super(CreateDBConfig, self).post(request, *args, **kwargs)
+
+    # 成功后跳转
+    def form_valid(self, form):
+        self.save(form)
+        return redirect(reverse('dbadmin:dbconfig.list'))
+
+    # 保存
+    def save(self, form):
+        dbconfig = DbConfig()
+
+        dbconfig.appname = form.cleaned_data['appname']
+        dbconfig.dbtype = form.cleaned_data['dbtype']
+        dbconfig.dbname = form.cleaned_data['dbname']
+        dbconfig.dbhost = form.cleaned_data['dbhost']
+        dbconfig.dbport = form.cleaned_data['dbport']
+        dbconfig.dbusername = form.cleaned_data['dbusername']
+        dbconfig.set_dbpassword(form.cleaned_data['dbpassword'])
+        dbconfig.save()
+
+
+class EditDBConfig(UpdateView):
+    """
+    ===============================================================================
+    function：    编辑数据链接
+    developer:    Rich.Chen
+    add-time      2016/12/29
+    Note:
+    ======
+    """
+    model = DbConfig
+    form_class = DBConfigForm
+    template_name = 'dbadmin/dbconfig.form.html'
+
+    def get(self, request, *args, **kwargs):
+        opt = request.GET.get('option', None)
+        opt = request.GET.get('option', None)
+        if opt is not None:
+            config = {}
+            config['host'] = request.GET.get('dbhost')
+            config['port'] = request.GET.get('dbport')
+            config['user'] = request.GET.get('dbusername')
+            config['password'] = request.GET.get('dbpassword')
+            config['dbname'] = request.GET.get('dbname')
+            config['dbtype'] = request.GET.get('dbtype')
+            return check_dbserver(config)
+
+        dbconfig = self.get_object()
+
+        form = DBConfigForm(initial={
+            'appname': dbconfig.appname,
+            'dbtype': dbconfig.dbtype,
+            'dbname': dbconfig.dbname,
+            'dbhost': dbconfig.dbhost,
+            'dbport': dbconfig.dbport,
+            'dbusername': dbconfig.dbusername,
+            'dbpassword': dbconfig.dbpassword
+        })
+
+        context = self.get_context_data(form=form)
+        return self.render_to_response(context)
+
+    def form_valid(self, form):
+        self.save(form)
+        return redirect(reverse('dbadmin:dbconfig.list'))
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        form = self.get_form(data=request.POST, files=request.FILES)
+        # 初始化一下，防止重复
+        form.fields['appname'].initial = self.object.appname
+        if form.is_valid():
+            return self.form_valid(form)
+        return self.form_invalid(form)
+
+    # 保存
+    def save(self, form):
+        dbconfig = self.get_object()
+        dbconfig.appname = form.cleaned_data['appname']
+        dbconfig.dbtype = form.cleaned_data['dbtype']
+        dbconfig.dbname = form.cleaned_data['dbname']
+        dbconfig.dbhost = form.cleaned_data['dbhost']
+        dbconfig.dbport = form.cleaned_data['dbport']
+        dbconfig.dbusername = form.cleaned_data['dbusername']
+        dbconfig.set_dbpassword(form.cleaned_data['dbpassword'])
+        dbconfig.save()
+
+
+def dbconfig_delete(request):
+    '''
+        批量删除
+        :param request:
+        :return:
+        '''
+    json_data = json.loads(request.GET.get('ids'))
+    list_id_del = json_data['ids']
+
+    sql = Q()
+
+    for id in list_id_del:
+        sql = sql | Q(id=id)
+
+    qs = DbConfig.objects.filter(sql)
+    if 0 != len(qs):
+        qs.delete()
+
+    name_dict = {'code': '00', 'desc': '删除成功!'}
+    return JsonResponse(name_dict)
+
+
+# 检测数据库配置是否正确
+
+def check_dbserver(myconfig):
+
+    mydb = dbengine(myconfig)
+
+    if mydb.ping() == 0:
+        context = {'code': '00', 'desc': '数据库链接成功!'}
+    else:
+        context = {'code': '01', 'desc': '连接服务器失败：%s!' % mydb.ping()}
+    mydb.close()
+    return JsonResponse(context)
+
+
+@csrf_exempt
+def dynamic_list(request):
+    req  = json.loads(request.body)
+    return HttpResponse(json.dumps(get_model_data(req)))
+
+@csrf_exempt
+def dynamic_add(request):
+    dbname = request.POST.get("databasename",'')
+    jsonobj = {}
+    jsonobj['dbname']=dbname
+    d =  request.POST.dict()
+    del d['csrfmiddlewaretoken']
+    del d['databasename']
+    del d['table_name']
+    sql = 'insert into '+request.POST.get('table_name','')
+    field = ''
+    values =''
+    for k in d:
+        field = field+str(k)+','
+        if not d[k]:
+            d[k]='NULL'
+        else:
+            d[k]='"'+d[k]+'"'
+        values = values+d[k]+','
+    field = field[0:field.__len__()-1]
+    values = values[0:values.__len__()-1]
+    sql=sql+'('+field+')'+'values('+values+')'
+    jsonobj['sql']=sql
+    return HttpResponse(json.dumps(add_model_data(jsonobj)))
+
+
+@csrf_exempt
+def dynamic_edit(request):
+    req  = json.loads(request.body)
+    return HttpResponse(json.dumps(edit_model_data(req)))
+
+
+@csrf_exempt
+def dynamic_delete(request):
+    req  = json.loads(request.body)
+    HttpResponse(json.dumps(delete_model_data(req)))
+
+
+def dynamic_detail(request,dbname,table_name,field_name,field_value):
+    jsonobj = {}
+    jsonobj['dbname']=dbname
+    jsonobj['sql'] = 'select * from '+table_name+' where '+field_name+'='+field_value
+    return HttpResponse(json.dumps(crud_model_data(jsonobj)))
+    # return HttpResponse(str(a)+','+str(b)+','+str(c)+','+str(d))
+
+
+def add_sql(request):
+    sql_params = eval(request.POST.get('sql_params',''))
+    context={}
+    try:
+        sqlname =  SqlName()
+        sqlname.dbname = request.POST.get('dbname','')
+        sqlname.sqlname = request.POST.get('sqlname','')
+        sqlname.sqlcontent = request.POST.get('sqlcontent','')
+        sqlname.sqltype=request.POST.get('sqltype','')
+        sqlname.save()
+        for sql_param in sql_params:
+            sqlparams = SqlParams()
+            fieldname =  sql_param.get('field_name','')
+            if str(fieldname).__contains__(':'):
+                arr_fieldname = str(fieldname).split(':')
+                sqlparams.field_name = arr_fieldname[0]
+                sqlparams.data_type = arr_fieldname[1]
+            else:
+                sqlparams.field_name = fieldname
+            sqlparams.field_opt = sql_param.get('field_opt','')
+            sqlparams.field_link = sql_param.get('field_link','')
+            sqlparams.field_memo = sql_param.get('field_memo','')
+            sqlparams.sql_name_id = sqlname.id
+            sqlparams.field_type=sql_param.get('field_type','1')
+            if (sqlname.sqltype=='U' or sqlname.sqltype=='D'):
+                # sqlparams.field_link='and'
+                sqlparams.field_opt = '='
+            sqlparams.save()
+
+        context['code']='00'
+        context['msg']='success'
+        return HttpResponse(json.dumps(context))
+    except:
+        context['code']='-1'
+        context['msg']='fail'
+        return HttpResponse(json.dumps(context))
+
+def list_sql(request):
+    sqlnames = SqlName.objects.filter(~Q(sqltype='R')).order_by('-id')
+    context=[]
+    for obj in sqlnames:
+        a = {}
+        a['id'] = obj.id
+        a['dbname'] = obj.dbname
+        a['sqlname'] = obj.sqlname
+        a['sqlcontent'] = obj.sqlcontent
+        a['sqltype'] = obj.sqltype
+        context.append(a)
+    return  HttpResponse(json.dumps(context))
+
+
+def test_sql(request):
+    '''
+    http://localhost:8000/dbadmin/sql/test/?sqlnameid=40&sqlserviceid=5&params_out=description,dict_id,dict_type,dict_name 测试连接地址
+    :param request:
+    :return:
+    '''
+    source  = query_data_source()#多业务查询数据源
+    source_1 = query_data_mul_source()#多业务变更数据源
+    context = query_data_field(request.GET.get('sqlnameid',''))#多业务查询请求或响应参数
+    context_1 = query_data_mul_field(request.GET.get('sqlserviceid',''))#多业务变更请求或响应参数
+    q_result = query_data_result(request.GET.get('sqlnameid',''),params_in=None,params_out=request.GET.get('params_out',''),page_index='1')#查询可以无入参查询，请根据返回的参数进行选定,默认1页显示10条，如果数据过大请根据page_index顺序读取
+
+    #原来新增，删除，修改业务统一更名为【多业务变更】
+    d_result = batch_mul_cud(arr=[{"sqlnameid":"29","params_in":{"personid":"3312773883301","mobile":"189673731877","name":"小明","sex":"1"}},
+                       {"sqlnameid":"33","params_in":{"id":"16"},"params_out":{"mobile":"888888888"}},
+                       {"sqlnameid":"34","params_in":{"id":"17","mobile":"19798888828828"},"params_out":{"name":"小梅"}},
+                       ])
+    result = json.dumps(context,ensure_ascii=False)
+    return HttpResponse("多业务查询数据源:"+str(json.dumps(source,ensure_ascii=False))+'<br />'
+                        +"多业务变更数据源:"+str(json.dumps(source_1,ensure_ascii=False))+'<br />'
+                        +"多业务查询请求或响应参数:"+str(result)+'<br />'
+                        +"多业务变更请求或响应参数:"+str(json.dumps(context_1,ensure_ascii=False)+'<br />')
+                        +"多业务查询业务执行:"+str(json.dumps(q_result,ensure_ascii=False)+'<br />')
+                        +"多业务变更业务执行:"+str(json.dumps(d_result,ensure_ascii=False)+'<br />')
+                        )
+
+def detail_sql(request):
+    id = request.GET.get('id','')
+    sql = SqlName.objects.get(id=id)
+    sqlparamslist =  SqlParams.objects.filter(sql_name_id=id)
+    b =[]
+    for sqlparam in sqlparamslist:
+        c={}
+        c['sql_name'] = sql.sqlname
+        c['field_name'] = sqlparam.field_name
+        if sqlparam.field_type=='1':
+            c['field_type'] = '输入参数'
+        elif sqlparam.field_type=='2':
+            c['field_type'] = '输出参数'
+        c['field_memo'] = sqlparam.field_memo
+        b.append(c)
+
+    context={}
+    a ={}
+    a['name'] = sql.sqlname
+    a['content'] = sql.sqlcontent
+    a['sqltype'] = sql.sqltype
+    context['sqlname']=a
+    context['sqlparams']  = b
+    return HttpResponse(json.dumps(context))
+
+def delete_sql(request):
+
+    return
+
+class Servicelist(TemplateView):
+    '''
+    多业务变更列表
+    '''
+    template_name = 'dbadmin/service.list.html'
+
+class QueryServicelist(TemplateView):
+    '''
+    多业务查询列表
+    '''
+    template_name = 'dbadmin/queryservice.list.html'
+
+
+#多业务数据变更列表
+class Servicedata(BaseDatatableView):
+    model = SqlService
+    columns = ['id', 'id', 'service_name','dbname', 'create_time', 'id', ]
+    order_columns = ['id', 'service_name','dbname', 'create_time', 'id', ]
+
+    def get_json(self, response):
+        data_list = response['data']
+        for data in data_list:
+            try:
+                data[3] =  DbConfig.objects.get(dbname=data[3]).appname
+            except:
+                pass
+        return super(Servicedata, self).get_json(response)
+
+
+ #多业务查询数据列表
+class QueryServicedata(BaseDatatableView):
+    model = SqlName
+    columns = ['id', 'id', 'sqlname','dbname', 'id', ]
+    order_columns = ['id', 'sqlname','dbname', 'id', ]
+
+    def filter_queryset(self, qs):
+        return super(QueryServicedata, self).filter_queryset(qs).filter(Q(sqltype='R'))
+
+    def get_json(self, response):
+        data_list = response['data']
+        for data in data_list:
+            try:
+                data[3] =  DbConfig.objects.get(dbname=data[3]).appname
+            except:
+                pass
+        return super(QueryServicedata, self).get_json(response)
+
+class CreateService(CreateView):
+    """
+    ===============================================================================
+    function：    创建多业务变更
+    developer:    zzm
+    add-time      2017/02/28
+    Note:
+    ===============================================================================
+    """
+
+    form_class = SqlServiceForm
+    template_name = 'dbadmin/service.form.html'
+
+    def get(self, request, *args, **kwargs):
+        return super(CreateService, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        return super(CreateService, self).post(request, *args, **kwargs)
+
+    # 成功后跳转
+    def form_valid(self, form):
+        self.save(form)
+        return redirect(reverse('dbadmin:service.list'))
+
+    # 保存
+    def save(self, form):
+        sqlservice = SqlService()
+        sqlservice.service_name =form.cleaned_data['service_name']
+        sqlservice.dbname =form.cleaned_data['dbname']
+        sqlservice.create_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        sqlservice.save()
+
+class CreateQueryService(CreateView):
+    """
+    ===============================================================================
+    function：    创建多业务查询
+    developer:    zzm
+    add-time      2017/03/02
+    Note:
+    ===============================================================================
+    """
+
+    form_class = SqlNameForm
+    template_name = 'dbadmin/queryservice.form.html'
+
+    def get(self, request, *args, **kwargs):
+        return super(CreateQueryService, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        return super(CreateQueryService, self).post(request, *args, **kwargs)
+
+    # 成功后跳转
+    def form_valid(self, form):
+        self.save(form)
+        return redirect(reverse('dbadmin:queryservice.list'))
+
+    # 保存
+    def save(self, form):
+        sql = SqlName()
+        sql.sqlname =form.cleaned_data['sqlname']
+        sql.dbname =form.cleaned_data['dbname']
+        sql.sqltype="R"
+        sql.save()
+
+def service_setting(request):
+    '''
+    多业务变更设置
+    :param request:
+    :return:
+    '''
+    id = request.GET.get('id','')
+    sqlservice =  SqlService.objects.get(id=id)
+    servicedetails=[]
+    sqlservicedetails = SqlServiceDetail.objects.filter(sql_service_id=sqlservice.id)
+    if sqlservicedetails:
+        for detail in sqlservicedetails:
+            servicedetails.append(detail.sql_name_id)
+    sqlnames = SqlName.objects.filter(~Q(sqltype='R'),dbname=sqlservice.dbname)
+    res = []
+    for task in sqlnames:
+        sqltask={}
+        sqltask['sql_name'] = task.sqlname
+        sqltask['sqlname_id'] = task.id
+        res.append(sqltask)
+    context={}
+    context['service_name'] = sqlservice.service_name
+    context['sqlnames'] = res
+    context['service_id'] = id
+    context['servicedetails'] = servicedetails
+    return render(request, 'dbadmin/service.setting.html', context)
+
+
+def service_add_detail(request):
+    '''
+    保存多业务变更明细
+    :param request:
+    :return:
+    '''
+    service_details = eval(request.POST.get('service_detail'))
+    sql_service_id = request.POST.get('sql_service_id','')
+    context={}
+    try:
+        SqlServiceDetail.objects.filter(sql_service_id=sql_service_id).delete()
+        for detail in service_details:
+            d  =  SqlServiceDetail()
+            d.sql_name_id = detail.get('sql_name_id','')
+            d.sql_service_id = detail.get('sql_service_id','')
+            d.save()
+        context['code']='00'
+        context['msg']='success'
+        return HttpResponse(json.dumps(context))
+    except:
+        context['code']='-1'
+        context['msg']='fail'
+        return HttpResponse(json.dumps(context))
+
+def queryservice_setting(request):
+    '''
+    多业务查询设置页面显示
+    :param request:
+    :return:
+    '''
+    id = request.GET.get('id','')
+    sql =  SqlName.objects.get(id=id)
+    context={}
+    context['sql_name'] = sql.sqlname
+    context['dbname'] = sql.dbname
+    context['sqlcontent'] = sql.sqlcontent
+    context['sqlnameid'] = id
+
+    sqlparams =  SqlParams.objects.filter(sql_name_id=id)
+    b=[]
+    if sqlparams:
+        for sqlparam in sqlparams:
+            a={}
+            a['field_name'] =  sqlparam.field_name
+            if sqlparam.field_type == '1':
+                a['field_type'] = '输入'
+            elif sqlparam.field_type == '2':
+                a['field_type'] = '输出'
+            a['field_opt'] = sqlparam.field_opt
+            a['field_link'] = sqlparam.field_link
+            a['field_memo'] = sqlparam.field_memo
+            b.append(a)
+    context['sqlparams'] = b
+    return render(request, 'dbadmin/queryservice.setting.html', context)
+
+
+def addparams_sql(request):
+    sql_params = eval(request.POST.get('sql_params',''))
+    sqlnameid = request.POST.get('sqlnameid','')
+    context={}
+    try:
+        sqlname =  SqlName.objects.get(id = sqlnameid)
+        sqlname.sqlcontent = request.POST.get('sqlcontent','')
+        sqlname.save()
+        SqlParams.objects.filter(sql_name_id=sqlnameid).delete()
+        for sql_param in sql_params:
+            sqlparams = SqlParams()
+            fieldname =  sql_param.get('field_name','')
+            if str(fieldname).__contains__(':'):
+                arr_fieldname = str(fieldname).split(':')
+                sqlparams.field_name = arr_fieldname[0]
+                sqlparams.data_type = arr_fieldname[1]
+            else:
+                sqlparams.field_name = fieldname
+            sqlparams.field_opt = sql_param.get('field_opt','')
+            sqlparams.field_link = sql_param.get('field_link','')
+            sqlparams.field_memo = sql_param.get('field_memo','')
+            sqlparams.sql_name_id = sqlname.id
+            sqlparams.field_type=sql_param.get('field_type','1')
+            sqlparams.save()
+        context['code']='00'
+        context['msg']='success'
+        return HttpResponse(json.dumps(context))
+    except:
+        context['code']='-1'
+        context['msg']='fail'
+        return HttpResponse(json.dumps(context))
+
+
+class ServiceEdit(UpdateView):
+    '''
+    多业务变更编辑页面
+    '''
+    model = SqlService
+    form_class = SqlServiceForm
+    template_name = 'dbadmin/service.form.html'
+
+    def get(self, request, *args, **kwargs):
+        sqlservice =  self.get_object()
+        form = SqlServiceForm(initial={
+            'service_name': sqlservice.service_name,
+            'dbname':sqlservice.dbname
+        })
+
+        context = self.get_context_data(form=form)
+        return self.render_to_response(context)
+
+    def form_valid(self, form):
+        self.save(form)
+        return redirect(reverse('dbadmin:service.list'))
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form(data=request.POST, files=request.FILES)
+        if form.is_valid():
+            return self.form_valid(form)
+        return self.form_invalid(form)
+
+    # 保存
+    def save(self, form):
+        sqlservice = self.get_object()
+        sqlservice.service_name = form.cleaned_data['service_name']
+        sqlservice.dbname = form.cleaned_data['dbname']
+        sqlservice.save()
+
+
+def service_delete(request):
+    '''
+        多业务变更批量删除
+        :param request:
+        :return:
+        '''
+    json_data = json.loads(request.GET.get('ids'))
+    list_id_del = json_data['ids']
+
+    sql = Q()
+
+    for id in list_id_del:
+        sql = sql | Q(id=id)
+
+    qs = SqlService.objects.filter(sql)
+
+
+    if 0 != len(qs):
+       for every_qs in qs:
+            SqlServiceDetail.objects.filter(sql_service_id=every_qs.id).delete()
+       qs.delete()
+
+    name_dict = {'code': '00', 'desc': '删除成功!'}
+    return JsonResponse(name_dict)
+
+
+
+class QueryServiceEdit(UpdateView):
+    '''
+    多业务查询编辑页面
+    '''
+    model = SqlName
+    form_class = SqlNameForm
+    template_name = 'dbadmin/queryservice.form.html'
+
+    def get(self, request, *args, **kwargs):
+        sql =self.get_object()
+        form = SqlNameForm(initial={
+            'sqlname': sql.sqlname,
+            'dbname':sql.dbname
+        })
+
+        context = self.get_context_data(form=form)
+        return self.render_to_response(context)
+
+    def form_valid(self, form):
+        self.save(form)
+        return redirect(reverse('dbadmin:queryservice.list'))
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form(data=request.POST, files=request.FILES)
+        if form.is_valid():
+            return self.form_valid(form)
+        return self.form_invalid(form)
+
+    # 保存
+    def save(self, form):
+        sql = self.get_object()
+        sql.sqlname = form.cleaned_data['sqlname']
+        sql.dbname = form.cleaned_data['dbname']
+        sql.save()
+
+
+def queryservice_delete(request):
+    '''
+        多业务查询批量删除
+        :param request:
+        :return:
+        '''
+    json_data = json.loads(request.GET.get('ids'))
+    list_id_del = json_data['ids']
+
+    sql = Q()
+
+    for id in list_id_del:
+        sql = sql | Q(id=id)
+
+    qs = SqlName.objects.filter(sql)
+
+
+    if 0 != len(qs):
+       for every_qs in qs:
+            SqlParams.objects.filter(sql_name_id=every_qs.id).delete()
+       qs.delete()
+
+    name_dict = {'code': '00', 'desc': '删除成功!'}
+    return JsonResponse(name_dict)

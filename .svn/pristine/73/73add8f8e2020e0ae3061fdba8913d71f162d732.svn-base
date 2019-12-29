@@ -1,0 +1,30 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+from django.views.generic import TemplateView
+
+class main(TemplateView):
+    template_name = 'security/security.main.html'
+
+class taskwizard(TemplateView):
+    template_name = 'security/security.taskwizard.html'
+
+class virusinfo(TemplateView):
+    template_name = 'security/security.virusinfo.html'
+
+class clientvirus(TemplateView):
+    template_name = 'security/security.clientvirus.html'
+
+class main_demo(TemplateView):
+    template_name = 'security/security.main.demo.html'
+
+class taskwizard_demo(TemplateView):
+    template_name = 'security/security.taskwizard.demo.html'
+
+class virusinfo_demo(TemplateView):
+    template_name = 'security/security.virusinfo.demo.html'
+
+class clientvirus_demo(TemplateView):
+    template_name = 'security/security.clientvirus.demo.html'
+
+
+

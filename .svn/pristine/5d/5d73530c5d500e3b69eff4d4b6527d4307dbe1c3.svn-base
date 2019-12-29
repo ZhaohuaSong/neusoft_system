@@ -1,0 +1,73 @@
+jQuery(function ($) {
+
+     $("#btn_add").bind("click",
+        function () {  
+             var tr=jQuery('<tr class="content"><td><input  class="index" type="text" disabled style="width:75px; " value=""></input></td>\
+                    <td><input  type="number" class="bit_index"  value="" style="width:120px" ></input></td>\
+                    <td><input  type="text"   class="field_name"  value=""  style="width:180px"></input></td>\
+                    <td><button type="button" class="btn btn-white btn-danger btn-sm"><i class="ace-icon fa fa-times red2"></i>删除</button></td></tr>');
+            
+             var tb=$("table#table_protocol"); 
+             var rows = tb.find("tbody").children("tr").length;
+ 
+             tr.appendTo(tb); 
+             tr.find("input.index").attr("value", rows);
+  
+             tr.find("button").on("click", function(){
+                delete_tr($(this));
+             });
+         }
+    );
+ 
+    $('.btn_delete').click(function(){ 
+        delete_tr($(this))
+    });
+
+    //删除一行
+    function delete_tr(btn){
+        
+        btn.closest('tr').remove();
+        rename_index();
+    }
+
+    //重新命名序号
+    function rename_index(){
+        var i=1; 
+        $('tr.content').each(function(){
+            var tr = $(this);
+
+            tr.find(".index").attr("value", i); 
+            i++;
+        }); 
+    }
+
+    //提交按钮事件
+    $('#btn_submit').click(function(){
+        var arr_data = {};
+        var i="0";
+        $('tr.content').each(function(){
+            var tr = $(this); 
+            var json_data = {};//一行格式数据 
+            json_data["field_name"] = tr.find("input.field_name").val();
+            json_data["bit_index"] = tr.find("input.bit_index").val(); 
+            arr_data[i] = json_data;
+            i=i+"0";
+        }); 
+
+
+        /////////////////
+        var postdata = JSON.stringify(arr_data);
+        var url = window.location.href;
+        $.post( url, postdata, function(data, status){
+            if(status=="success"){
+                //var json = JSON.parse(data);//返回的json数据 
+                alert(data["desc"])
+            }  
+        }); 
+        /////////////////
+    });
+    //函数结束
+
+})
+
+

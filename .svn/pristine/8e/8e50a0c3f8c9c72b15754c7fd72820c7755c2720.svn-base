@@ -1,0 +1,59 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from gevent import socket
+
+from  redismodels import  SendMsgRs
+from ..common.randomString import IdString
+import datetime
+from ..common.iso.iso_tool import *
+from iso_log_interface import ISOLogInterface
+
+class PackData(object):
+    def __init__(self):
+        self.address = ("0.0.0.0", 7000)
+        self.message=''
+
+
+    def send_roule(self):
+        data = None
+        address = None
+        sock = socket.socket(type=socket.SOCK_DGRAM)
+        sock.connect(self.address)
+        sock.settimeout(10)
+        try:
+            sendmsg = SendMsgRs()
+            sendmsg.app_id = ISOLogInterface(self.message).get_app_id()
+            sendmsg.protocol_id = ISOLogInterface(self.message).get_protocol_id()
+            sendmsg.content =str(format_assic_to_str(self.message))
+            sendmsg.back_content = ''
+            sendmsg.server_address = str(self.address[0])
+            sendmsg.server_port = str(self.address[1])
+            sendmsg.send_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            sendmsg.type=str(ISOLogInterface(self.message).get_msg_type())#规则报文
+            sendmsg.status='0'#正在发送
+            sendmsg.save()
+            sock.send(self.message)
+            data, address = sock.recvfrom(8192)
+            if data:
+                sendmsg.status='1'#通讯成功
+                sendmsg.back_content = str(format_assic_to_str(data))
+                sendmsg.return_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                sendmsg.save()
+            else:
+                sendmsg.status='2'#通讯失败
+                sendmsg.return_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                sendmsg.save()
+        except Exception as e:
+            print "socket error:", e
+            raise Exception('50')
+        sock.close()
+        return data,address
+
+
+
+
+
+    # def rece_message(self):
+    #     return self.in_message
+

@@ -1,0 +1,160 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2017/1/9 下午14:41
+# @Author  : qiujunli
+# @Site    :
+# @File    : views_apps_protocol.py
+# @Software: PyCharm
+# @Function: 适配器与协议规则之间的对应关系
+
+from django.views.generic import TemplateView
+from django.http import JsonResponse
+from django.db.models import Q
+import datetime
+import json
+import logging
+_logger = logging.getLogger('loggers')
+from remote_protocol_request import *
+
+from models import Apps, AppsProtocol, ProtocolType
+
+# Create your views here.
+
+class PageAppsProtocolView(TemplateView):
+    template_name = 'packmanage/packmanage.apps.protocol.html'
+
+    #GET请求
+    def get(self, request, *args, **kwargs):
+        id = request.GET.get('id', None)
+        context = {}
+        app = Apps.objects.get(id=id)
+        context['app'] = app
+        context['apps_protocol'] =  self.get_apps_protocol(app.app_id)
+        #报文协议下拉框
+        list_protocol = ProtocolType.objects.filter(bremoteconfig=0).values_list('id', 'protocol_name')
+        context['list_protocol'] = list_protocol
+        return self.render_to_response(context)
+
+    def get_apps_protocol(self, app_id):
+        '''
+        获取远程适配器支持的本地协议规则
+        :param app_id:
+        :return:
+        '''
+        apps_protocol = AppsProtocol.objects.filter(app_id=app_id)
+        for data in apps_protocol:
+            print data.state
+            try:
+                try:
+                    data.protocol_name = ProtocolType.objects.get(protocol_id=data.protocol_id).protocol_name
+                except:
+                    data.protocol_name = '---已删除---'
+
+                if data.state == 0:
+                    data.state = '未配置'
+                elif data.state == 1:
+                    data.state = '等待确认'
+                elif data.state == 2:
+                    data.state = '已配置'
+                elif data.state == 3:
+                    data.state = '拒绝配置'
+            except:
+                pass
+        return apps_protocol
+
+
+    #处理POST请求
+    def post(self, request, *args, **kwargs):
+        self.user = request.user
+        option = request.GET.get('option', None)
+        if option:
+            if u'add_protocol' == option:#添加报文协议
+                return self.add_protocol(request)
+            elif u'del_protocol' == option:#删除报文协议
+                return self.del_protocol(request)
+            elif u'config_protocol' == option:#向远程适配器发送协议配置
+                return self.send_config(request)
+
+        context = {'code': '01', 'desc': '不支持该操作类型!'}
+        return JsonResponse(context)
+
+    #向远程适配器增加报文规则配置
+    def add_protocol(self, request):
+        app_id = request.GET.get('id', None)
+        protocol_id = request.GET.get('protocol_id', None)
+
+        if app_id:
+            try:
+                app_id = Apps.objects.get(id=app_id).app_id
+            except:
+                return JsonResponse({'code': '01', 'desc': '该适配器不存在!'})
+
+        if protocol_id:
+            try:
+                protol = ProtocolType.objects.get(id=protocol_id)
+                protocol_id = protol.protocol_id
+            except:
+                return JsonResponse({'code': '01', 'desc': '该报文协议不存在!'})
+
+        if AppsProtocol.objects.filter(Q(app_id=app_id)&Q(protocol_id=protocol_id)).count() is not 0:
+            return JsonResponse({'code': '01', 'desc': '当前配器已经配置该报文协议!'})
+
+        info = AppsProtocol()
+        info.app_id = app_id
+        info.protocol_id = protocol_id
+        info.create_by = self.user.username
+        info.create_date = datetime.datetime.now()
+        info.state = 0
+        info.save()
+        return JsonResponse({'code': '00', 'desc': '操作成功!', 'protocol_name':protol.protocol_name, 'protocol_id':protol.protocol_id })
+
+    #删除对远程适配器支持的报文规则
+    def del_protocol(self, request):
+        app_id = request.GET.get('id', None)
+        protocol_id = request.GET.get('protocol_id', None)
+
+        if app_id:
+            try:
+                app_id = Apps.objects.get(id=app_id).app_id
+            except:
+                return JsonResponse({'code': '01', 'desc': '该适配器不存在!'})
+
+        # if protocol_id:
+        #     try:
+        #         ProtocolType.objects.get(protocol_id=protocol_id)
+        #     except:
+        #         return JsonResponse({'code': '01', 'desc': '该报文协议不存在!'})
+
+        AppsProtocol.objects.filter(Q(protocol_id=protocol_id)&Q(app_id=app_id)).delete()
+        return JsonResponse({'code': '00', 'desc': '操作成功!'})
+
+    #向远程适配器发送报文规则配送请求
+    def send_config(self, request):
+        app_id = request.GET.get('id', None)
+        protocol_id = request.GET.get('protocol_id', None)
+        if app_id:
+            try:
+                app = Apps.objects.get(id=app_id)
+            except:
+                return JsonResponse({'code': '01', 'desc': '该适配器不存在!'})
+
+        if protocol_id:
+            try:
+                protocol = ProtocolType.objects.get(protocol_id=protocol_id)
+            except:
+                return JsonResponse({'code': '01', 'desc': '该报文协议不存在!'})
+
+        ##################################################此处调用发送接口
+        #读取配置数据
+        try:
+            RemoteProtoclRequest().request(app, protocol)
+        except Exception as e:
+            return JsonResponse({'code': '01', 'desc': '向远程服务器发送配置失败：'+str(e)})
+        ###################################################
+
+        info = AppsProtocol.objects.get(Q(protocol_id=protocol.protocol_id)&Q(app_id=app.app_id))
+        info.state = 1#已发送
+        info.request_date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        info.save()
+
+        return JsonResponse({'code': '00', 'desc': '发送成功，等待远程适配器确认!', 'request_date':info.request_date})

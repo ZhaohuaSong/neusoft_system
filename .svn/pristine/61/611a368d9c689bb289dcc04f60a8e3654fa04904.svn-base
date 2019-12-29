@@ -1,0 +1,52 @@
+<div class="widget-box col-xs-12 step_3 hidden " >
+    <div class="widget-header widget-header-blue widget-header-flat">
+        <h4 class="widget-title lighter">请求报文协议配置——绑定数据源</h4>
+    </div>
+    <div class="space-20"></div>
+
+    <div class="form-horizontal"> 
+
+        <div class="form-group"> 
+            <label class="col-sm-3 control-label no-padding-right">输入参数</label>
+            <div class="col-xs-9 ">
+                <table class="tb" id="src_protocol_in">
+                    <thead>
+                        <tr>
+                            <td><input type='text' disabled value='输入参数名称' style="width:180px"></input></td>
+                            <td><input type='text' disabled value='数据源字段名称' style="width:180px;"></input></td>
+                        </tr>
+                    </thead> 
+                     <tbody></tbody>
+                </table>
+            </div>
+        </div>
+        <hr/>
+        <div class="form-group">
+            <label class="col-sm-3 control-label no-padding-right">输出参数</label>
+            <div class="col-xs-9 ">
+                <table class="tb" id="src_protocol_out">
+                    <thead>
+                        <tr>
+                            <td><input type='text' disabled value='输出参数名称' style="width:180px"></input></td>
+                            <td><input type='text' disabled value='数据源字段名称' style="width:180px;"></input></td>
+                        </tr>
+                    </thead> 
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="space-20"></div>
+        <hr/>
+        <div class="form-group o-1-next">
+            <label class="col-sm-3 control-label no-padding-right"></label>
+            <div class="col-sm-9">
+                <button id="btn-back-step2" class="btn btn-success btn-sm popover-success">上一步</button> 
+                <button id="btn-save" class="btn btn-info btn-sm tooltip-info" >保存</button>
+            </div>
+        </div>
+ 
+        <div class="space-10"></div>
+    </div>
+</div> 
+            

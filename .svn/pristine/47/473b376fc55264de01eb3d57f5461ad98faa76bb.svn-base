@@ -1,0 +1,387 @@
+#!/usr/bin/env python
+#-*- coding: utf-8 -*-
+from django import forms
+from models import Apps, TriggerType, ProtocolType
+from django.db.models import Q
+import re
+import socket
+from django.core.exceptions import ValidationError
+
+class FormApp(forms.Form):
+    '''
+    ============================================================================
+    class:FormAcq
+    developer:  QiuJL
+    add-time:  2016.9.28
+    note:受理机构表单
+    ============================================================================
+    '''
+    app_name    = forms.CharField(label='适配器名称',
+                              widget=forms.TextInput(
+                                  attrs={'class': 'col-xs-10 col-sm-5',
+                                         'placeholder': u'适配器名称',
+                                         'name': 'app_name',
+                                         'maxlength': "20",
+                                         }
+                              ),
+                              )
+
+    app_id = forms.CharField(label='适配器终端号',
+                               widget=forms.TextInput(
+                                   attrs={'class': 'col-xs-10 col-sm-5',
+                                          'placeholder': u'适配器编号 长度必须为8个字符数字组成',
+                                          'name': 'app_id',
+                                          'maxlength':"8",
+                                          }
+                               ),
+                               )
+
+    app_ip    = forms.CharField(label='IP地址',
+                              widget=forms.TextInput(
+                                  attrs={'class': 'col-xs-10 col-sm-5', 'placeholder': u'IP地址', 'name': 'app_ip',
+                                         }
+                              ),
+                              )
+
+    app_port    = forms.CharField(label='端口号',
+                              widget=forms.TextInput(
+                                  attrs={'class': 'col-xs-10 col-sm-5',
+                                         'placeholder': u'端口号',
+                                         'name': 'app_port',
+                                         'maxlength': "6",
+                                         }
+                              ),
+                              )
+
+
+
+    app_state = forms.ChoiceField(label='使用状态',
+                                      required=True,
+                                      widget=forms.Select(
+                                          attrs={
+                                              'id': 'form-field-select-1',
+                                              'name': 'app_state',
+                                              'class': 'select2  form-control',
+                                          }
+                                      ),
+                                      )
+
+    remarks = forms.CharField(label='备注',
+                               widget=forms.TextInput(
+                                   attrs={'class': 'col-xs-10 col-sm-5',
+                                          'placeholder': u'备注',
+                                          'name': 'remarks',
+                                          'maxlength': "50",
+                                          }
+                               ),
+                               )
+
+
+
+
+    def __init__(self, *args, **kwargs):
+        super(FormApp, self).__init__(*args, **kwargs)
+        #初始化报文发送触发类型
+        # choices = [('', '----------')] + list(TriggerType.objects.all().values_list("trigger_id", "trigger_name"))
+        # self.fields['app_triggertype'].choices = choices
+        self.fields['app_state'].choices = (('', '----------'), (1, u'正常使用'), (0, u'已停用'),)
+
+    def clean_app_name(self):
+        app_name = self.cleaned_data['app_name']
+        if app_name:# 如果值不为空
+            if app_name != self.fields['app_name'].initial:  #表单在编辑状态的时候判断名字是否被修改
+                if Apps.objects.filter(app_name=app_name).count() is not 0:
+                    raise forms.ValidationError(u"该名称已经被占用")
+
+            if app_name is not None and len(app_name) > 50:#名字的长度限制
+                raise forms.ValidationError(u"命名过长")
+        return app_name
+
+    def clean_app_note(self):
+        app_note = self.cleaned_data['remarks']
+        if app_note and len(app_note) > 50:
+            raise forms.ValidationError(u"备注过长")
+        return app_note
+
+    def clean_app_ip(self):
+        app_ip = self.cleaned_data['app_ip']
+        if app_ip and self.is_valid_ip(app_ip) is False:
+            raise forms.ValidationError(u"IP地址不合法")
+        return app_ip
+
+    def clean_app_port(self):
+        app_port = self.cleaned_data['app_port']
+        if app_port and self.is_valid_port(app_port) is False:
+            raise forms.ValidationError(u"端口号不合法")
+        return app_port
+
+    def clean_app_id(self):
+        app_id = self.cleaned_data['app_id']
+        if app_id and self.is_valid_id(app_id) is False:
+            raise forms.ValidationError(u"编号必须为数字字母组合")
+
+        if len(app_id) != 8:
+            raise forms.ValidationError(u"编号长度必须为8")
+
+        return app_id
+
+    #正则
+    def is_valid_id(self, id):
+        return re.match('^[0-9A-Z]+$', id)
+
+    #正则匹配IP
+    def is_valid_ip(self, ip):
+        if re.match(r"^\s*\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s*$", ip): return True
+        return False
+    #
+    #判断端口号是否合法有效
+    def is_valid_port(self, port):
+        return port.isdigit()
+
+
+class FormPortocolType(forms.Form):
+    '''
+    ============================================================================
+    class:FormPortocolType
+    developer:  QiuJL
+    add-time:  2016.12.29
+    note:受理机构表单
+    ============================================================================
+    '''
+    protocol_name    = forms.CharField(label='协议名称',
+                              widget=forms.TextInput(
+                                  attrs={'class': 'col-xs-10 col-sm-5',
+                                         'placeholder': u'协议名称',
+                                         'name': 'protocol_name',
+                                         'maxlength': "50",
+                                         }
+                              ),
+                              )
+
+    protocol_id = forms.CharField(label='协议ID',
+                                    widget=forms.TextInput(
+                                        attrs={'class': 'col-xs-10 col-sm-5', 'placeholder': u'长度为10的数字组成',
+                                               'name': 'protocol_id',
+                                               'maxlength': "10",
+                                               }
+                                    ),
+                                    )
+
+    protocol_state = forms.ChoiceField(label='使用状态',
+                                      choices = (('', '----------'), (1, u'正常使用'), (0, u'已停用'),),
+                                      required=True,
+                                      widget=forms.Select(
+                                          attrs={
+                                              'id': 'form-field-select-1',
+                                              'name': 'protocol_state',
+                                              'class': 'select2  form-control',
+                                          }
+                                      ),
+                                      )
+
+    remarks = forms.CharField(label='协议备注',
+                               widget=forms.TextInput(
+                                   attrs={'class': 'col-xs-10 col-sm-5',
+                                          'placeholder': u'协议备注',
+                                          'name': 'remarks',
+                                          'maxlength': "55",
+                                          }
+                               ),
+                               )
+
+
+
+
+    def __init__(self, *args, **kwargs):
+        super(FormPortocolType, self).__init__(*args, **kwargs)
+        self.fields['protocol_state'].choices = (('', '----------'), (1, u'正常使用'), (0, u'已停用'),)
+        #self.fields['protocol_srctype'].choices = (('', '----------'), (0, u'数据库表'), (1, u'CSV文件'))
+
+    def clean_protocol_name(self):
+        protocol_name = self.cleaned_data['protocol_name']
+        if protocol_name:
+            if protocol_name != self.fields['protocol_name'].initial:
+                if ProtocolType.objects.filter(protocol_name=protocol_name).count() is not 0:
+                    raise ValidationError(u"该名称已经被占用")
+
+            if len(protocol_name) > 50:
+                raise ValidationError(u"命名过长")
+        return protocol_name
+
+    def clean_protocol_id(self):
+        protocol_id = self.cleaned_data['protocol_id']
+        if protocol_id:
+            if protocol_id.isdigit() is False:
+                # self.errors['protocol_id'] = u'协议ID必须为10个数字组成'
+                raise ValidationError(u"协议ID必须为10个数字组成")
+
+            if len(protocol_id) != 10:
+                # self.errors['protocol_id'] = u'协议ID必须为10个数字组成'
+                raise ValidationError(u"协议ID必须为10个数字组成")
+
+        if protocol_id != self.fields['protocol_id'].initial:
+            if ProtocolType.objects.filter(Q(protocol_id=protocol_id)).count() is not 0 :
+                # self.errors['protocol_id'] = u'相同协议类型ID已经被占用'
+                raise ValidationError(u"该ID已经被占用")
+        return protocol_id
+
+    def clean_remarks(self):
+        protocol_note = self.cleaned_data['remarks']
+        if protocol_note:
+            if len(protocol_note)>50:
+                raise ValidationError(u"备注过长")
+        return protocol_note
+
+class FormLoaclApp(forms.Form):
+    '''
+    ============================================================================
+    class:FormLoaclApp
+    developer:  QiuJL
+    add-time:  2017.1.17
+    note:本地适配器参数配置
+    ============================================================================
+    '''
+    local_ip    = forms.CharField(label='IP地址',
+                              widget=forms.TextInput(
+                                  attrs={'class': 'col-xs-10 col-sm-5', 'placeholder': u'IP地址', 'name': 'local_ip',
+                                         }
+                              ),
+                              )
+
+    local_port = forms.CharField(label='端口号',
+                               widget=forms.TextInput(
+                                   attrs={'class': 'col-xs-10 col-sm-5',
+                                          'placeholder': u'IP地址',
+                                          'name': 'local_port',
+                                          'maxlength': "6",
+                                          }
+                               ),
+                               )
+
+    app_name = forms.CharField(label='名称',
+                               widget=forms.TextInput(
+                                   attrs={'class': 'col-xs-10 col-sm-5',
+                                          'placeholder': u'名称',
+                                          'name': 'app_name',
+                                          'maxlength': "55",
+                                          }
+                               ),
+                               )
+
+    app_id = forms.CharField(label='适配器终端号',
+                             widget=forms.TextInput(
+                                 attrs={'class': 'col-xs-10 col-sm-5', 'placeholder': u'适配器编号 长度必须为8个字符数字组成',
+                                        'name': 'app_id',
+                                        'maxlength': "8",
+                                        }
+                             ),
+                             )
+
+    def clean_app_id(self):
+        app_id = self.cleaned_data['app_id']
+        if app_id and re.match('^[0-9A-Z]+$', app_id) is False:
+            raise forms.ValidationError(u"编号必须为数字字母组合")
+
+        if len(app_id) != 8:
+            raise forms.ValidationError(u"编号长度必须为8")
+
+        return app_id
+
+    def clean_local_port(self):
+        app_port = self.cleaned_data['local_port']
+        if app_port:
+            if app_port.isdigit() is False:
+                raise forms.ValidationError(u"端口号不合法")
+            if int(app_port)>=65535:
+                raise forms.ValidationError(u"端口号不合法,请控制在0~65535内")
+            if self.IsOpen(app_port):
+                raise forms.ValidationError(u"端口号已经被占用")
+        return app_port
+    #检测端口号是否被打开
+    def IsOpen(self, port):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(0.5)
+        try:
+            s.connect(('127.0.0.1', int(port)))
+            s.shutdown(2)
+            return True
+        except:
+            return False
+
+    def clean_local_ip(self):
+        app_ip = self.cleaned_data['local_ip']
+        if app_ip and self.is_valid_ip(app_ip) is False:
+            raise forms.ValidationError(u"IP地址不合法")
+        return app_ip
+
+    # 正则匹配IP
+    def is_valid_ip(self, ip):
+        if re.match(r"^\s*\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s*$", ip): return True
+        return False
+
+
+
+
+class FormTrigger(forms.Form):
+    '''
+    ============================================================================
+    class:FormTrigger
+    developer:  QiuJL
+    add-time:  2017.2.18
+    note:触发器管理
+    ============================================================================
+    '''
+    trigger_name    = forms.CharField(label='触发器名称',
+                              widget=forms.TextInput(
+                                  attrs={'class': 'col-xs-10 col-sm-5',
+                                         'placeholder': u'适配器名称',
+                                         'name': 'app_name',
+                                         'maxlength': "20",
+                                         }
+                              ),
+                              )
+
+    trigger_type = forms.ChoiceField(label='触发方式',
+                                 required=True,
+                                 widget=forms.Select(
+                                     attrs={
+                                         'id': 'form-field-select-3',
+                                         'name': 'app_state',
+                                         'class': 'select2  form-control',
+                                     }
+                                 ),
+                                 )
+
+
+    app_name = forms.ChoiceField(label='适配器名称',
+                                      required=True,
+                                      widget=forms.Select(
+                                          attrs={
+                                              'id': 'form-field-select-1',
+                                              'name': 'app_state',
+                                              'class': 'select2  form-control',
+                                          }
+                                      ),
+                                      )
+
+    protocol_name = forms.ChoiceField(label='协议名称',
+                                  required=True,
+                                  widget=forms.Select(
+                                      attrs={
+                                          'id': 'form-field-select-2',
+                                          'name': 'app_state',
+                                          'class': 'select2  form-control',
+                                      }
+                                  ),
+                                  )
+
+
+    def __init__(self, *args, **kwargs):
+        super(FormTrigger, self).__init__(*args, **kwargs)
+        #初始化报文发送触发类型
+        self.fields['app_name'].choices = [('', '----------')] + list(Apps.objects.all().values_list("app_id", "app_name"))
+        self.fields['protocol_name'].choices = [('', '----------')] + list(
+            ProtocolType.objects.all().values_list("protocol_id", "protocol_name"))
+
+        self.fields['trigger_type'].choices = [('', '----------')] + list(
+            TriggerType.objects.all().values_list("trigger_id", "trigger_name"))

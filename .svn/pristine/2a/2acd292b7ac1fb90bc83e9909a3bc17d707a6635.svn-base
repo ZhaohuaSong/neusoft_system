@@ -1,0 +1,906 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+from django import forms
+from django.forms import ModelForm
+from django.db.models import Q
+from datetime import datetime
+import random
+from models_resource_catalog import ResourceList, OrgInfo
+import socket
+from django.core.exceptions import ValidationError
+import re
+
+
+class DBListForm(forms.Form):
+    '''
+    ============================================================================
+    class:DBListForm
+    developer:  wangyingqi
+    add-time:  2017.03.23
+    note:增加数据库字段
+    ============================================================================
+    '''
+
+    name = forms.CharField(label='数据库名称',
+                           required=False,
+                           widget=forms.TextInput(
+                               attrs={'class': 'col-xs-10 col-sm-5', 'placeholder': u'数据库名称', 'name': 'name',
+                                      }
+                           ),
+                           )
+
+    column = forms.MultipleChoiceField(label='字段名称',
+                                       required=False,
+                                       widget=forms.SelectMultiple(
+                                           attrs={'class': 'col-xs-10 col-sm-5', 'placeholder': u'字段名称',
+                                                  'name': 'column',
+                                                  }
+                                       ),
+                                       )
+
+    def __init__(self, *args, **kwargs):
+        super(DBListForm, self).__init__(*args, **kwargs)
+
+
+class OrgListForm(forms.Form):
+    '''
+    ============================================================================
+    class:OrgListForm
+    developer:  wangyingqi
+    add-time:  2017.03.23
+    note:资源目录注册
+    ============================================================================
+    '''
+
+    resource_id = forms.CharField(label='资源编号',
+                                  required=True,
+                                  error_messages={'required': '请填写资源编号', 'invalid': '资源编号格式错误'},
+                                  widget=forms.TextInput(
+                                      attrs={'class': 'col-xs-12', 'placeholder': u'资源编号',
+                                             'name': 'resource_id', 'readonly': 'readonly'
+                                             }
+                                  ),
+                                  )
+
+    resource_name = forms.CharField(label='资源名称',
+                                    required=True,
+                                    error_messages={'required': '请填写资源名称', 'invalid': '资源名称格式错误'},
+                                    widget=forms.TextInput(
+                                        attrs={'class': 'col-xs-12', 'placeholder': u'资源名称',
+                                               'name': 'resource_name',
+                                               }
+                                    ),
+                                    )
+
+    category_name = forms.CharField(label='数据领域',
+                                    required=False,
+                                    error_messages={'required': '请选择数据领域', 'invalid': '数据领域格式错误'},
+                                    widget=forms.TextInput(
+                                        attrs={'class': 'col-xs-12', 'placeholder': u'数据领域',
+                                               'name': 'category_name',
+                                               }
+                                    ),
+                                    )
+
+    power = forms.CharField(label='权限控制',
+                            required=False,
+                            error_messages={'required': '请选择权限控制', 'invalid': '权限控制格式错误'},
+                            widget=forms.TextInput(
+                                attrs={'class': 'col-xs-12', 'placeholder': u'权限控制',
+                                       'name': 'power',
+                                       }
+                            ),
+                            )
+
+    update = forms.CharField(label='更新频率',
+                             required=False,
+                             error_messages={'required': '请选择更新频率', 'invalid': '更新频率格式错误'},
+                             widget=forms.TextInput(
+                                 attrs={'class': 'col-xs-12', 'placeholder': u'更新频率',
+                                        'name': 'update',
+                                        }
+                             ),
+                             )
+
+    resource_type = forms.ChoiceField(
+        label='数据保存类型',
+        error_messages={'required': '请选择数据保存类型', },
+        required=True,
+        choices=(
+            ('', '----------'),
+            (0, u'数据库'),
+            (1, u'文件'),
+        ),
+        widget=forms.Select(
+            attrs={
+                'id': 'id_resource_type',
+                'class': 'select3  form-control',
+                'placeholder': u"数据保存类型",
+            }
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(OrgListForm, self).__init__(*args, **kwargs)
+        self.fields['resource_id'].initial = generate_resource_id
+
+
+class DOrgListForm(forms.Form):
+    '''
+    ============================================================================
+    class:DOrgListForm
+    developer:  wangyingqi
+    add-time:  2017.04.06
+    note:资源目录字段添加
+    ============================================================================
+    '''
+
+    resource_id = forms.CharField(label='资源编号',
+                                  required=True,
+                                  error_messages={'required': '请填写资源编号', 'invalid': '资源编号格式错误'},
+                                  widget=forms.TextInput(
+                                      attrs={'class': 'col-xs-12', 'placeholder': u'资源编号',
+                                             'name': 'resource_id1', 'readonly': 'readonly'
+                                             }
+                                  ),
+                                  )
+
+    field_name = forms.CharField(label='字段名',
+                                 required=True,
+                                 error_messages={'required': '请填写字段名', 'invalid': '字段名格式错误'},
+                                 widget=forms.TextInput(
+                                     attrs={'class': 'col-xs-12', 'placeholder': u'字段名',
+                                            'name': 'field_name',
+                                            }
+                                 ),
+                                 )
+
+    field_name_resolution = forms.CharField(label='字段名说明',
+                                            required=True,
+                                            error_messages={'required': '请填写字段名说明', 'invalid': '字段名说明格式错误'},
+                                            widget=forms.TextInput(
+                                                attrs={'class': 'col-xs-12', 'placeholder': u'字段名说明',
+                                                       'name': 'field_name_resolution',
+                                                       }
+                                            ),
+                                            )
+
+    # field_name_attribute = forms.CharField(label='字段属性',
+    #                                        required=False,
+    #                                        widget=forms.TextInput(
+    #                                            attrs={'class': 'col-xs-10 col-sm-5', 'placeholder': u'字段属性',
+    #                                                   'name': 'field_name_resolution',
+    #                                                   }
+    #                                        ),
+    #                                        )
+
+    search = forms.CharField(label='查询键',
+                             required=False,
+                             error_messages={'required': '请选择查询键', 'invalid': '查询键格式错误'},
+                             widget=forms.TextInput(
+                                 attrs={'class': 'col-xs-12', 'placeholder': u'查询键',
+                                        'name': 'search',
+                                        }
+                             ),
+                             )
+
+    result = forms.CharField(label='返回结果',
+                             required=False,
+                             error_messages={'required': '请选择返回结果', 'invalid': '返回结果格式错误'},
+                             widget=forms.TextInput(
+                                 attrs={'class': 'col-xs-12', 'placeholder': u'返回结果',
+                                        'name': 'result',
+                                        }
+                             ),
+                             )
+
+    modify = forms.CharField(label='修改方式',
+                             required=False,
+                             error_messages={'required': '请选择修改方式', 'invalid': '修改方式格式错误'},
+                             widget=forms.TextInput(
+                                 attrs={'class': 'col-xs-12', 'placeholder': u'修改方式',
+                                        'name': 'modify',
+                                        }
+                             ),
+                             )
+
+    add = forms.CharField(label='添加方式',
+                          required=False,
+                          error_messages={'required': '请选择添加方式', 'invalid': '添加方式格式错误'},
+                          widget=forms.TextInput(
+                              attrs={'class': 'col-xs-12', 'placeholder': u'添加方式',
+                                     'name': 'add',
+                                     }
+                          ),
+                          )
+
+    delete = forms.CharField(label='删除方式',
+                             required=False,
+                             error_messages={'required': '请选择删除方式', 'invalid': '删除方式格式错误'},
+                             widget=forms.TextInput(
+                                 attrs={'class': 'col-xs-12', 'placeholder': u'删除方式',
+                                        'name': 'delete',
+                                        }
+                             ),
+                             )
+
+    def __init__(self, *args, **kwargs):
+        super(DOrgListForm, self).__init__(*args, **kwargs)
+
+
+class OrgEditForm(forms.Form):
+    '''
+    ============================================================================
+    class:OrgEditForm
+    developer:  wangyingqi
+    add-time:  2017.03.23
+    note:资源目录编辑
+    ============================================================================
+    '''
+
+    post_status = forms.ChoiceField(
+        label='发布状态',
+        error_messages={'required': '请选择发布状态', },
+        required=True,
+        choices=(
+            ('', '----------'),
+            (2, u'已发布'),
+            (1, u'已停用'),
+        ),
+        widget=forms.Select(
+            attrs={
+                'id': 'id_resource_type',
+                'class': 'select3  form-control',
+                'placeholder': u"发布状态",
+            }
+        ),
+    )
+
+    resource_id = forms.CharField(label='资源编号',
+                                  required=True,
+                                  error_messages={'required': '请填写资源编号', 'invalid': '资源编号格式错误'},
+                                  widget=forms.TextInput(
+                                      attrs={'class': 'col-xs-12', 'placeholder': u'资源编号',
+                                             'name': 'resource_id', 'readonly': 'readonly'
+                                             }
+                                  ),
+                                  )
+
+    resource_name = forms.CharField(label='资源名称',
+                                    required=True,
+                                    error_messages={'required': '请填写资源名称', 'invalid': '资源名称格式错误'},
+                                    widget=forms.TextInput(
+                                        attrs={'class': 'col-xs-12', 'placeholder': u'资源名称',
+                                               'name': 'resource_name',
+                                               }
+                                    ),
+                                    )
+
+    category_name = forms.CharField(label='数据领域',
+                                    required=False,
+                                    error_messages={'required': '请选择数据领域', 'invalid': '数据领域格式错误'},
+                                    widget=forms.TextInput(
+                                        attrs={'class': 'col-xs-12', 'placeholder': u'数据领域',
+                                               'name': 'category_name',
+                                               }
+                                    ),
+                                    )
+
+    power = forms.CharField(label='权限控制',
+                            required=False,
+                            error_messages={'required': '请选择权限控制', 'invalid': '权限控制格式错误'},
+                            widget=forms.TextInput(
+                                attrs={'class': 'col-xs-12', 'placeholder': u'权限控制',
+                                       'name': 'power',
+                                       }
+                            ),
+                            )
+
+    update = forms.CharField(label='更新频率',
+                             required=False,
+                             error_messages={'required': '请选择更新频率', 'invalid': '更新频率格式错误'},
+                             widget=forms.TextInput(
+                                 attrs={'class': 'col-xs-12', 'placeholder': u'更新频率',
+                                        'name': 'update',
+                                        }
+                             ),
+                             )
+
+    resource_type = forms.ChoiceField(
+        label='数据保存类型',
+        error_messages={'required': '请选择数据保存类型', },
+        required=True,
+        choices=(
+            ('', '----------'),
+            (0, u'数据库'),
+            (1, u'文件'),
+        ),
+        widget=forms.Select(
+            attrs={
+                'id': 'id_resource_type',
+                'class': 'select3  form-control',
+                'placeholder': u"数据保存类型",
+            }
+        ),
+    )
+
+    def __init__(self, resource_list=None, *args, **kwargs):
+        super(OrgEditForm, self).__init__(*args, **kwargs)
+        # 下面字段操作都是给表单数据初始化
+        self.fields['resource_id'].initial = resource_list.resource_id
+        self.fields['resource_name'].initial = resource_list.resource_name
+        self.fields['category_name'].initial = resource_list.category_name
+        self.fields['resource_type'].initial = resource_list.resource_type
+        self.fields['post_status'].initial = resource_list.post_status
+        self.fields['power'].initial = resource_list.power
+        self.fields['update'].initial = resource_list.update
+
+
+def generate_resource_id():
+    """资源ID生成规则"""
+    try:
+        total_count = ResourceList.objects.last()
+        total_count = total_count.id
+    except:
+        total_count = 0
+    app_id_str = OrgInfo.objects.last()
+    app_id_str = str(app_id_str.app_id)
+    idx = str(total_count + 1)
+    if len(idx) < 5:
+        idx = idx.rjust(5, '0')
+
+    return ''.join((app_id_str, idx))
+
+
+class CreateOrgCheckForm(forms.Form):
+    '''
+    ============================================================================
+    class:CreateOrgCheckForm
+    developer:  wangyingqi
+    add-time:  2017.03.28
+    note:资源目录审核
+    ============================================================================
+    '''
+
+    result = forms.ChoiceField(
+        label=u"审核结果",
+        required=True,
+        error_messages={'required': '请选择审核结果，必选项', },
+        choices=(
+            (1, "通过"),
+            (0, "不通过"),
+
+        ),
+        widget=forms.RadioSelect(
+            attrs={
+                'class': 'col-xs-20 col-sm-20',
+                'class': 'am-radio-inline',
+                'placeholder': u"审核结果",
+                'name': 'result',
+            }
+        )
+    )
+    content = forms.CharField(
+        label=u'审核备注',
+        required=False,
+        initial=None,
+        widget=forms.Textarea(
+            attrs={
+                'id': 'id_result',
+                'class': 'form-control js-pattern-key',
+                'style': 'border:1px solid ;border-color:#D5D5D5; width:100%;height:2% ;padding:1%  ',
+                'data-validation-message': "请输入审核内容",
+                'placeholder': u"审核不通过，必须写明原因",
+            }
+        )
+    )
+
+    biz_id = forms.CharField(required=False, widget=forms.TextInput(
+        attrs={'name': 'biz_id', 'class': 'col-xs-12',
+               }
+    ), )
+
+    def __init__(self, *args, **kwargs):
+        super(CreateOrgCheckForm, self).__init__(*args, **kwargs)
+
+
+class AuditOrgBaseForm(forms.Form):
+    '''
+    ============================================================================
+    class:AuditOrgBaseForm
+    developer:  wangyingqi
+    add-time:  2017.04.10
+    note:资源目录终端审核信息详情(信息只读不可编辑)
+    ============================================================================
+    '''
+
+    def __init__(self, resource_list=None, *args, **kwargs):
+        super(AuditOrgBaseForm, self).__init__(*args, **kwargs)
+
+    app_name = forms.CharField(label='终端名称',
+                               required=False,
+                               error_messages={'required': '请填写终端名称', 'invalid': '终端名称格式错误'},
+                               widget=forms.TextInput(
+                                   attrs={'class': 'col-xs-12', 'placeholder': u'终端名称', 'name': 'app_name',
+                                          'readonly': 'readonly'
+                                          }
+                               ),
+                               )
+
+    app_id = forms.CharField(label='终端编号',
+                             required=False,
+                             error_messages={'required': '请填写终端编号', 'invalid': '终端编号格式错误'},
+                             widget=forms.TextInput(
+                                 attrs={'class': 'col-xs-12', 'placeholder': u'终端编号 长度必须为8位数字符组成',
+                                        'name': 'app_id', 'readonly': 'readonly'
+                                        }
+                             ),
+                             )
+
+    local_ip = forms.CharField(label='IP地址',
+                               required=False,
+                               error_messages={'required': '请填写IP地址', 'invalid': 'IP地址格式错误'},
+                               widget=forms.TextInput(
+                                   attrs={'class': 'col-xs-12', 'placeholder': u'IP地址',
+                                          'name': 'local_ip', 'readonly': 'readonly'
+                                          }
+                               ),
+                               )
+
+    local_port = forms.CharField(label='端口号',
+                                 required=False,
+                                 error_messages={'required': '请填写端口号', 'invalid': '端口号格式错误'},
+                                 widget=forms.TextInput(
+                                     attrs={'class': 'col-xs-12', 'placeholder': u'端口号',
+                                            'name': 'local_port', 'readonly': 'readonly'
+                                            }
+                                 ),
+                                 )
+
+    org_name = forms.CharField(label='提供方机构名称',
+                               required=False,
+                               error_messages={'required': '请填写提供方机构名称', 'invalid': '提供方机构名称格式错误'},
+                               widget=forms.TextInput(
+                                   attrs={'class': 'col-xs-12', 'placeholder': u'提供方机构名称',
+                                          'name': 'org_name', 'readonly': 'readonly'
+                                          }
+                               ),
+                               )
+
+    org_address = forms.CharField(label='提供方地址',
+                                  required=False,
+                                  error_messages={'required': '请填写提供方地址', 'invalid': '提供方地址格式错误'},
+                                  widget=forms.TextInput(
+                                      attrs={'class': 'col-xs-12', 'placeholder': u'提供方地址',
+                                             'name': 'org_address', 'readonly': 'readonly'
+                                             }
+                                  ),
+                                  )
+
+    org_phone = forms.CharField(label='提供方电话',
+                                required=False,
+                                error_messages={'required': '请填写提供方电话', 'invalid': '提供方电话格式错误'},
+                                widget=forms.TextInput(
+                                    attrs={'class': 'col-xs-12', 'placeholder': u'提供方电话',
+                                           'name': 'org_phone', 'readonly': 'readonly'
+                                           }
+                                ),
+                                )
+
+    org_content = forms.CharField(label='提供方描述',
+                                  required=False,
+                                  error_messages={'required': '请填写提供方描述', 'invalid': '提供方描述格式错误'},
+                                  widget=forms.TextInput(
+                                      attrs={'class': 'col-xs-12', 'placeholder': u'提供方描述',
+                                             'name': 'org_content', 'readonly': 'readonly'
+                                             }
+                                  ),
+                                  )
+
+
+class AuditOrgForm(forms.Form):
+    '''
+    ============================================================================
+    class:AuditOrgForm
+    developer:  wangyingqi
+    add-time:  2017.03.28
+    note:资源目录审核信息详情(信息只读不可编辑)
+    ============================================================================
+    '''
+
+    def __init__(self, resource_list=None, *args, **kwargs):
+        super(AuditOrgForm, self).__init__(*args, **kwargs)
+
+    post_status = forms.CharField(label='发布状态',
+                                  required=False,
+                                  error_messages={'required': '请选择发布状态', 'invalid': '发布状态格式错误'},
+                                  widget=forms.TextInput(
+                                      attrs={'class': 'col-xs-12', 'placeholder': u'提供方描述',
+                                             'name': 'post_status', 'readonly': 'readonly'
+                                             }
+                                  ),
+                                  )
+
+    resource_id = forms.CharField(label='资源编号',
+                                  required=False,
+                                  error_messages={'required': '请填写资源编号', 'invalid': '资源编号格式错误'},
+                                  widget=forms.TextInput(
+                                      attrs={'class': 'col-xs-12', 'placeholder': u'资源编号',
+                                             'name': 'resource_id', 'readonly': 'readonly'
+                                             }
+                                  ),
+                                  )
+
+    resource_name = forms.CharField(label='资源名称',
+                                    required=False,
+                                    error_messages={'required': '请填写资源名称', 'invalid': '资源名称格式错误'},
+                                    widget=forms.TextInput(
+                                        attrs={'class': 'col-xs-12', 'placeholder': u'资源名称',
+                                               'name': 'resource_name', 'readonly': 'readonly'
+                                               }
+                                    ),
+                                    )
+
+    category_name = forms.CharField(label='数据领域',
+                                    required=False,
+                                    error_messages={'required': '请填写资源描述', 'invalid': '资源描述格式错误'},
+                                    widget=forms.TextInput(
+                                        attrs={'class': 'col-xs-12', 'placeholder': u'数据领域',
+                                               'name': 'category_name', 'readonly': 'readonly'
+                                               }
+                                    ),
+                                    )
+
+    power = forms.CharField(label='权限控制',
+                            required=False,
+                            error_messages={'required': '请选择权限控制', 'invalid': '权限控制格式错误'},
+                            widget=forms.TextInput(
+                                attrs={'class': 'col-xs-12', 'placeholder': u'权限控制',
+                                       'name': 'power', 'readonly': 'readonly'
+                                       }
+                            ),
+                            )
+
+    update = forms.CharField(label='更新频率',
+                             required=False,
+                             error_messages={'required': '请选择更新频率', 'invalid': '更新频率格式错误'},
+                             widget=forms.TextInput(
+                                 attrs={'class': 'col-xs-12', 'placeholder': u'更新频率',
+                                        'name': 'update', 'readonly': 'readonly'
+                                        }
+                             ),
+                             )
+
+    resource_type = forms.CharField(label='数据保存类型',
+                                    required=False,
+                                    error_messages={'required': '请选择数据保存类型', 'invalid': '数据保存类型格式错误'},
+                                    widget=forms.TextInput(
+                                        attrs={'class': 'col-xs-12', 'placeholder': u'资源描述',
+                                               'name': 'category_name', 'readonly': 'readonly'
+                                               }
+                                    ),
+                                    )
+
+
+class CreateOrgForm(forms.Form):
+    '''
+    ============================================================================
+    class:OrgListForm
+    developer:  wangyingqi
+    add-time:  2017.03.31
+    note:资源目录基础信息注册
+    ============================================================================
+    '''
+
+    app_name = forms.CharField(label='终端名称',
+                               required=True,
+                               error_messages={'required': '请填写终端名称', 'invalid': '终端名称格式错误'},
+                               widget=forms.TextInput(
+                                   attrs={'class': 'col-xs-12', 'placeholder': u'终端名称', 'name': 'app_name',
+                                          }
+                               ),
+                               )
+
+    app_id = forms.CharField(label='终端编号',
+                             required=True,
+                             error_messages={'required': '请填写终端编号', 'invalid': '终端编号格式错误'},
+                             widget=forms.TextInput(
+                                 attrs={'class': 'col-xs-12', 'placeholder': u'终端编号 长度必须为8位数字符组成',
+                                        'name': 'app_id',
+                                        }
+                             ),
+                             )
+    local_ip = forms.CharField(label='IP地址',
+                               required=True,
+                               error_messages={'required': '请填写IP地址', 'invalid': 'IP地址格式错误'},
+                               widget=forms.TextInput(
+                                   attrs={'class': 'col-xs-12', 'placeholder': u'IP地址',
+                                          'name': 'local_ip',
+                                          }
+                               ),
+                               )
+
+    local_port = forms.CharField(label='端口号',
+                                 required=True,
+                                 error_messages={'required': '请填写端口号', 'invalid': '端口号格式错误'},
+                                 widget=forms.TextInput(
+                                     attrs={'class': 'col-xs-12', 'placeholder': u'端口号',
+                                            'name': 'local_port',
+                                            }
+                                 ),
+                                 )
+
+    org_name = forms.CharField(label='提供方机构名称',
+                               required=True,
+                               error_messages={'required': '请填写提供方机构名称', 'invalid': '提供方机构名称格式错误'},
+                               widget=forms.TextInput(
+                                   attrs={'class': 'col-xs-12', 'placeholder': u'提供方机构名称',
+                                          'name': 'org_name',
+                                          }
+                               ),
+                               )
+
+    org_address = forms.CharField(label='提供方地址',
+                                  required=True,
+                                  error_messages={'required': '请填写提供方地址', 'invalid': '提供方地址格式错误'},
+                                  widget=forms.TextInput(
+                                      attrs={'class': 'col-xs-12', 'placeholder': u'提供方地址',
+                                             'name': 'org_address',
+                                             }
+                                  ),
+                                  )
+
+    org_phone = forms.CharField(label='提供方电话',
+                                required=True,
+                                error_messages={'required': '请填写提供方电话', 'invalid': '提供方电话格式错误'},
+                                widget=forms.TextInput(
+                                    attrs={'class': 'col-xs-12', 'placeholder': u'提供方电话',
+                                           'name': 'org_phone',
+                                           }
+                                ),
+                                )
+
+    org_content = forms.CharField(label='提供方描述',
+                                  required=True,
+                                  error_messages={'required': '请填写提供方描述', 'invalid': '提供方描述格式错误'},
+                                  widget=forms.TextInput(
+                                      attrs={'class': 'col-xs-12', 'placeholder': u'提供方描述',
+                                             'name': 'org_content',
+                                             }
+                                  ),
+                                  )
+
+    def __init__(self, *args, **kwargs):
+        super(CreateOrgForm, self).__init__(*args, **kwargs)
+
+    def clean_local_ip(self):
+        local_ip = self.cleaned_data['local_ip']
+        if local_ip and self.is_valid_ip(local_ip) is False:
+            raise forms.ValidationError(u"IP地址不合法")
+        return local_ip
+
+    def clean_local_port(self):
+        local_port = self.cleaned_data['local_port']
+        if local_port and self.is_valid_port(local_port) is False:
+            raise forms.ValidationError(u"端口号不合法")
+        return local_port
+
+    def clean_app_id(self):
+        app_id = self.cleaned_data['app_id']
+        if app_id and self.is_valid_id(app_id) is False:
+            raise forms.ValidationError(u"终端编号必须为数字字母组合")
+
+        if len(app_id) != 8:
+            raise forms.ValidationError(u"终端编号长度必须为8")
+
+        return app_id
+
+    # 正则
+    def is_valid_id(self, id):
+        return re.match('^[0-9A-Z]+$', id)
+
+    # 正则匹配IP
+    def is_valid_ip(self, ip):
+        if re.match(r"^\s*\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s*$", ip): return True
+        return False
+
+    # 判断端口号是否合法有效
+    def is_valid_port(self, port):
+        return port.isdigit()
+
+
+class EditOrgForm(forms.Form):
+    '''
+    ============================================================================
+    class:OrgListForm
+    developer:  wangyingqi
+    add-time:  2017.03.31
+    note:资源目录基础信息编辑
+    ============================================================================
+    '''
+
+    app_name = forms.CharField(label='终端名称',
+                               required=True,
+                               error_messages={'required': '请填写终端名称', 'invalid': '终端名称格式错误'},
+                               widget=forms.TextInput(
+                                   attrs={'class': 'col-xs-12', 'placeholder': u'终端名称', 'name': 'app_name',
+                                          }
+                               ),
+                               )
+
+    app_id = forms.CharField(label='终端编号',
+                             required=True,
+                             error_messages={'required': '请填写终端编号', 'invalid': '终端编号格式错误'},
+                             widget=forms.TextInput(
+                                 attrs={'class': 'col-xs-12', 'placeholder': u'终端编号 长度必须为8位数字符组成',
+                                        'name': 'app_id',
+                                        }
+                             ),
+                             )
+    local_ip = forms.CharField(label='IP地址',
+                               required=True,
+                               error_messages={'required': '请填写IP地址', 'invalid': 'IP地址格式错误'},
+                               widget=forms.TextInput(
+                                   attrs={'class': 'col-xs-12', 'placeholder': u'IP地址',
+                                          'name': 'local_ip',
+                                          }
+                               ),
+                               )
+
+    local_port = forms.CharField(label='端口号',
+                                 required=True,
+                                 error_messages={'required': '请填写端口号', 'invalid': '端口号格式错误'},
+                                 widget=forms.TextInput(
+                                     attrs={'class': 'col-xs-12', 'placeholder': u'端口号',
+                                            'name': 'local_port',
+                                            }
+                                 ),
+                                 )
+
+    org_name = forms.CharField(label='提供方机构名称',
+                               required=True,
+                               error_messages={'required': '请填写提供方机构名称', 'invalid': '提供方机构名称格式错误'},
+                               widget=forms.TextInput(
+                                   attrs={'class': 'col-xs-12', 'placeholder': u'提供方机构名称',
+                                          'name': 'org_name',
+                                          }
+                               ),
+                               )
+
+    org_address = forms.CharField(label='提供方地址',
+                                  required=True,
+                                  error_messages={'required': '请填写提供方地址', 'invalid': '提供方地址格式错误'},
+                                  widget=forms.TextInput(
+                                      attrs={'class': 'col-xs-12', 'placeholder': u'提供方地址',
+                                             'name': 'org_address',
+                                             }
+                                  ),
+                                  )
+
+    org_phone = forms.CharField(label='提供方电话',
+                                required=True,
+                                error_messages={'required': '请填写提供方电话', 'invalid': '提供方电话格式错误'},
+                                widget=forms.TextInput(
+                                    attrs={'class': 'col-xs-12', 'placeholder': u'提供方电话',
+                                           'name': 'org_phone',
+                                           }
+                                ),
+                                )
+
+    org_content = forms.CharField(label='提供方描述',
+                                  required=True,
+                                  error_messages={'required': '请填写提供方描述', 'invalid': '提供方描述格式错误'},
+                                  widget=forms.TextInput(
+                                      attrs={'class': 'col-xs-12', 'placeholder': u'提供方描述',
+                                             'name': 'org_content',
+                                             }
+                                  ),
+                                  )
+
+    def __init__(self, orginfo=None, *args, **kwargs):
+        super(EditOrgForm, self).__init__(*args, **kwargs)
+        # 下面字段操作都是给表单数据初始化
+        self.fields['app_name'].initial = orginfo.app_name
+        self.fields['app_id'].initial = orginfo.app_id
+        self.fields['local_ip'].initial = orginfo.local_ip
+        self.fields['local_port'].initial = orginfo.local_port
+        self.fields['org_name'].initial = orginfo.org_name
+        self.fields['org_address'].initial = orginfo.org_address
+        self.fields['org_phone'].initial = orginfo.org_phone
+        self.fields['org_content'].initial = orginfo.org_content
+
+    def clean_local_ip(self):
+        local_ip = self.cleaned_data['local_ip']
+        if local_ip and self.is_valid_ip(local_ip) is False:
+            raise forms.ValidationError(u"IP地址不合法")
+        return local_ip
+
+    def clean_local_port(self):
+        local_port = self.cleaned_data['local_port']
+        if local_port and self.is_valid_port(local_port) is False:
+            raise forms.ValidationError(u"端口号不合法")
+        return local_port
+
+    def clean_app_id(self):
+        app_id = self.cleaned_data['app_id']
+        if app_id and self.is_valid_id(app_id) is False:
+            raise forms.ValidationError(u"终端编号必须为数字字母组合")
+
+        if len(app_id) != 8:
+            raise forms.ValidationError(u"终端编号长度必须为8")
+
+        return app_id
+
+    # 正则
+    def is_valid_id(self, id):
+        return re.match('^[0-9A-Z]+$', id)
+
+    # 正则匹配IP
+    def is_valid_ip(self, ip):
+        if re.match(r"^\s*\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s*$", ip): return True
+        return False
+
+    # 判断端口号是否合法有效
+    def is_valid_port(self, port):
+        return port.isdigit()
+
+
+class FormCentralIPPort(forms.Form):
+    '''
+    ============================================================================
+    class:FormCentralIPPort
+    developer:  ljh
+    add-time:  2017.4.6
+    note:中心节点ip端口配置管理
+    ============================================================================
+    '''
+    central_node_ip = forms.CharField(label='中心节点IP地址',
+                                      widget=forms.TextInput(
+                                          attrs={'class': 'col-xs-10 col-sm-5', 'placeholder': u'中心节点IP地址',
+                                                 'name': 'local_ip',
+                                                 }
+                                      ),
+                                      )
+
+    central_node_port = forms.CharField(label='中心节点端口号',
+                                        widget=forms.TextInput(
+                                            attrs={'class': 'col-xs-10 col-sm-5',
+                                                   'placeholder': u'中心节点端口号',
+                                                   'name': 'local_port',
+                                                   'maxlength': "6",
+                                                   }
+                                        ),
+                                        )
+
+    def clean_local_port(self):
+        central_node_port = self.cleaned_data['central_node_port']
+        if central_node_port:
+            if central_node_port.isdigit() is False:
+                raise forms.ValidationError(u"端口号不合法")
+            if int(central_node_port) >= 65535:
+                raise forms.ValidationError(u"端口号不合法,请控制在0~65535内")
+            if self.IsOpen(central_node_port):
+                raise forms.ValidationError(u"端口号已经被占用")
+        return central_node_port
+
+    # 检测端口号是否被打开
+    def IsOpen(self, port):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(0.5)
+        try:
+            s.connect(('127.0.0.1', int(port)))
+            s.shutdown(2)
+            return True
+        except:
+            return False
+
+    def clean_local_ip(self):
+        central_node_ip = self.cleaned_data['central_node_ip']
+        if central_node_ip and self.is_valid_ip(central_node_ip) is False:
+            raise forms.ValidationError(u"IP地址不合法")
+        return central_node_ip
+
+    # 正则匹配IP
+    def is_valid_ip(self, ip):
+        if re.match(r"^\s*\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s*$", ip): return True
+        return False

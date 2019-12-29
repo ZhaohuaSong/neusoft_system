@@ -1,0 +1,77 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+from django.conf.urls import url
+from views_apps import ListAppsView, JsonAppsView, apps_delete, CreateAppView, EditAppView
+from views_ter_apps import TerListAppsView, TerJsonAppsView, ter_apps_delete, TerCreateAppView, TerEditAppView
+from views_protocol_local import ListProtocolTypeView, JsonProtocolTypeView, protocoltype_delete, CreateProtocoltypeView, EditProtocoltypeView
+from views_protocol_remote import ListRemoteProtocolTypeView, JsonRemoteProtocolTypeView
+from views_protocol_content import PageProtocolContentView, PageRemoteProtocolContentView, PageProtocolDataSrc
+from views_apps_protocol import PageAppsProtocolView
+from views_protocol_remote_config import ListProtocolTypeConfigView, JsonProtocolTypeConfigView, remote_protocol_delete
+from views_protocol_remote_config_content import ListRemoteProtocolTypeContent, refuse, accept
+from views_apps_localapp import LocalAppView, EditLocalAppView, test_local_app
+
+from views_trigger import  PageTriggerView, JsonTriggerView, CreateTriggerView, trigger_delete
+from views_trigger_config import PageTriggerConfigView
+
+urlpatterns = [
+    #应用程序管理
+    url(r'^packmanage/apps/list$', ListAppsView.as_view(), name='apps.list'),  # 页面模板
+    url(r'^packmanage/apps/data$', JsonAppsView.as_view(), name="apps.data"),  # 获取数据
+    url(r'^packmanage/apps/delete$', apps_delete, name="apps.delete"),  # 删除
+    url(r'^packmanage/apps/add$',  CreateAppView.as_view(), name='apps.add'),  # 添加
+    url(r'^packmanage/apps/edit/(?P<pk>\d+)/$', EditAppView.as_view(), name="acqinfo.edit"),  # 编辑
+
+    #终端管理 >> 远程适配器管理
+    url(r'^terminal/apps/list$', TerListAppsView.as_view(), name='apps.list1'),  # 页面模板
+    url(r'^terminal/apps/data$', TerJsonAppsView.as_view(), name="apps.data"),  # 获取数据
+    url(r'^terminal/apps/delete$', ter_apps_delete, name="apps.delete1"),  # 删除
+    url(r'^terminal/apps/add$',  TerCreateAppView.as_view(), name='apps.add1'),  # 添加
+    url(r'^terminal/apps/edit/(?P<pk>\d+)/$', TerEditAppView.as_view(), name="acqinfo.edit1"),  # 编辑
+
+    #本地适配器信息
+    url(r'^packmanage/localapp/$', LocalAppView.as_view(), name='apps.localapp'),  # 本地适配器
+    url(r'^packmanage/localapp/edit$', EditLocalAppView.as_view(), name='apps.localapp.edit'),  # 编辑本地适配器
+    url(r'^packmanage/localapp/test', test_local_app, name='apps.localapp.test'),  # 测试本地适配器服务运行状态
+
+    # url(r'^packmanage/localapp/start$', start_app),  # 启动本地服务
+    # url(r'^packmanage/localapp/stop', stop_app),  # 停止本地服务
+
+    #本地报文协议类型管理
+    url(r'^packmanage/protocoltype/list$', ListProtocolTypeView.as_view(), name='protocoltype.list'),  # 报文协议页面
+    url(r'^packmanage/protocoltype/data$', JsonProtocolTypeView.as_view(), name='protocoltype.data'),  # 获取当前页面数据
+    url(r'^packmanage/protocoltype/delete$', protocoltype_delete, name="protocoltype.delete"),  # 删除
+    url(r'^packmanage/protocoltype/add$',  CreateProtocoltypeView.as_view(), name='protocoltype.add'),  # 添加
+    url(r'^packmanage/protocoltype/edit/(?P<pk>\d+)/$', EditProtocoltypeView.as_view(), name="protocoltype.edit"),  # 编辑
+    url(r'^packmanage/protocoltype/content$', PageProtocolContentView.as_view(), name='protocoltype.content'),  # 协议内容
+
+    #远程报文协议类型管理
+    url(r'^packmanage/remoteprotocoltype/list$', ListRemoteProtocolTypeView.as_view(), name='remoteprotocoltype.list'),  # 报文协议页面
+    url(r'^packmanage/remoteprotocoltype/data$', JsonRemoteProtocolTypeView.as_view(), name='remoteprotocoltype.data'),  # 获取当前页面数据
+    url(r'^packmanage/remoteprotocoltype/delete$', protocoltype_delete, name="remoteprotocoltype.delete"),  # 删除
+    url(r'^packmanage/remoteprotocoltype/content$', PageRemoteProtocolContentView.as_view(), name='remoteprotocoltype.content'),  # 协议内容
+    url(r'^packmanage/remoteprotocoltype/datasrc$', PageProtocolDataSrc.as_view(), name='remoteprotocoltype.datasrc'),  # 协议内容
+
+    #适配器协议规则管理
+    url(r'^packmanage/apps/protocol', PageAppsProtocolView.as_view(), name='apps.protocol'),#
+    #终端管理 >> 远程适配器配置
+    url(r'^terminal/apps/protocol', PageAppsProtocolView.as_view(), name='apps.protocol'),#
+
+
+    #远程适配器报文规则请求配置管理
+    url(r'^packmanage/reomte/protocoltype/list', ListProtocolTypeConfigView.as_view(), name='protocoltype.config.list'),
+    url(r'^packmanage/reomte/protocoltype/data$', JsonProtocolTypeConfigView.as_view(), name="protocoltype.config.data"),  # 获取数据
+    url(r'^packmanage/reomte/protocoltype/content', ListRemoteProtocolTypeContent.as_view(), name="protocoltype.config.content"),  # 协议规则内容
+    url(r'^packmanage/reomte/protocoltype/refuse', refuse, name='protocoltype.config.refuse'),#请求拒绝
+    url(r'^packmanage/reomte/protocoltype/accept', accept, name='protocoltype.config.accept'),#请求接受
+    url(r'^packmanage/reomte/protocoltype/delete', remote_protocol_delete),#删除
+
+
+    #触发器管理
+    url(r'^packmanage/trigger/list$', PageTriggerView.as_view(), name='trigger.list'),  # 报文协议页面
+    url(r'^packmanage/trigger/data$', JsonTriggerView.as_view(), name='trigger.data'),  # 获取当前页面数据
+    url(r'^packmanage/trigger/delete$', trigger_delete, name="trigger.delete"),  # 删除
+    url(r'^packmanage/trigger/add$',  CreateTriggerView.as_view(), name='trigger.add'),  # 添加
+    url(r'^packmanage/trigger/config$', PageTriggerConfigView.as_view(), name='trigger.config'),  # 触发器配置
+    # url(r'^packmanage/trigger/edit/(?P<pk>\d+)/$', EditProtocoltypeView.as_view(), name="trigger.edit"),  # 编辑
+]

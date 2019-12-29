@@ -1,0 +1,337 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+from django.views.generic import TemplateView
+from ..common.datatables.views import BaseDatatableView
+from django.db.models import Q
+from django.http import JsonResponse
+import json
+from models_resource_catalog import OrgInfo, ResourceList, ResourceDetails, TaskHistory, ResourceMiddleWare
+from ..vanilla import CreateView, UpdateView
+from forms import CreateOrgCheckForm, AuditOrgForm, AuditOrgBaseForm
+from django.http import HttpResponseRedirect
+from souregister_views import getmiddleWare, filterResourceMiddleWare
+from django.views.decorators.csrf import csrf_exempt
+from django.template.response import TemplateResponse
+from django.core.urlresolvers import reverse
+from datetime import datetime
+
+
+class OrgCheck(TemplateView):
+    template_name = 'source_check/org.list.html'
+
+
+class OrgCheckJson(BaseDatatableView):
+    '''
+    Json 数据格式
+    '''
+    model = ResourceList
+    columns = ['id', 'id', 'resource_name', 'category_name', 'power', 'update', 'resource_type', 'registration_time',
+               'org_name', 'audit_status']
+    order_columns = ['id', 'id', 'resource_name', 'category_name', 'power', 'update', 'resource_type',
+                     'registration_time', 'org_name', 'audit_status']
+
+    def get_initial_queryset(self):
+        # 如果数据有错误，则过滤数据
+        data = self.model.objects.filter(create_by=self.request.user.id)
+        return data
+
+    def filter_queryset(self, qs):
+        # 部分条目查询
+        if not self.pre_camel_case_notation:
+            search = self._querydict.get('search[value]', None)
+            q = Q()
+            if 0 != len(search):
+                q = q | Q(resource_id__contains=search)
+                q = q | Q(resource_name__contains=search)
+                q = q | Q(org_name__contains=search)
+                q = q | filterResourceMiddleWare(search, ResourceMiddleWare, 0)
+                if search == '数据库':
+                    search = '0'
+                elif search == '文件':
+                    search = '1'
+                q = q | Q(resource_type__contains=search)
+            qs = qs.filter(q)
+        return qs
+
+    def prepare_results(self, qs):
+        json_data = []
+        for item in qs:
+            audit_status = ''
+            if item.audit_status == '0':
+                audit_status = '待审核'
+            elif item.audit_status == '1':
+                audit_status = '审核中'
+            elif item.audit_status == '2':
+                audit_status = '已审核'
+
+            resource_type = ''
+            if item.resource_type == '0':
+                resource_type = '数据库'
+            elif item.resource_type == '1':
+                resource_type = '文件'
+
+            try:
+                history = TaskHistory.objects.filter(biz_id=item.resource_id).last()
+                create_time = history.create_time.strftime("%Y-%m-%d")
+            except:
+                create_time = ''
+
+            json_data.append([
+                item.id,
+                item.id,
+                item.resource_id,
+                item.resource_name,
+                item.org_name,
+                getmiddleWare(item.category_name),
+                getmiddleWare(item.power),
+                getmiddleWare(item.update),
+                resource_type,
+                create_time,
+                audit_status,
+                item.id,
+            ])
+        return json_data
+
+
+class OrgBaseCheckJson(BaseDatatableView):
+    '''
+    Json 数据格式,基础信息审核表单
+    '''
+    model = OrgInfo
+    columns = ['id', 'id', 'app_name', 'app_id', 'local_ip', 'local_port', 'org_name',
+               'audit_status']
+    order_columns = ['id', 'id', 'app_name', 'app_id', 'local_ip', 'local_port', 'org_name',
+                     'audit_status']
+
+    def get_initial_queryset(self):
+        # 如果数据有错误，则过滤数据
+        data = self.model.objects.all()
+        return data
+
+    def filter_queryset(self, qs):
+        # 部分条目查询
+        if not self.pre_camel_case_notation:
+            search = self._querydict.get('search[value]', None)
+            q = Q()
+            if 0 != len(search):
+                q = q | Q(app_name__contains=search)
+                q = q | Q(app_id__contains=search)
+                q = q | Q(local_ip__contains=search)
+                q = q | Q(local_port__contains=search)
+                q = q | Q(org_name__contains=search)
+            qs = qs.filter(q)
+        return qs
+
+    def prepare_results(self, qs):
+        json_data = []
+        for item in qs:
+            audit_status = ''
+            if item.audit_status == '0':
+                audit_status = '待审核'
+            elif item.audit_status == '1':
+                audit_status = '审核中'
+            elif item.audit_status == '2':
+                audit_status = '已审核'
+
+            try:
+                history = TaskHistory.objects.filter(biz_id=item.id).last()
+                create_time = history.create_time.strftime("%Y-%m-%d")
+            except:
+                create_time = ''
+
+            json_data.append([
+                item.id,
+                item.id,
+                item.app_name,
+                item.app_id,
+                item.local_ip,
+                item.local_port,
+                item.org_name,
+                item.org_content,
+                create_time,
+                audit_status,
+                item.id,
+            ])
+        return json_data
+
+
+class CheckOrgBaseManage(UpdateView):
+    """资源目录审核(终端信息)"""
+
+    form_class = CreateOrgCheckForm
+    template_name = 'source_check/org.base.check.html'
+    success_url = '/catalog/orgcheck/list'
+
+    def get(self, request, *args, **kwargs):
+        pk = kwargs.get("pk")
+        if pk:
+            self.orginfo = OrgInfo.objects.get(id=pk)
+            form = self.initForm()
+        else:
+            form = self.get_form()
+        context = self.get_context_data(form=form)
+        audit_form = CreateOrgCheckForm(initial={
+            'biz_id': pk,
+        })
+        context["audit_form"] = audit_form
+        return self.render_to_response(context)
+
+    def initForm(self):
+
+        return AuditOrgBaseForm(initial={
+            'app_name': self.orginfo.app_name,
+            'app_id': self.orginfo.app_id,
+            'local_ip': self.orginfo.local_ip,
+            'local_port': self.orginfo.local_port,
+            'org_name': self.orginfo.org_name,
+            'org_address': self.orginfo.org_address,
+            'org_phone': self.orginfo.org_phone,
+            'org_content': self.orginfo.org_content,
+        })
+
+    def post(self, request, *args, **kwargs):
+        form = CreateOrgCheckForm(request.POST)
+        if form.is_valid():
+            result = request.POST.get("result")
+            content = request.POST.get("content")
+            biz_id = request.POST.get("biz_id")
+
+            self.task_history_update(biz_id, content, request, result)
+            return HttpResponseRedirect(self.get_success_url())
+        return self.form_invalid(form)
+
+    def task_history_update(self, biz_id, content, request, result):
+        '''
+        保存审核历史记录、更新注册的审核状态信息
+        '''
+        task_history = TaskHistory.objects.create(
+            user_id=request.user.id, result=result, content=content, biz_id=biz_id,
+            user=request.user.username, create_time=datetime.now())
+        task_history.save()
+        orginfo = OrgInfo.objects.get(id=task_history.biz_id)
+        if not result == '1':
+            orginfo.audit_status = 1
+        else:
+            orginfo.audit_status = 2
+        orginfo.save()
+
+
+class CheckOrgCheckManage(UpdateView):
+    """资源目录审核"""
+
+    form_class = CreateOrgCheckForm
+    template_name = 'source_check/org.field.check.html'
+    success_url = '/catalog/orgcheck/list'
+
+    def get(self, request, *args, **kwargs):
+        pk = kwargs.get("pk")
+        if pk:
+            self.resource_list = ResourceList.objects.get(resource_id=pk)
+            form = self.initForm()
+        else:
+            form = self.get_form()
+
+        details = ResourceDetails.objects.filter(resource_id=pk)
+        details_list = render_details_list(details)
+
+        context = self.get_context_data(form=form)
+        audit_form = CreateOrgCheckForm(initial={
+            'biz_id': pk,
+        })
+        context["audit_form"] = audit_form
+        context["details"] = details_list
+        return self.render_to_response(context)
+
+    def initForm(self):
+        resource_type = ''
+        if self.resource_list.resource_type == '0':
+            resource_type = '数据库'
+        elif self.resource_list.resource_type == '1':
+            resource_type = '文件'
+
+        post_status = ''
+        if self.resource_list.post_status == '2':
+            post_status = '已发布'
+        elif self.resource_list.post_status == '1':
+            post_status = '已停用'
+
+        return AuditOrgForm(initial={
+            'resource_id': self.resource_list.resource_id,
+            'resource_name': self.resource_list.resource_name,
+            'category_name': display_mid_name(self.resource_list.category_name),
+            'power': display_mid_name(self.resource_list.power),
+            'update': display_mid_name(self.resource_list.update),
+            'resource_type': resource_type,
+            'post_status': post_status,
+        })
+
+    def post(self, request, *args, **kwargs):
+        form = CreateOrgCheckForm(request.POST)
+        if form.is_valid():
+            result = request.POST.get("result")
+            content = request.POST.get("content")
+            biz_id = request.POST.get("biz_id")
+
+            self.task_history_update(biz_id, content, request, result)
+            return HttpResponseRedirect(self.get_success_url())
+        return self.form_invalid(form)
+
+    def task_history_update(self, biz_id, content, request, result):
+        '''
+        保存审核历史记录、更新注册的审核状态信息
+        '''
+        task_history = TaskHistory.objects.create(
+            user_id=request.user.id, result=result, content=content, biz_id=biz_id,
+            user=request.user.username, create_time=datetime.now())
+        task_history.save()
+        resourcelist = ResourceList.objects.get(resource_id=task_history.biz_id)
+        if not result == '1':
+            resourcelist.audit_status = 1
+        else:
+            resourcelist.audit_status = 2
+        resourcelist.save()
+
+
+class OrgAuditHistory(TemplateView):
+    template_name = 'source_check/org.history.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(OrgAuditHistory, self).get_context_data(**kwargs)
+        pk = kwargs['pk']
+        try:
+            task_history = TaskHistory.objects.filter(biz_id=pk)  # 历史记录
+            historys = render_audit_history_list(task_history)
+            context["task_history"] = historys
+            return context
+        except:
+            return context
+
+
+def render_audit_history_list(task_history_list):
+    history_list = []
+    for task in task_history_list:
+        if task.create_time:
+            task.create_time = task.create_time.strftime("%Y-%m-%d")
+        if task.result == 1:
+            task.result = "通过"
+        else:
+            task.result = "不通过"
+        history_list.append(task)
+    return history_list
+
+
+def display_mid_name(value):
+    resource_middle_ware = ResourceMiddleWare.objects.get(mid_id=value)
+    return resource_middle_ware.mid_name
+
+
+def render_details_list(details_list):
+    get_details = []
+    for detail in details_list:
+        detail.search = display_mid_name(detail.search)
+        detail.result = display_mid_name(detail.result)
+        detail.modify = display_mid_name(detail.modify)
+        detail.add = display_mid_name(detail.add)
+        detail.delete = display_mid_name(detail.delete)
+        get_details.append(detail)
+    return get_details

@@ -1,0 +1,32 @@
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : 203richDataX
+Source Server Version : 50626
+Source Host           : 192.168.0.203:3306
+Source Database       : richdatax
+
+Target Server Type    : MYSQL
+Target Server Version : 50626
+File Encoding         : 65001
+
+Date: 2017-03-02 14:16:02
+*/
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for packmanage_protocol_trigger
+-- ----------------------------
+DROP TABLE IF EXISTS `packmanage_protocol_trigger`;
+CREATE TABLE `packmanage_protocol_trigger` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) DEFAULT NULL,
+  `app_id` varchar(255) DEFAULT NULL COMMENT '适配器ID',
+  `protocol_id` varchar(255) DEFAULT NULL COMMENT '报文协议ID',
+  `trigger_type` int(11) DEFAULT NULL COMMENT '触发器ID',
+  `trigger_param` text COMMENT '触发参数',
+  `datasrc_id` varchar(255) DEFAULT NULL COMMENT '数据源ID',
+  `datasrc_type` varchar(11) DEFAULT NULL COMMENT '数据库类型0=文件，1=数据库',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8;

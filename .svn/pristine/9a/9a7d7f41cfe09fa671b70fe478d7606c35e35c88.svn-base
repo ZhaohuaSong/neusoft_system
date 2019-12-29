@@ -1,0 +1,45 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from ..packmanage.api.iso_recever import *
+from ..common.iso.iso_tool import *
+from redismodels import ReceiveMsgRs
+from iso_log_interface import ISOLogInterface
+'''
+接收数据响应类
+'''
+class ReceiveData(object):
+
+    def __init__(self):
+        self.iso_recever = ISORecever()
+        pass
+
+    def answer_message(self, message):
+
+        iso_net = self.iso_recever.data_received(message)
+        if iso_net is True:
+            return True # 则表示为查询操作
+        else:
+            msg = ReceiveMsgRs()
+            msg_obj = ISOLogInterface(message)
+            msg.app_id = msg_obj.get_app_id()
+            msg.protocol_id = msg_obj.get_protocol_id()
+            msg.content =str(format_assic_to_str(message))
+            msg.back_content =str(format_assic_to_str(iso_net))
+            msg.receive_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            msg.type =str(msg_obj.get_msg_type())
+            msg.status='1'#接收成功
+            msg.save()
+
+        return iso_net
+
+    def get_query_data(self):
+        '''
+        获取查询内容
+        :return:
+        '''
+
+        return self.iso_recever.get_query_data()
+
+
+

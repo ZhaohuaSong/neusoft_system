@@ -1,0 +1,111 @@
+{% extends "mainbase.html" %}
+{% load staticfiles %}
+{% load i18n staticfiles %}
+{% load url from future %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% block scripts %}
+
+        <script src="{% static "js/jquery.bootstrap-duallistbox.min.js" %}"></script>
+        <script src="{% static "js/jquery.raty.min.js" %}"></script>
+        <script src="{% static "js/bootstrap-multiselect.min.js" %}"></script>
+        <script src="{% static "js/select2.min.js" %}"></script>
+        <script src="{% static "js/jquery-typeahead.js" %}"></script>
+        <script src="{% static "js/selectbox/selectbox.js" %}"></script>
+        <!-- page specific plugin scripts -->
+        <link href="{% static 'css/bootstrap-duallistbox.min.css' %}" rel="stylesheet">
+        <link href="{% static 'css/bootstrap-multiselect.min.css' %}" rel="stylesheet">
+        <link href="{% static 'css/select2.min.css' %}" rel="stylesheet">
+        <link href="{% static 'css/ace-skins.min.css' %}" rel="stylesheet">
+        <link href="{% static 'css/ace-rtl.min.css' %}" rel="stylesheet">
+
+        <script src="{% static "js/packmanage/packmanage.trigger.config.js" %}"></script>
+        <script type="text/javascript">
+            jQuery(function ($) {
+                $("#btn-back").bind("click",
+                        function () {
+                            window.location.href = "{% url 'packmanage:trigger.list' %}"
+                        });
+            })
+
+            var g_src_type = {{ src_type_index }}
+            var g_src_name = {{ src_name }}
+       
+        </script>
+
+        <style type="text/css">
+            /*table#table_protocol
+            {
+                margin-left:auto; margin-right:auto
+            }*/
+
+            table.tb tr td {
+                padding: 0px;
+                padding-bottom:3px;
+                padding-right: 5px;
+            }
+
+            .form-control1{
+                height:28px;
+                width:100%;
+            }
+
+
+
+        </style>
+    {% endblock %}
+</head>
+<body class="no-skin">
+{% block content %}
+    <div class="main-content">
+        <div class="breadcrumbs" id="breadcrumbs">
+            <ul class="breadcrumb">
+                <li>
+                    <i class="ace-icon fa fa-home home-icon"></i>
+                    <a href="#">首页</a>
+                </li>
+                <li>
+                    <a href="#">适配器通讯管理</a>
+                </li>
+                <li>
+                    <a href="{% url 'packmanage:trigger.list' %}">请求触发器管理</a>
+                </li>
+                <li class="active">触发器参数配置</li>
+            </ul><!-- /.breadcrumb -->
+        </div>
+
+        <div class="page-content">
+            <div class="page-header " style="border-bottom:1px dashed #DEDEDE">
+                触发器：<span class="blue">{{ trigger_name }}</span>&nbsp;&nbsp;&nbsp;&nbsp;
+                触发方式：<span id="lb_mid" class="blue">{{ trigger_type }}</span> &nbsp;&nbsp;&nbsp;&nbsp;
+
+                目标适配器：<span id="lb_tid" class="blue">{{ app_name }}</span>&nbsp;&nbsp;&nbsp;&nbsp;
+                使用协议：<span id="lb_tid" class="blue">{{ protocol_name }}</span>&nbsp;&nbsp;&nbsp;&nbsp;
+                协议ID：<span id="lb_tid" class="blue">{{ protocol_id }}</span>
+                <br/>
+            </div><!-- /.page-header -->
+
+            <div class="row">
+                <div class="col-xs-12" style="margin-bottom:80px;">
+
+                {% if is_over == 1 %}
+                   {% include "packmanage/trigger.over.html" %}
+                {% else %}
+                    {% include "packmanage/trigger.param.html" %}
+                {% endif %}
+
+
+                </div><!-- /.col -->
+            </div><!-- /.row -->
+
+        </div>
+
+
+    </div>
+    </div>
+    {% include "message.html" %}
+{% endblock %}
+<!-- /.main-content -->
+</body>
+</html>

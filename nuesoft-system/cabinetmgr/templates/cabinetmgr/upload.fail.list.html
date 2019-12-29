@@ -1,0 +1,72 @@
+{% extends "mainbase.html" %}
+{% load staticfiles %}
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+</head>
+<body>
+{% block content %}
+
+    <div class="main-content">
+
+        <div class="main-content-inner">
+
+            <div class="breadcrumbs" id="breadcrumbs">
+                <script type="text/javascript">
+                    try {
+                        ace.settings.check('breadcrumbs', 'fixed')
+                    } catch (e) {
+                    }
+                </script>
+                <ul class="breadcrumb">
+                    <li><i class="ace-icon fa fa-home home-icon"></i> <a href="#">主页</a></li>
+                    <li><a href="#">机柜管理模块</a></li>
+{#                    <li><a href="#">文件管理</a></li>#}
+                    <li class="active">数据录入</li>
+                </ul> <!-- /.breadcrumb -->
+
+            </div>
+
+            <div class="page-content">
+
+                {% include "filemanage/upload.fail.key.html" %}
+                <div class="row">
+                    <div class="col-xs-12">
+                        <div class="clearfix" style="padding-top: 10px">
+                            <div class="tableTools-container"></div>
+                        </div>
+                        <div id="login-box" class="login-box visible widget-box no-border"
+                             style="background-color: #fff; padding: 40px;line-height: 50px;overflow: hidden;margin:0 auto; margin-top: 20px; width: 600px; height: 300px;">
+                            <div id="box-in" style="overflow: hidden; text-align: center; padding-top: 10px;">
+                                <p style="font-size:25px ; display:inline-block; line-height:50px;" class="red">
+                                    上传失败，未选择文件！
+                                </p>
+                            </div>
+                        </div>
+
+                    </div><!-- /.span -->
+                </div><!-- /.row -->
+            </div>  <!-- /.page-content -->
+
+        </div>
+    </div>  <!-- /.main-content -->
+
+     <script type="text/javascript">
+            // 通用的新增方法 Qiailin
+            $("#btn-back").bind("click",
+                function () {
+                    window.location.href = "/cabinetmgr/file/upload"
+                });
+        </script>
+
+{% endblock %}
+
+<!-- /.main-container -->
+
+</body>
+</html>
+
+
+

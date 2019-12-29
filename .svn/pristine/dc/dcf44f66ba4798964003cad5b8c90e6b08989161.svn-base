@@ -1,0 +1,292 @@
+# -*- coding: utf-8 -*-
+"""
+Django settings for richDataX-system project.
+
+For more information on this file, see
+https://docs.djangoproject.com/en/dev/topics/settings/
+
+For the full list of settings and their values, see
+https://docs.djangoproject.com/en/dev/ref/settings/
+"""
+from __future__ import absolute_import, unicode_literals
+
+import environ
+
+ROOT_DIR = environ.Path(__file__) - 3  # (richDataX-system/config/settings/common.py - 3 = richDataX-system/)
+APPS_DIR = ROOT_DIR.path('richDataX-system')
+
+# 从 .env 文件中读取相关的环境配置信息
+env = environ.Env()
+env.read_env()
+
+# APP CONFIGURATION
+# ------------------------------------------------------------------------------
+DJANGO_APPS = (
+    # Default Django apps:
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.sites',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    # Admin
+    'django.contrib.admin',
+)
+THIRD_PARTY_APPS = (
+    'crispy_forms',  # Form layouts
+    'ws4redis',  # django-websocket
+)
+
+# Apps specific for this project go here.
+LOCAL_APPS = (
+    # custom users app
+    'richDataX-system.common.apps.CommonConfig',#通用工具
+    'richDataX-system.vanilla.apps.VanillaConfig', #通用视图
+    'richDataX-system.message.apps.MessageConfig',  # message
+    'richDataX-system.sysadmin.apps.SysadminConfig',  # sysamdin
+    'richDataX-system.dbadmin.apps.DbadminConfig', #数据库链接器
+    'richDataX-system.packmanage.apps.PackmanageConfig', #通讯报文管理
+    # Your stuff: custom apps go here
+)
+
+# See: https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
+INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
+
+# MIDDLEWARE CONFIGURATION
+# ------------------------------------------------------------------------------
+MIDDLEWARE_CLASSES = (
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # 登录
+    'richDataX-system.sysadmin.middleware.QtsAuthenticationMiddleware',#登录拦截
+    'richDataX-system.sysadmin.middleware.SysCatchException', #异常抓取
+    'richDataX-system.sysadmin.middleware.SysLogSaveMiddleware',#系统日志
+)
+
+# MIGRATIONS CONFIGURATION
+# ------------------------------------------------------------------------------
+# 存放 sites migrations 的目录
+# Qiailin
+MIGRATION_MODULES = {
+    'sites': 'richDataX-system.contrib.sites.migrations'
+}
+
+# DEBUG
+# ------------------------------------------------------------------------------
+# See: https://docs.djangoproject.com/en/dev/ref/settings/#debug
+DEBUG = env.bool('DJANGO_DEBUG', False)
+
+# FIXTURE CONFIGURATION
+# ------------------------------------------------------------------------------
+# See: https://docs.djangoproject.com/en/dev/ref/settings/#std:setting-FIXTURE_DIRS
+FIXTURE_DIRS = (
+    str(APPS_DIR.path('fixtures')),
+)
+
+# EMAIL CONFIGURATION
+# ------------------------------------------------------------------------------
+EMAIL_BACKEND = env('DJANGO_EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
+
+ALLOWED_HOSTS = env('DJANGO_ALLOWED_HOSTS', default='django.core.mail.backends.smtp.EmailBackend')
+
+# MANAGER CONFIGURATION
+# ------------------------------------------------------------------------------
+# See: https://docs.djangoproject.com/en/dev/ref/settings/#admins
+ADMINS = (
+    ("""Rich.Chen""", 'czw@rich-f.com'),
+)
+
+# See: https://docs.djangoproject.com/en/dev/ref/settings/#managers
+MANAGERS = ADMINS
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'richdatax',
+        'USER': 'root',
+        'PASSWORD': '123456',
+        'HOST': 'localhost',
+        'PORT': '3306',
+        'CHARSET': 'utf8',
+    },
+}
+DATABASES['default']['ATOMIC_REQUESTS'] = True
+
+# GENERAL CONFIGURATION
+# ------------------------------------------------------------------------------
+# Local time zone for this installation. Choices can be found here:
+# http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
+# although not all choices may be available on all operating systems.
+# In a Windows environment this must be set to your system time zone.
+TIME_ZONE = 'Asia/Shanghai'
+
+# See: https://docs.djangoproject.com/en/dev/ref/settings/#language-code
+LANGUAGE_CODE = 'zh-hans'
+
+# See: https://docs.djangoproject.com/en/dev/ref/settings/#site-id
+SITE_ID = 1
+
+# See: https://docs.djangoproject.com/en/dev/ref/settings/#use-i18n
+USE_I18N = True
+
+# See: https://docs.djangoproject.com/en/dev/ref/settings/#use-l10n
+USE_L10N = True
+
+# See: https://docs.djangoproject.com/en/dev/ref/settings/#use-tz
+USE_TZ = False
+
+# TEMPLATE CONFIGURATION
+# ------------------------------------------------------------------------------
+# See: https://docs.djangoproject.com/en/dev/ref/settings/#templates
+TEMPLATES = [
+    {
+        # See: https://docs.djangoproject.com/en/dev/ref/settings/#std:setting-TEMPLATES-BACKEND
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        # See: https://docs.djangoproject.com/en/dev/ref/settings/#template-dirs
+        'DIRS': [
+            str(APPS_DIR.path('templates')),
+        ],
+        'OPTIONS': {
+            # See: https://docs.djangoproject.com/en/dev/ref/settings/#template-debug
+            'debug': DEBUG,
+            # See: https://docs.djangoproject.com/en/dev/ref/settings/#template-loaders
+            # https://docs.djangoproject.com/en/dev/ref/templates/api/#loader-types
+            'loaders': [
+                'django.template.loaders.filesystem.Loader',
+                'django.template.loaders.app_directories.Loader',
+            ],
+            # See: https://docs.djangoproject.com/en/dev/ref/settings/#template-context-processors
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.template.context_processors.i18n',
+                'django.template.context_processors.media',
+                'django.template.context_processors.static',
+                'django.template.context_processors.tz',
+                'django.contrib.messages.context_processors.messages',
+                # By czw@rich-f.com
+                'ws4redis.context_processors.default',
+                'richDataX-system.sysadmin.views.globar_setting',
+                'richDataX-system.sysadmin.views.login_data',
+            ],
+        },
+    },
+]
+
+# See: http://django-crispy-forms.readthedocs.io/en/latest/install.html#template-packs
+CRISPY_TEMPLATE_PACK = 'bootstrap4'
+
+# STATIC FILE CONFIGURATION
+# ------------------------------------------------------------------------------
+# See: https://docs.djangoproject.com/en/dev/ref/settings/#static-root
+STATIC_ROOT = str(ROOT_DIR('staticfiles'))
+
+# See: https://docs.djangoproject.com/en/dev/ref/settings/#static-url
+STATIC_URL = '/static/'
+
+# See: https://docs.djangoproject.com/en/dev/ref/contrib/staticfiles/#std:setting-STATICFILES_DIRS
+STATICFILES_DIRS = (
+    str(APPS_DIR.path('static')),
+)
+
+# See: https://docs.djangoproject.com/en/dev/ref/contrib/staticfiles/#staticfiles-finders
+STATICFILES_FINDERS = (
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+)
+
+# MEDIA CONFIGURATION
+# ------------------------------------------------------------------------------
+# See: https://docs.djangoproject.com/en/dev/ref/settings/#media-root
+MEDIA_ROOT = str(APPS_DIR('media'))
+
+# See: https://docs.djangoproject.com/en/dev/ref/settings/#media-url
+MEDIA_URL = '/media/'
+
+# URL Configuration
+# ------------------------------------------------------------------------------
+ROOT_URLCONF = 'config.urls'
+
+
+
+# PASSWORD VALIDATION
+# https://docs.djangoproject.com/en/dev/ref/settings/#auth-password-validators
+# ------------------------------------------------------------------------------
+
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+]
+
+# AUTHENTICATION CONFIGURATION
+# ------------------------------------------------------------------------------
+AUTH_USER_MODEL = 'sysadmin.SysUser'
+AUTHENTICATION_BACKENDS = ('django.contrib.auth.backends.ModelBackend', 'richDataX-system.sysadmin.models.CustomAuth')
+
+# django-compressor
+# ------------------------------------------------------------------------------
+INSTALLED_APPS += ("compressor",)
+STATICFILES_FINDERS += ("compressor.finders.CompressorFinder",)
+
+# Location of root django.contrib.admin URL, use {% url 'admin:index' %}
+ADMIN_URL = r'^admin/'
+
+# Your common stuff: Below this line define 3rd party library settings
+# ------------------------------------------------------------------------------
+
+##################################################################################################
+#  wsgi redis
+# This setting is required to override the Django's main loop, when running in
+# development mode, such as ./manage runserver
+
+
+# See: https://docs.djangoproject.com/en/dev/ref/settings/#wsgi-application
+#WSGI_APPLICATION = 'config.wsgi.application'
+
+WSGI_APPLICATION = 'ws4redis.django_runserver.application'
+
+# URL that distinguishes websocket connections from normal requests
+WEBSOCKET_URL = '/ws/'
+
+# Set the number of seconds each message shall persited
+WS4REDIS_EXPIRE = 3600
+
+WS4REDIS_HEARTBEAT = '--heartbeat--'
+
+WS4REDIS_PREFIX = 'demo'
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://:rich-f@localhost:6379/1",
+        "OPTIONS": {
+            # customizing 自定义
+            # django-redis supports customizing the underlying Redis client
+            "REDIS_CLIENT_CLASS": "fakeredis.FakeStrictRedis",
+        },
+    }
+}
+
+#  WSREDIS CONNECTIONS
+WS4REDIS_CONNECTION = {
+    'host': 'localhost',
+    'port': 6379,
+    'db': 1,
+    'password': "rich-f",
+}

@@ -1,0 +1,608 @@
+jQuery(function ($) {
+
+    /**********全局变量区域**************/ 
+    var g_datasrc_name = ''
+    var g_bFile;
+    var g_datasrc_type = '-1'
+    var g_datasrc_response_type;
+    var g_datasrc_response_name;
+    /************************************/ 
+ 
+    
+    /* search start *****************************************/
+    //查询
+    $("#btn-search").bind("click", function(){
+
+        show_out_result(false)
+        
+        var url = window.location.href + "&option=search";
+ 
+        var postData = get_search_param();//获取查询条件
+
+        show_flag(true);
+        $.post( url, postData, function(data, status){
+
+            
+            if(status=="success"){       
+                if(data["code"]=="00"){  
+                    show_msg(data["data"])
+                }
+                else{
+                    show_msg(data["data"])
+                }
+            }
+            show_flag(false);
+        }) 
+    })
+
+    function show_msg(list){
+        data = list ;
+                    var desc = ''
+                    for (var i=0; i< data.length; i++) {
+                        desc += data[i]
+                        desc += '<br/>'
+                    };
+                    alert_dialog(desc);
+    }
+
+    function show_flag(bStart){
+        if(bStart)
+            jQuery("#flag_falg").text("正在执行操作...")
+        else
+            jQuery("#flag_falg").text("完成！")
+    }
+
+    //获取查询条件参数
+    function get_search_param(){
+        var arr_in = get_in_param();
+        var json_data = {}
+        json_data["search"] = arr_in;
+        return JSON.stringify(json_data);
+    }
+
+    //获取入参的值
+    function get_in_param(){
+        
+        var arr_in = new Array()
+        var in_sels = jQuery("input.in_input");
+
+        in_sels.each(function(index, sel){
+            var sel = $(this);
+            var v = sel.val();
+            arr_in.push(v);
+        })
+
+        return arr_in;
+    }
+
+    //获取输入参数的值
+    function get_out_param(){
+        
+        var arr_in = new Array()
+        var in_sels = jQuery("input.out_input");
+
+        in_sels.each(function(index, sel){
+            var sel = $(this);
+            var v = sel.val();
+            arr_in.push(v);
+        })
+
+        return arr_in;
+    }
+
+    //设置查询结果
+    function set_search_result(data){
+        var in_sels = jQuery("input.out_input");
+
+        in_sels.each(function(index, sel){
+            var sel = $(this);
+            sel.val(data[index])
+        })
+    }
+
+    //
+    function show_out_result(bShow){
+        if(bShow)
+            jQuery(".o-out").removeClass("hidden")
+        else
+            jQuery(".o-out").addClass("hidden")
+    }
+
+    /* search end *****************************************/
+
+    /* add start *****************************************/
+    //新增
+    function get_add_param(){
+        var arr_in = get_in_param();
+        var json_data = {}
+        json_data["add"] = arr_in;
+        return JSON.stringify(json_data);
+    }
+
+    $("#btn-add").bind("click", function(){ 
+        
+        var url = window.location.href + "&option=add";
+ 
+        var postData = get_add_param();//获取查询条件
+
+        show_flag(true);
+        $.post( url, postData, function(data, status){
+            if(status=="success"){       
+                if(data["code"]=="00"){  
+                    show_msg(data["data"])
+                }
+                else{
+                    show_msg(data["data"])
+                }
+                show_flag(false);
+            }
+        })
+
+    })
+ 
+    /* add end *****************************************/
+
+    /* del start *****************************************/
+    
+    //获取删除条件
+    function get_del_param(){
+        var arr_in = get_in_param();
+        var json_data = {}
+        json_data["del"] = arr_in;
+        return JSON.stringify(json_data);
+    }
+
+    $("#btn-del").bind("click", function(){
+
+        show_out_result(false)
+        
+        var url = window.location.href + "&option=del";
+ 
+        var postData = get_del_param();//获取查询条件
+        show_flag(true)
+ 
+        $.post( url, postData, function(data, status){
+            if(status=="success"){       
+                if(data["code"]=="00"){  
+                     show_msg(data["data"]) 
+                }
+                else{
+                    show_msg(data["data"])
+                }
+              
+            }
+
+            show_flag(false)
+        })
+    })
+
+    /* del end *****************************************/
+
+    /* updata start *****************************************/
+    
+    //获取删除条件
+    function get_updata_param(){
+        var arr_in = get_in_param();
+        var json_data = {}
+        json_data["updata_in"] = arr_in;
+
+        var arr_out = get_out_param(); 
+        json_data["updata_out"] = arr_out;
+
+        return JSON.stringify(json_data);
+    }
+
+    $("#btn-updata").bind("click", function(){
+        
+        var url = window.location.href + "&option=updata";
+ 
+        var postData = get_updata_param();//获取查询条件
+        show_flag(true)
+
+        $.post( url, postData, function(data, status){
+            if(status=="success"){       
+                if(data["code"]=="00"){  
+                    show_msg(data["data"])
+                }
+                else{
+                    show_msg(data["data"])
+                }
+
+                show_flag(false)
+            }
+        })
+    })
+
+    /* updata end *****************************************/
+
+    /* save param *****************************************/
+    //数据源下拉框选择事件
+    jQuery("#sel-datasrc").change(function(){ 
+        var dsrc_id = jQuery("#sel-datasrc  option:selected").attr("value");
+        g_datasrc_type=jQuery("#sel-datasrc  option:selected").attr("value"); 
+
+
+
+        if(g_datasrc_type == -1){
+
+            var sel = jQuery("#src_list");
+            sel.empty(); 
+            var sF = "<option value='-1'>----------</option>"
+            jQuery(sF).appendTo(sel);
+            return;
+        }
+
+        var url = window.location.href + "&option=src_list"; 
+        url += "&src_type=" + g_datasrc_type;
+
+        $.ajax({
+                type: "GET",
+                url: url,
+                success: function (data) { 
+
+                    if (data["code"] == "00") {
+                        create_src_list(data['data'])
+                    }
+                    else { 
+                         alert(data["desc"])
+                    } 
+                }
+            }); 
+    })
+
+    //创建数据源下拉框
+    function create_src_list(list){
+        var sel = jQuery("#src_list");
+        sel.empty();
+
+        var sF = "<option value='-1'>----------</option>"
+        for(i=0; i<list.length; i++){
+            var item = list[i]; 
+            sF += "<option value='"; sF += item[0]; sF += "'>"; sF += item[1]; sF+="</option>"
+        }
+
+        jQuery(sF).appendTo(sel);
+    }
+
+    //获取列名字
+    jQuery("#src_list").change(function(){
+        var src_name = jQuery("#src_list  option:selected").attr("value");
+        g_datasrc_name = src_name; 
+ 
+        if(src_name!="-1"){
+            var url = window.location.href + "&option=src_cols";
+            url += "&src_name="; url += src_name;
+            url += "&src_type=" + g_datasrc_type;
+
+            $.ajax({
+                type: "GET",
+                url: url,
+                success: function (data) { 
+
+                    if (data["code"] == "00") {
+                        
+                        var in_k = data['in_k'];
+                        var in_v = data['in_v'];
+
+                        var out_k = data['out_k'];
+                        var out_v = data['out_v']; 
+
+                        create_src_sel(in_k, in_v, out_k, out_v);
+                        create_query_param(in_k, in_v);
+                         
+                    }
+                    else { 
+                         alert(data["desc"])
+                    } 
+                }
+            });
+        }
+    })
+ 
+    //创建数据源字段名下拉框
+    //in_k:入参的key, in_v:入参的value, out_k:出参的key, out_v:出参的value
+    function create_src_sel(in_k, in_v, out_k, out_v){
+
+        var sF = "<option value='-1'>----------</option>";
+        for(i=0; i<out_k.length; i++){
+            sF += "<option style='padding:3px 4px 5px' value='";
+            sF += out_k[i]; 
+            sF += "'>";
+            sF += out_v[i];
+            sF += "</option>"
+        }
+ 
+        
+        var sels = jQuery("select.in_sel_src");
+        sels.each(function(index, sel){
+            var sel = $(this);
+            sel.empty();
+            jQuery(sF).appendTo(sel)
+        })
+
+        var sF = "<option value='-1'>----------</option>";
+        for(i=0; i<out_k.length; i++){
+            sF += "<option value='";
+            sF += out_k[i]; 
+            sF += "'>";
+            sF += out_v[i];
+            sF += "</option>"
+        }
+ 
+        
+        var sels = jQuery("select.out_sel_src");
+        sels.each(function(index, sel){
+            var sel = $(this);
+            sel.empty();
+            jQuery(sF).appendTo(sel)
+        })
+    }
+
+    //本地数据源查询参数
+    function create_query_param(in_k, in_v){
+
+        var tb = jQuery("#query_param");
+        tb.empty();
+
+        var sF = ''
+        for(i=0; i<in_k.length; i++){
+
+            if(g_datasrc_type==1){//数据库
+                sF += '<tr key="' + in_k[i] + '" />';
+                sF += '<td><input type="text" disabled style="width:180px" value="'; sF += in_v[i]; sF+='" /></td>'
+                sF += '<td><input type="text" class="query_key" key="' + in_k[i] +'" v="' + in_v[i] +'"" style="width:180px "  /> </td>';
+                sF += '</tr>';
+            }
+            else{
+                sF += '<tr key="' + in_k[i] + '" />';
+                sF += '<td><input type="text" disabled style="width:180px" value="'; sF += in_v[i]; sF+='" /></td>'
+                sF += '<td><input type="text" class="query_key" key="' + in_k[i] +'" v="' + in_v[i] +'"" style="width:180px "/></td>';
+                sF += '<td><button type="button" class="btn btn-white btn-danger btn-sm"><i class="ace-icon fa fa-times red2"></i>删除</button></td>'
+                sF += '</tr>';
+            }
+            
+        } 
+
+        jQuery(sF).appendTo(tb)
+        tb.find("button").each(function(index, btn){
+            var btn = $(this);
+            btn.on("click", function(){//绑定响应事件
+                var tr = $(this).closest("tr");
+                tr.remove()
+            });
+        })
+    }
+
+    // 获取要保存的输入、输出参数数据源的绑定已经保存
+    function get_save_param(){
+        //1、输入参数
+        var json_data_in = {}
+        var arr_in_v = new Array();
+        var arr_in_sel = jQuery("select.in_sel_src");//输入参数下拉框
+        arr_in_sel.each(function(index, sel){
+            var sel = $(this); 
+            var id = sel.find("option:selected").attr("value");
+            var v = sel.find("option:selected").text();
+
+            json_data_in[index] = id + '_' + v;
+            arr_in_v.push(json_data_in[index]);
+        });
+ 
+        //2、获取输出参数
+        var json_data_out = {}
+        var arr_out_v = new Array();
+        var arr_out_sel = jQuery("select.out_sel_src");//输出参数下拉框
+        arr_out_sel.each(function(index, sel){
+            var sel = $(this);
+            var id = sel.find("option:selected").attr("value");
+            var v = sel.find("option:selected").text();
+            json_data_out[index] = id+'_'+v;
+
+            arr_out_v.push(json_data_out[index]);
+        }) 
+
+        //3、获取查询条件参数   
+        var query_arr_param = new Array();
+        var querys = jQuery("input.query_key");
+        querys.each(function(index, input){
+            var query_v = new Array();
+            var edit = $(this);
+            var v = edit.val();
+            //var tr = edit.closest("tr");
+            var k = edit.attr("key");
+            var note = edit.attr("v");
+            query_v.push(v)
+            query_v.push(k)
+            query_v.push(note) 
+            query_arr_param.push(query_v)
+        })
+
+        var data_src = {}
+        data_src["src_type"]  = g_datasrc_type;
+        data_src["src_name"]  = g_datasrc_name;
+        data_src["param_in"]  = json_data_in; 
+        data_src["param_out"] = json_data_out; 
+        data_src["query_param"] = query_arr_param;
+
+        
+
+        //4、获取输出参数数据源配置
+   
+        var arr_out_v = new Array();
+        var arr_out_sel = jQuery("select.sel_to_src");//输出参数下拉框
+        arr_out_sel.each(function(index, sel){
+            var query_v = new Array();
+            var sel = $(this);
+            var bit_index = sel.attr("id");
+            var k = sel.find("option:selected").attr("value");
+            var v = sel.find("option:selected").text();
+            query_v.push(bit_index);
+            query_v.push(k);
+            query_v.push(v);
+            arr_out_v.push(query_v);
+        }) 
+
+        if(arr_out_v.length > 0){
+            data_response = {}
+
+            data_response['src_type'] = g_datasrc_response_type;
+            data_response['src_name'] = g_datasrc_response_name;
+            data_response['src_data'] = arr_out_v;
+            data_src['data_response'] = data_response;
+        }
+
+        return JSON.stringify(data_src);
+    }
+
+    //保存参数响应事件
+    $("#btn-save").bind("click", function(){
+ 
+        
+        var url = window.location.href + "&option=save";
+        var postData = get_save_param();//获取查询条件
+
+
+        $.post( url, postData, function(data, status){
+            if(status=="success"){       
+                if(data["code"]=="00"){  
+                     window.location.reload();
+                }
+                else{
+                    alert_dialog(data["desc"]);
+                }
+            }
+        })
+    })
+
+    /* end save param *****************************************/
+
+    /* reConfig param *****************************************/
+
+    //重新配置 
+    $("#btn_reconfig").bind("click", function(){
+
+        var url = window.location.href + "&option=reconfig";
+
+
+
+        $.get( url, function(data, status){
+            if(status=="success"){              
+                if(data["code"]=="00"){ 
+                    //重新刷新当前页面
+                    window.location.reload();
+                }
+                else{
+                    alert_dialog(data["desc"])
+                }
+            }
+        })
+    })
+    /* end reConfig *******************************************/
+
+
+    /* start datasrc response *******************************************/
+    //数据源下拉框选择事件
+    jQuery("#sel-datasrc-response").change(function(){ 
+        var dsrc_id = jQuery("#sel-datasrc-response  option:selected").attr("value");
+        g_datasrc_response_type=jQuery("#sel-datasrc-response  option:selected").attr("value"); 
+
+
+
+        if(g_datasrc_response_type == -1){
+
+            var sel = jQuery("#src_list_response");
+            sel.empty(); 
+            var sF = "<option value='-1'>----------</option>"
+            jQuery(sF).appendTo(sel);
+            return;
+        }
+
+        var url = window.location.href + "&option=src_list_resp"; 
+        url += "&src_type=" + g_datasrc_response_type;
+
+        $.ajax({
+                type: "GET",
+                url: url,
+                success: function (data) { 
+
+                    if (data["code"] == "00") {
+                        create_src_response_list(data['data'])
+                    }
+                    else { 
+                         alert(data["desc"])
+                    } 
+                }
+            }); 
+    })
+
+    //创建数据源下拉框
+    function create_src_response_list(list){
+        var sel = jQuery("#src_list_response");
+        sel.empty();
+
+        var sF = "<option value='-1'>----------</option>"
+        for(i=0; i<list.length; i++){
+            var item = list[i]; 
+            sF += "<option value='"; sF += item[0]; sF += "'>"; sF += item[1]; sF+="</option>"
+        }
+
+        jQuery(sF).appendTo(sel);
+    }
+
+    jQuery("#src_list_response").change(function(){
+        var src_name = jQuery("#src_list_response  option:selected").attr("value");
+        g_datasrc_response_name = src_name; 
+ 
+        if(src_name!="-1"){
+            var url = window.location.href + "&option=src_cols_resp";
+            url += "&src_name="; url += src_name;
+            url += "&src_type=" + g_datasrc_response_type;
+
+            $.ajax({
+                type: "GET",
+                url: url,
+                success: function (data) { 
+
+                    if (data["code"] == "00") {
+
+                     
+
+                        var in_k = data['in_k'];
+                        var in_v = data['in_v'];
+
+                        var out_k = data['out_k'];
+                        var out_v = data['out_v'];  
+                        create_src_response(in_k, in_v, out_k, out_v);
+                    }
+                    else { 
+                         alert(data["desc"])
+                    } 
+                }
+            });
+        }
+    })
+
+
+    //创建数据源下拉框
+    function create_src_response(in_k, in_v, out_k, out_v){ 
+
+        var sF = "<option value='-1'>----------</option>";
+        for(i=0; i<in_k.length; i++){
+            sF += "<option style='padding:3px 4px 5px' value='";
+            sF += in_k[i]; 
+            sF += "'>";
+            sF += in_v[i];
+            sF += "</option>"
+        }
+ 
+        
+        var sels = jQuery("select.sel_to_src");
+        sels.each(function(index, sel){
+            var sel = $(this);
+            sel.empty();
+            jQuery(sF).appendTo(sel)
+        })
+    }
+
+
+})

@@ -1,0 +1,1000 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 16/7/8 10:37
+# @Author  : czw@mtaiyi.com
+# @Site    : www.ws-ex.com
+# @File    : forms.py
+# @Software: 北京国际酒类交易系统
+import os
+
+from django import forms
+from django.db.models import Q
+
+
+from models import SysUser, RoleList, PermissionList
+from django.core.exceptions import ObjectDoesNotExist
+from models import SysUser, SysDict, SysOrg
+from django.contrib.auth import authenticate
+import re
+from PIL import Image
+from django.forms import ModelForm
+
+
+
+class LoginForm(forms.Form):
+    """
+    登录表单
+    :param Form:
+    :return:
+    """
+    userid = forms.CharField(
+        label=u'用户名:',
+        max_length=100,
+        widget=forms.TextInput(
+            attrs={'class': 'form-control', 'placeholder': u'用户名/邮箱/手机号', 'required': 'required', 'autofocus': ''}
+        ),
+    )
+
+    pwd = forms.CharField(
+        label=u'密码:',
+        widget=forms.PasswordInput(
+            attrs={'class': 'form-control', 'placeholder': u'密码', 'required': 'required'}
+        )
+    )
+
+    remember_me = forms.BooleanField(
+        label=u'记住密码:',
+        required=False,
+        widget=forms.CheckboxInput(
+            attrs={'class': 'ace', }
+        ),
+    )
+
+    def __init__(self, request=None, *args, **kwargs):
+        self.request = request
+        self.user_cache = None
+        self.auto_login = None
+        super(LoginForm, self).__init__(*args, **kwargs)
+
+    def clean(self):
+        userid = self.cleaned_data.get('userid')
+        password = self.cleaned_data.get('pwd')
+        remember_me = self.cleaned_data.get('remeber_me')
+        auto_login = self.cleaned_data.get('auto_login', None)
+
+        if userid and password:
+            # 判断是否邮件登录
+            if re.match(r'\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}\b', userid) != None:
+
+                if not SysUser.objects.filter(email=userid).exists():
+                    raise forms.ValidationError(u'该账号不存在')
+                self.user_cache = authenticate(email=userid, password=password)
+
+            # 判断是否手机登录
+            elif re.match(r'1\d{10}', userid) != None:
+
+                if not SysUser.objects.filter(mobile=userid).exists():
+                    raise forms.ValidationError(u'该账号不存在')
+                self.user_cache = authenticate(mobile=userid, password=password)
+
+            # 用户名登录
+            else:
+
+                if not SysUser.objects.filter(username=userid).exists():
+                    raise forms.ValidationError(u'该账号不存在')
+                self.user_cache = authenticate(username=userid, password=password)
+
+        if self.user_cache is None:
+            raise forms.ValidationError(u'用户名、邮箱、手机号或密码错误！')
+
+        elif not self.user_cache.is_active:
+            raise forms.ValidationError(u'该帐号已被禁用！')
+
+        if remember_me:
+            self.auto_login = True;
+
+        return self.cleaned_data
+
+    def get_user(self):
+        """
+        获取用户实例
+        :return:
+        """
+        return self.user_cache
+
+    def get_auto_login(self):
+        """
+        是否勾选了自动登录
+        :return:
+        """
+        return self.auto_login
+
+    def get_user_is_first(self):
+        """
+        获取用户是否是第一次登录
+        :return:
+        """
+        is_first = False
+        if self.user_cache and self.user_cache.type == -1:
+            is_first = True
+            self.user_cache.type == 0
+            self.user_cache.save()
+        return is_first
+class ForgotForm(forms.Form):
+    """
+    忘记密码表单
+    :param Form:
+    :return:
+    """
+    Email = forms.EmailField(
+        label=u'邮箱',
+        max_length=100,
+        widget=forms.TextInput(
+            attrs={'class': 'form-control ', 'placeholder': u'Email', 'required': '', 'autofocus': ''}
+        ),
+    )
+
+    def __init__(self, request=None, *args, **kwargs):
+        self.request = request
+        self.Email = None
+        super(ForgotForm, self).__init__(*args, **kwargs)
+
+    def clean(self):
+
+        Email = self.cleaned_data.get('Email')
+
+        if Email is None:  # 采用EmailField自带了邮件地址的判断,不需要正则表达式
+            raise forms.ValidationError(u'邮箱格式错误！')
+
+        if not SysUser.objects.filter(email=Email).exists():  # 判断邮件地址对应的用户是否存在
+            raise forms.ValidationError(u'该账号不存在')
+
+        return self.cleaned_data
+class RegisterForm(forms.Form):
+    """
+    注册表单
+    :param Form:
+    :return:
+    """
+    username = forms.CharField(
+        label=u'密码:',
+        widget=forms.TextInput(
+            attrs={'class': 'form-control', 'placeholder': u'用户名', 'required': 'required'}
+        )
+    )
+
+    Email = forms.EmailField(
+        label=u'邮箱',
+        max_length=100,
+        required=True,
+        error_messages={
+            'required': 'Please provide your email address.',
+        },
+        widget=forms.TextInput(
+            attrs={'class': 'form-control', 'placeholder': u'Email', 'required': 'required', 'autofocus': ''}
+        ),
+    )
+
+    mobile = forms.CharField(
+        label=u'手机号码:',
+        max_length=20,
+        required=False,
+        widget=forms.TextInput(
+            attrs={'class': 'form-control', 'placeholder': u'联系电话', 'required': '', 'autofocus': ''}
+        ),
+    )
+
+    pwd1 = forms.CharField(
+        label=u'密码:',
+        widget=forms.PasswordInput(
+            attrs={'class': 'form-control', 'placeholder': u'密码', 'required': 'required'}
+        )
+    )
+
+    pwd2 = forms.CharField(
+        label=u'再次输入密码:',
+        widget=forms.PasswordInput(
+            attrs={'class': 'form-control', 'placeholder': u'再次输入密码', 'required': 'required'}
+        )
+    )
+
+    iagree = forms.BooleanField(
+        label=u'我同意:',
+        required=False,
+        widget=forms.CheckboxInput(
+            attrs={'class': 'ace',
+                   'id': 'iagree',
+                   }
+        ),
+    )
+
+    def __init__(self, request=None, *args, **kwargs):
+        self.request = request
+        self.RegisterForm = None
+        super(RegisterForm, self).__init__(*args, **kwargs)
+
+    def clean(self):
+        org_type = self.cleaned_data.get('org_type')
+        org_name = self.cleaned_data.get('org_name')
+        mobile = self.cleaned_data.get('mobile')
+        Email = self.cleaned_data.get('Email')
+        pwd1 = self.cleaned_data.get('pwd1')
+        pwd2 = self.cleaned_data.get('pwd2')
+        iagree = self.cleaned_data.get('iagree')
+
+        if Email is None:
+            raise forms.ValidationError(u'请输入正确的邮件格式！')
+
+        if SysUser.objects.filter(email=Email).exists():  # 判断邮件地址对应的用户是否存在
+            raise forms.ValidationError(u'该邮件地址已经注册过!')
+
+        if mobile != None:
+            if SysUser.objects.filter(mobile=mobile).exists():
+                raise forms.ValidationError(u'该手机号码已经注册过!')
+
+        if pwd1 is None or pwd2 is None:
+            raise forms.ValidationError(u'请输入密码!')
+
+        if pwd1 != pwd2:
+            raise forms.ValidationError(u'两次输入的密码不一致!')
+
+        if pwd1 == pwd2 and len(pwd1) < 6:
+            raise forms.ValidationError(u'密码必须大于6位!')
+
+        if iagree is False:
+            raise forms.ValidationError(u'同意用户协议才能注册!')
+        return self.cleaned_data
+
+class CreateUserForm(forms.Form):
+    """
+    ===============================================================================
+    function：    公司系统管理员增加用户
+    developer:    Rich.Chen
+    add-time      2015/10/3
+    ===============================================================================
+    """
+    sys_org_id = forms.CharField(
+        label='父级名称',
+        # required=True,
+        error_messages={'required': '父级名称不能为空',},
+        widget=forms.TextInput(
+              attrs={'class': 'col-xs-10 col-sm-5 ', 'placeholder': u"用户名", 'name': 'sys_org_id',"id":'auto_tag', 'value':-2
+               }
+
+        )
+
+    )
+    username = forms.CharField(
+        max_length=20,
+        label='用户名',
+        # required=True,
+        error_messages={'required': '用户名不能为空',},
+        widget=forms.TextInput(
+              attrs={'class': 'col-xs-10 col-sm-5', 'placeholder': u"登录用户名，长度不超过20字符", 'name': 'username','length': '10',
+               }
+        )
+    )
+
+    email = forms.EmailField(
+        label=u'邮箱',
+        max_length=100,
+        error_messages={'required': '邮箱不能为空', },
+        widget=forms.TextInput(
+              attrs={'class': 'col-xs-10 col-sm-5', 'placeholder': u'Email', 'name': 'email',
+               }
+
+        )
+
+    )
+
+    phone = forms.CharField(
+        label='联系号码',
+        # required=False,
+        error_messages={'required': '电话不能为空', },
+        widget=forms.TextInput(
+              attrs={'class': 'col-xs-10 col-sm-5',  'placeholder': u"手机号码", 'name': 'phone',
+               }
+        )
+    )
+
+    sex = forms.ChoiceField(
+        label=u"性别",
+        error_messages={'required': '请选择性别，必选项', },
+        initial = 1,
+        choices=(
+            (1, "男性"),
+            (0, "女性"),
+        ),
+
+        widget=forms.RadioSelect(
+            attrs={'class': 'col-xs-10 col-sm-5',
+                   'class': 'am-radio-inline ',
+                   'placeholder': u"用户的性别",
+                    'name': 'sex',
+                   }
+        )
+    )
+
+    pwd1 = forms.CharField(
+        label=u'密码',
+        error_messages={'required': '密码不能为空',},
+        widget=forms.PasswordInput(
+              attrs={'class': 'col-xs-10 col-sm-5',  'placeholder': u'密码', 'name': 'pwd1',
+               }
+
+        )
+    )
+
+    pwd2 = forms.CharField(
+        label=u'重复密码',
+        error_messages={'required': '重复密码', },
+        widget=forms.PasswordInput(
+              attrs={'class': 'col-xs-10 col-sm-5',  'placeholder': u'再输入一次密码', 'name': 'pwd2',
+               }
+        )
+    )
+
+    role_id = forms.ModelChoiceField(
+        queryset=RoleList.objects.all(),
+        label=u"用户角色",
+        required=True,
+
+        widget=forms.Select(
+            attrs={
+                'placeholder': u"用户角色",
+            }
+        )
+    )
+
+    # def __init__(self, user=None, *args, **kwargs):
+    #
+    #     self.user = user
+    #     super(CreateUserForm, self).__init__(*args, **kwargs)
+    #     #这里采用了过滤的是系统登录账号对应的sys_org_id,在Addaccout里头的user = request.user
+    #     self.fields['sys_org_id'].queryset = SysOrg.objects.filter(id__startswith=self.user.sys_org_id)
+    def clean(self):
+        username=None
+        try:
+            username = self.cleaned_data['username']
+        except :
+            pass
+        sql = Q()
+        sql = sql | Q(username=username)
+        if 0!=len(SysUser.objects.filter(sql)):
+            self.errors['username'] = '该用户名=[%s]已存在' % username.encode('utf-8')
+            raise forms.ValidationError(u"用户名不能为空")
+
+    def clean_email(self):
+        # 验证输入的电子邮件是否合法
+        email = self.cleaned_data['email']
+        pattern = re.compile(r"^([a-zA-Z0-9_-])+@([a-zA-Z0-9_-])+(.[a-zA-Z0-9_-])+")
+        try:
+            SysUser.objects.get(email=email)
+        except ObjectDoesNotExist:
+            if email:
+                if pattern.match(email):  # 如果验证失败的话就会返回none
+                    return email
+                else:
+                    raise forms.ValidationError('请输入正确的邮箱地址！')
+            else:
+                pass
+        raise forms.ValidationError('该邮箱已存在！')
+
+    def clean_phone(self):
+        # 验证输入电话号码的合法性
+        phone = self.cleaned_data['phone']
+        pattern = re.compile(r"^0?(13[0-9]|15[012356789]|17[013678]|18[0-9]|14[57])[0-9]{8}$")  # 设置正则验证
+        if phone:
+            if pattern.match(phone):  # 如果验证失败的话就会返回none
+                if 0 != len(SysUser.objects.filter(mobile=phone)):
+                    raise forms.ValidationError('该手机号已经被注册！')
+                return phone
+            else:
+                raise forms.ValidationError('请输入正确的手机或座机号码！')
+        else:
+            pass
+
+    def clean_pwd2(self):
+        # 验证密码的合法性
+        pwd1 = self.cleaned_data['pwd1']
+        pwd2 = self.cleaned_data['pwd2']
+        if pwd1 != pwd2:
+            raise forms.ValidationError(u'两次输入密码不一致')
+        if pwd2 == pwd1 and len(pwd1) < 6:
+            raise forms.ValidationError(u'密码不能小于6位')
+
+        return pwd2
+
+class EditUserForm(forms.Form):
+    """
+      ===============================================================================
+      function：    公司系统管理员修改用户
+      developer:    Rich.Chen
+      add-time      2015/10/3
+      ===============================================================================
+    """
+
+
+    username = forms.CharField(
+        label='用户名',
+        max_length=20,
+        # required=True,
+        error_messages={'required': '用户名不能为空',},
+        widget=forms.TextInput(
+              attrs={'class': 'col-xs-10 col-sm-5', 'placeholder': u"登录用户名，长度不超过20字符", 'name': 'appl_id',
+               }
+
+        )
+
+    )
+
+    email = forms.EmailField(
+        label=u'邮箱',
+        max_length=100,
+        error_messages={'required': '邮箱不能为空', },
+        widget=forms.TextInput(
+              attrs={'class': 'col-xs-10 col-sm-5', 'placeholder': u'Email', 'name': 'appl_id',
+               }
+
+        )
+
+    )
+
+    phone = forms.CharField(
+        label='联系号码',
+        # required=False,
+        error_messages={'required': '电话不能为空', },
+        widget=forms.TextInput(
+              attrs={'class': 'col-xs-10 col-sm-5',  'placeholder': u"手机号码", 'name': 'appl_id',
+               }
+
+        )
+
+
+    )
+
+    sex = forms.ChoiceField(
+        label=u"性别",
+        choices=(
+            (1, "男性"),
+            (0, "女性"),
+        ),
+
+        widget=forms.RadioSelect(
+            attrs={'class': 'col-xs-10 col-sm-5',
+                   'class': 'am-radio-inline ',
+                   'placeholder': u"用户的性别",
+                    'name': 'appl_id',
+                   }
+        )
+    )
+
+    role_id = forms.ModelChoiceField(
+        queryset=RoleList.objects.all(),
+        label=u"用户角色",
+        required=True,
+
+        widget=forms.Select(
+            attrs={
+                'placeholder': u"用户角色",
+            }
+        )
+    )
+
+    #设置修改的user
+    def set_user(self, user):
+        self.user = user
+
+    def __init__(self, user=None, *args, **kwargs):
+        self.user = user
+        super(EditUserForm, self).__init__(*args, **kwargs)
+        #下面字段操作都是给表单数据初始化
+        if user is not None:
+            self.fields['username'].initial = user.username
+            self.fields['email'].initial = user.email
+            self.fields['phone'].initial = user.mobile
+            self.fields['role_id'].initial = user.role_id
+            self.fields['sex'].initial = user.sex
+        # 通过传递过来的login_user_org_id来过滤数据
+        # self.fields['sys_org_id'].queryset = SysOrg.objects.filter(id__startswith=login_user_org_id)
+    # def clean(self):
+    #     username=None
+    #     try:
+    #         username = self.cleaned_data['username']
+    #     except :
+    #         pass
+    #     sql = Q()
+    #     sql = sql | Q(username=username)
+    #     if 0!=len(SysUser.objects.filter(username=username)) :
+    #         self.errors['username'] = '该用户=[%s]已存在' % username.encode('utf-8')
+    #         raise forms.ValidationError(u"用户不能为空")
+    def clean_username(self):
+        # 验证用户名是否重复
+        username = self.cleaned_data['username']
+        if username == self.user.username:
+            # 判断用户名是否等于初始值,如果是直接不验证
+            return username
+        else:
+            try:
+                SysUser.objects.get(username=username)
+                raise forms.ValidationError('该用户名已存在！')
+            except ObjectDoesNotExist:
+                return username
+
+
+    def clean_email(self):
+        # 验证输入的电子邮件是否合法
+        email = self.cleaned_data['email']
+        if email == self.user.email:
+            # 判断email是否等于初始值,如果是直接不验证
+            return email
+        else:
+            try:
+                SysUser.objects.get(email=email)
+                raise forms.ValidationError('该邮箱已存在！')
+            except ObjectDoesNotExist:
+                return email
+
+
+    def clean_phone(self):
+        # 验证输入电话号码的合法性
+        phone = self.cleaned_data['phone']
+        pattern = re.compile(r"^0?(13[0-9]|15[012356789]|17[013678]|18[0-9]|14[57])[0-9]{8}$")  # 设置正则验证
+        if phone:
+            if pattern.match(phone):  # 如果验证失败的话就会返回none
+                return phone
+            else:
+                raise forms.ValidationError('请输入正确的手机号码！')
+        else:
+            pass
+
+from django.utils.html import force_text, format_html
+#from itertools import chain
+class RoleSelectMultiple(forms.SelectMultiple):
+    # def render_options(self, choices, selected_choices):
+    #     # Normalize to strings.
+    #     selected_choices = set(force_text(v) for v in selected_choices)
+    #     output = []
+    #
+    #     for option_value, option_label in chain(self.choices, choices):
+    #         try:
+    #             if 1 == PermissionList.objects.get(id=option_value).type:
+    #                 continue
+    #         except:
+    #             pass
+    #
+    #         if isinstance(option_label, (list, tuple)):
+    #             output.append(format_html('<optgroup label="{}">', force_text(option_value)))
+    #             for option in option_label:
+    #                 output.append(self.render_option(selected_choices, *option))
+    #             output.append('</optgroup>')
+    #         else:
+    #             output.append(self.render_option(selected_choices, option_value, option_label))
+    #     return '\n'.join(output)
+
+    def render_options(self, selected_choices):
+        # Normalize to strings.
+        selected_choices = set(force_text(v) for v in selected_choices)
+        output = []
+        for option_value, option_label in self.choices:
+            try:
+                if 1 == PermissionList.objects.get(id=option_value).type:
+                    continue
+            except:
+                pass
+            if isinstance(option_label, (list, tuple)):
+                output.append(format_html('<optgroup label="{}">', force_text(option_value)))
+                for option in option_label:
+                    output.append(self.render_option(selected_choices, *option))
+                output.append('</optgroup>')
+            else:
+                output.append(self.render_option(selected_choices, option_value, option_label))
+        return '\n'.join(output)
+
+class RoleListForm(forms.ModelForm):
+    """
+    ===============================================================================
+    function：    角色管理表单
+    developer:    Rich.Chen
+    add-time      2015/10/3
+    ===============================================================================
+    """
+
+    class Meta:
+        model = RoleList
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control','placeholder': u'角色名称'}),
+            'permission': RoleSelectMultiple(
+                attrs={'class': 'form-control', 'placeholder': u'URL','size': '10', 'multiple': 'multiple'}
+            ),
+
+            # 'permission' : forms.CheckboxSelectMultiple(choices=[(x.id,x.name) for x in PermissionList.objects.all()]),
+        }
+        fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+
+        super(RoleListForm, self).__init__(*args, **kwargs)
+        self.fields['name'].label = u'名 称'
+        self.fields['name'].error_messages = {'required': u'请输入角色名称'}
+        self.fields['permission'].label = u'URL'
+        self.fields['permission'].required = False
+
+
+
+    def clean(self):
+        name = self.cleaned_data['name']
+        try:#编辑的时候用到
+            if self.initial['name'] == name:
+                return
+        except:
+            pass
+
+        if name!=None and 0!=len(RoleList.objects.filter(name=name)):
+              self.errors['name'] = '该角色名称已存在'
+              raise forms.ValidationError(u"该角色名称已存在")
+
+class PermissionListForm(forms.Form):
+    """
+    ===============================================================================
+    function：    权限管理表单
+    developer:    Rich.Chen
+    add-time      2015/10/3
+    ===============================================================================
+    """
+    name = forms.CharField(
+        label='栏目名称',
+        required=True,
+        error_messages={'required': '栏目名称不能为空', },
+        widget=forms.TextInput(
+            attrs={'class': 'col-xs-10 col-sm-5', 'placeholder': u"栏目名称", "id": 'column_name_tag',
+                   }
+
+        )
+    )
+    url = forms.CharField(
+        label='栏目名称',
+        required=True,
+        error_messages={'required': '栏目名称不能为空', },
+        widget=forms.TextInput(
+            attrs={'class': 'col-xs-10 col-sm-5', 'placeholder': u"栏目名称", "id": 'column_name_tag',
+                   }
+
+        )
+    )
+    type = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(
+            attrs={'class': 'ace input-lg', 'name': 'type'}
+        ),
+    )
+    id = forms.CharField(
+        label='权限ID',
+        required=True,
+        error_messages={'required': '权限ID选择不能为空', },
+        widget=forms.TextInput(
+            attrs={'class': 'col-xs-10 col-sm-5 ', 'placeholder': u"权限ID选择不能为空", "id": 'auto_tag',
+                   }
+
+        )
+
+    )
+
+
+    # id=0
+    # def setId(self, id):
+    #   PermissionListForm.id=id
+    #
+    # def clean(self):
+    #     name=None
+    #     url=None
+    #     try:
+    #         name = self.cleaned_data['name']
+    #         url = self.cleaned_data.get('url')
+    #     except Exception as e:
+    #         pass
+    #     sql = Q()
+    #     sql = sql | Q(name=name)|Q(url=url)
+    #     if url!=None and name!=None and 0!=len(PermissionList.objects.filter(sql).exclude(id=PermissionListForm.id)):
+    #             try:
+    #                  if PermissionList.objects.get(name=name)is not None:
+    #                      self.errors['name'] = '该权限名称=[%s]已存在' % name.encode('utf-8')
+    #                  else:
+    #                      self.errors['url'] = 'URL或权限名称=[%s]已存在' % url.encode('utf-8')
+    #             except:
+    #                 self.errors['url'] = '该URL=[%s]已存在' % url.encode('utf-8')
+    #
+    #             raise forms.ValidationError(u"权限名称不能为空")
+
+class EditPermissionListForm(forms.Form):
+    """
+    ===============================================================================
+    function：    权限管理表单
+    developer:    Rich.Chen
+    add-time      2015/10/3
+    ===============================================================================
+    """
+
+    # class Meta:
+    #     model = PermissionList
+    #     widgets = {
+    #         'name': forms.TextInput(attrs={'class': 'form-control', 'style': 'border:1px solid ;border-color:#D5D5D5; width:66.5%;height:2% ;padding:1%  ','placeholder': u'名称', 'autofocus': ''}),
+    #         'url': forms.TextInput(attrs={'class': 'form-control','style': 'border:1px solid ;border-color:#D5D5D5; width:66.5%;height:2% ;padding:1%  ', 'placeholder': u'URL', 'autofocus': ''}),
+    #     }
+    #     fields = "__all__"
+
+    name = forms.CharField(
+        label='栏目名称',
+        required=True,
+        error_messages={'required': '栏目名称不能为空', },
+        widget=forms.TextInput(
+            attrs={'class': 'col-xs-10 col-sm-5', 'placeholder': u"栏目名称", "id": 'column_name_tag',
+                   }
+
+        )
+    )
+    url = forms.CharField(
+        label='栏目名称',
+        required=True,
+        error_messages={'required': '栏目名称不能为空', },
+        widget=forms.TextInput(
+            attrs={'class': 'col-xs-10 col-sm-5', 'placeholder': u"栏目名称", "id": 'column_name_tag',
+                   }
+
+        )
+    )
+    type = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(
+            attrs={'class': 'ace input-lg', 'name': 'type'}
+        ),
+    )
+    id = forms.CharField(
+        label='权限ID',
+        required=True,
+        error_messages={'required': '权限ID选择不能为空', },
+        widget=forms.TextInput(
+            attrs={'class': 'col-xs-10 col-sm-5 ', 'placeholder': u"权限ID选择不能为空", "id": 'auto_tag',
+                   }
+
+        )
+
+    )
+
+
+    def __init__(self, PermissionList=None, login_user_org_id=None, *args, **kwargs):
+        # self.iColumn = iColumn
+        super(EditPermissionListForm, self).__init__(*args, **kwargs)
+        # 下面字段操作都是给表单数据初始化
+        self.fields['id'].initial = PermissionList.id
+        self.fields['name'].initial = PermissionList.name
+        self.fields['type'].initial = PermissionList.type
+        self.fields['url'].initial = PermissionList.url
+
+
+
+    def setId(self, id):
+      EditPermissionListForm.id=id
+
+    def clean(self):
+        name=None
+        url=None
+        try:
+            name = self.cleaned_data['name']
+            url = self.cleaned_data.get('url')
+        except Exception as e:
+            pass
+        sql = Q()
+        sql = sql | Q(name=name)|Q(url=url)
+        if url!=None and name!=None and 0!=len(PermissionList.objects.filter(sql).exclude(id=EditPermissionListForm.id)):
+                try:
+                     if PermissionList.objects.get(name=name)is not None:
+                         self.errors['name'] = '该权限名称=[%s]已存在' % name.encode('utf-8')
+                     else:
+                         self.errors['url'] = 'URL或权限名称=[%s]已存在' % url.encode('utf-8')
+                except:
+                    self.errors['url'] = '该URL=[%s]已存在' % url.encode('utf-8')
+
+                raise forms.ValidationError(u"权限名称不能为空")
+    #     # 验证url
+    #     url = self.cleaned_data['url']
+    #     if url == self.user.url:
+    #         # 判断email是否等于初始值,如果是直接不验证
+    #         return url
+    #     else:
+    #         try:
+    #             PermissionList.objects.get(url=url)
+    #             raise forms.ValidationError('该URL已存在！')
+    #         except ObjectDoesNotExist:
+    #             return url
+class ChangeUserForm(forms.Form):
+    """
+    ===============================================================================
+    function：    修改个人信息类
+    developer:    Rich.Chen
+    add-time      2015/9/3
+    ===============================================================================
+    """
+
+    username = forms.CharField(
+        label='用户名',
+        # required=True,
+        error_messages={'required': '用户名不能为空',},
+        widget=forms.TextInput(
+              attrs={'class': 'col-xs-10 col-sm-5', 'placeholder': u"用户名", 'name': 'appl_id',
+               }
+
+        )
+
+    )
+
+    phone = forms.CharField(
+        label='联系号码',
+        # required=False,
+        error_messages={'required': '电话不能为空', },
+        widget=forms.TextInput(
+              attrs={'class': 'col-xs-10 col-sm-5',  'placeholder': u"用户的联系电话", 'name': 'appl_id',
+               }
+
+        )
+    )
+    sex = forms.ChoiceField(
+        label=u"性别",
+        choices=(
+            (1, "男性"),
+            (0, "女性"),
+        ),
+
+        widget=forms.RadioSelect(
+            attrs={'class': 'col-xs-10 col-sm-5',
+                   'class': 'am-radio-inline ',
+                   'placeholder': u"用户的性别",
+                    'name': 'appl_id',
+                   }
+        )
+    )
+
+
+    desc = forms.CharField(
+        label=u"用户简介",
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                'placeholder': u"用户简介",
+                'rows':'3;',
+            }
+        )
+
+    )
+
+    def __init__(self, request=None, *args, **kwargs):
+        super(ChangeUserForm, self).__init__(*args, **kwargs)
+        # self.fields['sys_orgid'].choices = [(None, '----------')] + [(sysOrg.id, sysOrg.org_name) for sysOrg in
+        #                                                            SysOrg.objects.all()]
+    def clean_phone(self):
+        # 验证输入电话号码的合法性
+        phone = self.cleaned_data['phone']
+        pattern = re.compile(r"^((\d{3,4}-)?\d{7,8})$|(1[3-9][0-9]{9})")  # 设置正则验证
+        if phone:
+            if pattern.match(phone):  # 如果验证失败的话就会返回none
+                pass
+            else:
+                raise forms.ValidationError('请输入正确的手机或座机号码！！')
+        else:
+            pass
+class PasswordForm(forms.Form):
+    """
+    ===============================================================================
+    function：    用户修改密码
+    developer:    Rich.Chen
+    add-time      2015/9/23
+    ===============================================================================
+    """
+    oldpwd = forms.CharField(label=u'原始密码', widget=forms.PasswordInput(
+        attrs={'class': 'col-xs-10 col-sm-5', 'placeholder': u'原始密码', 'required': ''})
+                             )
+    password1 = forms.CharField(label=u'新密码', widget=forms.PasswordInput(
+        attrs={'class': 'col-xs-10 col-sm-5', 'placeholder': u'新密码确认 密码长度在6-12位', 'required': ''})
+                                )
+    password2 = forms.CharField(label=u'再输入一次', widget=forms.PasswordInput(
+        attrs={'class': 'col-xs-10 col-sm-5', 'placeholder': u'再输入一次新密码', 'required': ''})
+                                )
+
+    def __init__(self, user=None, *args, **kwargs):
+        self.user = user
+        self.newpwd = None
+        super(PasswordForm, self).__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned_data = super(PasswordForm, self).clean()
+        oldpwd = cleaned_data.get("oldpwd")
+        password1 = cleaned_data.get("password1")
+        password2 = cleaned_data.get("password2")
+
+        if not self.user.check_password(oldpwd):
+            msg = u"原密码错误。"
+            self._errors["oldpwd"] = self.error_class([msg])
+            # raise forms.ValidationError(u'原密码错误')
+        if password1 and password2:
+            if password1 != password2:
+                msg = u"两个密码字段不一致。"
+                self._errors["password2"] = self.error_class([msg])
+            if not 5 < len(password1) < 13:
+                msg = u"密码要在6-12位之间。"
+                self._errors["password1"] = self.error_class([msg])
+
+        return cleaned_data
+class UserPasswordForm(forms.Form):
+    """
+    ===============================================================================
+    function：    用户修改密码
+    developer:    Rich.Chen
+    add-time      2015/9/23
+    ===============================================================================
+    """
+    email = forms.CharField(label=u'邮箱', widget=forms.TextInput(
+        attrs={'class': 'col-xs-10 col-sm-5', 'placeholder': u'邮箱', 'required': ''})
+                             )
+    password1 = forms.CharField(label=u'新密码', widget=forms.PasswordInput(
+        attrs={'class': 'col-xs-10 col-sm-5', 'placeholder': u'新密码确认 密码长度在6-12位', 'required': ''})
+                                )
+    password2 = forms.CharField(label=u'再输入一次', widget=forms.PasswordInput(
+        attrs={'class': 'col-xs-10 col-sm-5', 'placeholder': u'再输入一次新密码', 'required': ''})
+                                )
+
+    def __init__(self, user=None, *args, **kwargs):
+        self.user = user
+        self.newpwd = None
+        super(UserPasswordForm, self).__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned_data = super(UserPasswordForm, self).clean()
+        email = cleaned_data.get("email")
+        password1 = cleaned_data.get("password1")
+        password2 = cleaned_data.get("password2")
+
+        if password1 and password2:
+            if password1 != password2:
+                msg = u"两个密码字段不一致。"
+                self._errors["password2"] = self.error_class([msg])
+            if not 5 < len(password1) < 13:
+                msg = u"密码要在6-12位之间。"
+                self._errors["password1"] = self.error_class([msg])
+
+        return cleaned_data
+class AvatarForm(forms.Form):
+    """
+    ===============================================================================
+    function：    用户修改头像
+    developer:    Rich.Chen
+    add-time      2015/9/23
+    ===============================================================================
+    """
+    avatar = forms.ImageField(label=u'图片上传(图片尺寸不超过300*300)', widget=forms.FileInput(
+        attrs={'class': 'col-xs-10 col-sm-5', 'placeholder': u'图片上传', 'required': ''})
+                              )
+
+    def clean(self):
+        cleaned_data = super(AvatarForm, self).clean()
+        image = cleaned_data.get("avatar", None)
+        if image:
+            if image.content_type not in ['image/jpeg', 'image/png']:
+                self.errors['avatar'] = '图片格式有误,请上传正确的图片'
+                raise forms.ValidationError(u'图片格式有误,请上传正确的图片？')
+            else:
+
+                img = Image.open(image)
+                w, h = img.size
+                max_width = max_height = 300
+                if w >= max_width or h >= max_height:
+                    self.errors['avatar'] = '上传的图片要尺寸要小于或等于300*300'
+                    raise forms.ValidationError(u'上传的图片要尺寸要小于或等于%s宽，%s高' % (max_width, max_height))
+                if img.format.lower() not in ['jpeg', 'pjpeg', 'png', 'jpg']:
+                    self.errors['avatar'] = '暂只支持JPEG or PNG格式图片'
+                    raise forms.ValidationError(u'暂时只接纳JPEG or PNG.')
+                # validate file size
+                if len(image) > (1 * 1024 * 1024):
+                    raise forms.ValidationError('Image file too large ( maximum 1mb )')
+        else:
+            raise forms.ValidationError(u'没有图片？')
+        return cleaned_data

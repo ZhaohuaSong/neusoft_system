@@ -1,0 +1,393 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2016/12/27 上午10:03
+# @Author  : qiujunli
+# @Site    :
+# @File    : views_protocol_content.py
+# @Software: PyCharm
+# @Function: 报文协议内容视图模型
+
+from django.views.generic import TemplateView
+from django.http import JsonResponse
+from django.db.models import Q
+import datetime
+import json
+import logging
+_logger = logging.getLogger('loggers')
+from api.system_enum import *
+from models import ProtocolType, TriggerType
+# from external_interface import FileSrc, DBSrc
+from api.data_src.data_src_interface import IDataSrc
+# Create your views here.
+
+
+class PageProtocolContentView(TemplateView):
+    template_name = 'packmanage/packmanage.protocoltype.content.html'
+
+    #GET请求
+    def get(self, request, *args, **kwargs):
+        id = request.GET.get('id', None)
+
+        opt = request.GET.get('option', None)
+        if opt is not None:
+            src_name = request.GET.get('file_name', None)
+
+            if opt == 'get_file_cols':  # 获取文件列数据信息
+                if src_name is None:
+                    return JsonResponse({'code': '01', 'desc': 'url错误，缺少文件名称!'})
+
+                cols_in, cols_out = IDataSrc(DATA_SRC_TYPE_FILE).get_cols_name_list(src_name)
+                return JsonResponse({'code': '00', 'desc': 'ok!', "data": cols_out[1], "keys": cols_out[0]})
+            elif opt == 'get_db_cols':
+                if src_name is None:
+                    return JsonResponse({'code': '01', 'desc': 'url错误，缺少文件名称!'})
+
+                cols_in, cols_out = IDataSrc(DATA_SRC_TYPE_DB).get_cols_name_list(src_name)
+                return JsonResponse({'code': '00', 'desc': 'ok!', "data": cols_out[1], "keys": cols_out[0]})
+            elif opt == 'reconfig':
+                try:
+                    info = ProtocolType.objects.get(id=id)
+                    info.protocol_content=''
+                    info.request_datasrc_content=''
+                    info.save()
+                    context = {'code': '00', 'desc': '操作成功!'}
+                    return JsonResponse(context)
+                except Exception as e:
+                    context = {'code': '01', 'desc': '操作异常:%s!' % str(e)}
+                    return JsonResponse(context)
+
+
+        info = ProtocolType.objects.get(id=id)
+        context = self.get_context_data(**kwargs)
+        #显示协议基础信息
+        context['protocol_name'] = info.protocol_name
+        context['protocol_id'] = info.protocol_id
+        context['protocol_srctype'] = info.protocol_srctype
+        context['protocol_creater'] = info.create_by
+        context['protocol_state'] = info.protocol_state
+        context['protocol_operation'] = PROTOCOL_OPERATOR_TYPE
+
+        try:
+            context['protocol_content_in'] = self.get_protocol_content_in(info.protocol_content)
+            context['protocol_content_out'] = self.get_protocol_content_out(info.protocol_content)
+            context['protocol_opt_type'] = self.get_protocol_opt(info.protocol_content)
+            context['b_ok'] = len(context['protocol_opt_type'])!=0
+
+        except:
+            pass
+        context['bremoteconfig'] = info.bremoteconfig
+
+        context["datasrc_list"] = PROTOCOL_DATA_SRC_TYPE
+        context["file_list"] = IDataSrc(DATA_SRC_TYPE_FILE).get_all_src_list()#FileSrc().get_file_list()
+        context["db_list"] = IDataSrc(DATA_SRC_TYPE_DB).get_all_src_list(True)#DBSrc().get_db_src_list()
+        # try:
+        #     protocol = ProtocolType.objects.get(id=id)
+        #     if protocol.protocol_content is not None and protocol.protocol_content!='':
+        #         context['is_over'] = 1
+        #         context['src_type'], context['src_name'], context['src_in'], context['src_out'] = self.get_data_src_data(protocol.request_datasrc_content)
+        #         self.format_data_src(context)
+        #     else:
+        #         context['is_over'] = 0
+        # except Exception as e:
+        #     context['is_over'] = 0
+
+        return self.render_to_response(context)
+
+    def get_data_src_data(self, data_src_content):
+        if data_src_content is None or len(data_src_content) == 0:
+            return '', '', [], []
+
+        try:
+            dict_datasrc = json.loads(data_src_content)
+            scr_type = PROTOCOL_DATA_SRC_TYPE[dict_datasrc["src_type"]]
+            scr_name = dict_datasrc["src_name"]
+            param_in = dict_datasrc["param_in"]
+            param_out = dict_datasrc["param_out"]
+
+            new_in = {}
+            for k in param_in.keys():
+                new_in[int(k)] = param_in[k]
+
+            in_list = []
+            for v in new_in.values():
+                in_list.append(v)
+
+            new_out = {}
+            for k in param_out.keys():
+                new_out[int(k)] = param_out[k]
+
+            out_list = []
+            for v in new_out.values():
+                out_list.append(v)
+
+            return scr_type, scr_name, in_list, out_list
+        except Exception as e:
+            return '', '', [], []
+
+    def format_data_src(self, context):
+        try:
+            src_in = context['src_in']
+            src_out = context['src_out']
+            protocol_content_in = context['protocol_content_in']
+            protocol_content_out = context['protocol_content_out']
+
+            new_in = []
+            new_out = []
+            for i in range(0, len(protocol_content_in)):
+                new_in.append((protocol_content_in[i]['field_name'], src_in[i]))
+
+            for i in range(0, len(protocol_content_out)):
+                new_out.append((protocol_content_out[i]['field_name'], src_out[i]))
+
+            context['src_in'] = new_in
+            context['src_out'] = new_out
+
+            return True
+        except Exception as e:
+            return False
+
+    #获取协议内容
+    def get_protocol_content_in(self, protocol_content):
+        if protocol_content is None or len(protocol_content)==0:
+            return []
+        #dict_protocol = eval(protocol_content)
+        dict_protocol = json.loads(protocol_content)
+        return  list(dict_protocol['in'].values())
+
+    def get_protocol_content_out(self, protocol_content):
+        if protocol_content is None or len(protocol_content) == 0:
+            return []
+        # dict_protocol = eval(protocol_content)
+        dict_protocol = json.loads(protocol_content)
+        return list(dict_protocol['out'].values())
+
+    def get_protocol_opt(self, protocol_content):
+        if protocol_content is None or len(protocol_content) == 0:
+            return []
+        # dict_protocol = eval(protocol_content)
+        dict_protocol = json.loads(protocol_content)
+        opt = dict_protocol['operation']
+        return PROTOCOL_OPERATOR_TYPE[opt]
+
+    def post(self, request, *args, **kwargs):
+        id = request.GET.get('id', None)
+        if id is None:
+            return JsonResponse({'code': '01', 'desc': '该协议类型不存在!'})
+
+        try:
+            json_data = json.loads(request.body)# json
+            #json_data = json.dumps(json_data)# str
+            #self.save_protocol_content(id, json.dumps(json_data["protocol_content"]))
+            self.save_in_data_src(id,json_data)
+        except Exception as e:
+            return JsonResponse({'code': '01', 'desc': '保存过程中出现异常：%s!'%str(e)})
+
+        return JsonResponse({'code': '00', 'desc': '保存成功!'})
+
+    # def save_protocol_content(self, id, data):
+    #     '''
+    #     save pprotocol content
+    #     :param data:
+    #     :return:
+    #     '''
+    #
+    #     info = ProtocolType.objects.get(id=id)
+    #     info.protocol_content = str(data)
+    #     info.update_date = datetime.datetime.now()
+    #     info.save()
+
+    def save_in_data_src(self, id, data):
+        '''
+        save in param data src
+        :param data:
+        :return:
+        '''
+        protocol_content = json.dumps(data['protocol_content'])
+        operation_type = data['operation']
+
+        # data_src = json.dumps(data['data_src'])
+
+        info = ProtocolType.objects.get(id=id)
+        # info.request_datasrc_content = data_src
+        info.protocol_content = protocol_content
+        info.operation_type = operation_type
+        info.update_date = datetime.datetime.now()
+        info.save()
+
+
+class PageRemoteProtocolContentView(PageProtocolContentView):
+    template_name = 'packmanage/packmanage.remote.protocoltype.content.html'
+
+
+class PageProtocolDataSrc(TemplateView):
+    template_name = 'packmanage/packmanage.remote.protocoltype.datasrc.html'
+
+    def get(self, request, *args, **kwargs):
+        id = request.GET.get('id', None)#协议ID
+        opt = request.GET.get('option', None)
+        src_name = request.GET.get('file_name', None)
+        datasrc_business = request.GET.get('datasrc_business', None)
+        if opt is not None:
+            if opt == 'get_file_cols':  # 获取文件列数据信息
+                if src_name is None:
+                    return JsonResponse({'code': '01', 'desc': 'url错误，缺少文件名称!'})
+
+                cols_in, cols_out = IDataSrc(DATA_SRC_TYPE_FILE).get_cols_name_list(src_name)
+                print cols_in
+                print cols_out
+                return JsonResponse({'code': '00', 'desc': 'ok!', "data": cols_out[1], "keys": cols_out[0],
+                                     'in_k': cols_in[0], 'in_v': cols_in[1], 'out_k': cols_out[0],
+                                     'out_v': cols_out[1]})
+            elif opt == 'get_db_cols':
+                if src_name is None:
+                    return JsonResponse({'code': '01', 'desc': 'url错误，缺少文件名称!'})
+
+                cols_in, cols_out = IDataSrc(DATA_SRC_TYPE_DB).get_cols_name_list(src_name,datasrc_business)
+
+                print cols_in
+                print cols_out
+                return JsonResponse({'code': '00', 'desc': 'ok!', "data": cols_out[1], "keys": cols_out[0],
+                                     'in_k':cols_in[0], 'in_v':cols_in[1], 'out_k':cols_out[0], 'out_v':cols_out[1] })
+
+            elif opt == 'reconfig':
+                try:
+                    info = ProtocolType.objects.get(id=id)
+                    info.response_datasrc_content=''
+                    info.save()
+                    context = {'code': '00', 'desc': '操作成功!' }
+                    return JsonResponse(context)
+                except Exception as e:
+                    context = {'code': '01', 'desc': '操作异常:%s!'%str(e)}
+                    return JsonResponse(context)
+
+
+
+        info = ProtocolType.objects.get(id=id)
+        context = self.get_context_data(**kwargs)
+        # 显示协议基础信息
+        context['protocol_name'] = info.protocol_name
+        context['protocol_id'] = info.protocol_id
+        context['protocol_srctype'] = info.protocol_srctype
+        context['protocol_creater'] = info.create_by
+        context['protocol_state'] = info.protocol_state
+        context["datasrc_list"] = [{"id":"0", "name":"文件"}, {"id":"1", "name":"数据库"}]
+        context["file_list"] = IDataSrc(DATA_SRC_TYPE_FILE).get_all_src_list()
+        context["db_list"] = IDataSrc(DATA_SRC_TYPE_DB).get_all_src_list(True)
+
+
+        try:
+            context['protocol_content_in'] = self.get_protocol_content_in(info.protocol_content)
+            context['protocol_content_out'] = self.get_protocol_content_out(info.protocol_content)
+        except:
+            pass
+        context['bremoteconfig'] = info.bremoteconfig
+
+        # format data src
+        try:
+            if info.response_datasrc_content is not None and info.response_datasrc_content!="":
+                context['is_over'] = 1
+                context['src_type'], context['src_name'], context['src_in'], context[
+                    'src_out'] = self.get_data_src_data(info.response_datasrc_content)
+            else:
+                context['is_over'] = 0
+
+            re = self.format_data_src(context)
+        except Exception as e:
+            context['is_over'] = 0
+
+        return self.render_to_response(context)
+
+    #
+    def format_data_src(self, context):
+        try:
+            src_in = context['src_in']
+            src_out = context['src_out']
+            protocol_content_in = context['protocol_content_in']
+            protocol_content_out = context['protocol_content_out']
+
+            new_in = []
+            new_out = []
+            for i in range(0, len(protocol_content_in)):
+                new_in.append( (protocol_content_in[i]['field_name'], src_in[i]) )
+
+            for i in range(0, len(protocol_content_out)):
+                new_out.append( (protocol_content_out[i]['field_name'], src_out[i]) )
+
+            context['src_in']  = new_in
+            context['src_out'] = new_out
+            return True
+        except:
+            return False
+
+    # 获取数据源配置信息
+    def get_data_src_data(self, data_src_content):
+        if data_src_content is None or len(data_src_content) == 0:
+            return '', '', [], []
+
+        try:
+            dict_datasrc = json.loads(data_src_content)
+            scr_type = PROTOCOL_DATA_SRC_TYPE[dict_datasrc["src_type"]]
+            scr_name = dict_datasrc["src_name"]
+            param_in = dict_datasrc["param_in"]
+            param_out = dict_datasrc["param_out"]
+
+            new_in = {}
+            for k in param_in.keys():
+                new_in[int(k)] = param_in[k]
+
+            in_list = []
+            for v in new_in.values():
+                in_list.append(v)
+
+            new_out = {}
+            for k in param_out.keys():
+                new_out[int(k)] = param_out[k]
+
+            out_list = []
+            for v in new_out.values():
+                out_list.append(v)
+            return scr_type, scr_name, in_list, out_list
+        except Exception as e:
+            return '', '', [], []
+
+    # 获取协议内容
+    def get_protocol_content_in(self, protocol_content):
+        if protocol_content is None or len(protocol_content) == 0:
+            return []
+        # dict_protocol = eval(protocol_content)
+        dict_protocol = json.loads(protocol_content)
+        return list(dict_protocol['in'].values())
+
+    def get_protocol_content_out(self, protocol_content):
+        if protocol_content is None or len(protocol_content) == 0:
+            return []
+        # dict_protocol = eval(protocol_content)
+        dict_protocol = json.loads(protocol_content)
+        return list(dict_protocol['out'].values())
+
+    def post(self, request, *args, **kwargs):
+        #1. get protocol id
+        id = request.GET.get('id', None)
+        if id is None:
+            return JsonResponse({'code': '01', 'desc': '需要指定协议ID!'})
+
+        #2. get protocol data src type
+        datasrc_type = request.GET.get('datasrc_type', None)
+        if datasrc_type is None:
+            return JsonResponse({'code': '01', 'desc': '数据源类型未指定!'})
+
+        #3. save to db
+        json_data = json.loads(request.body)
+        json_data = json.dumps(json_data)
+        try:
+            try:
+                info = ProtocolType.objects.get(id=id)
+            except:
+                raise Exception("该协议在数据库丢失")
+
+            info.response_datasrc_content = str(json_data)
+            info.save()
+        except Exception as e:
+            return JsonResponse({'code': '01', 'desc': '保存过程中出现异常：%s!' % str(e)})
+
+        return JsonResponse({'code': '00', 'desc': '保存成功!'})

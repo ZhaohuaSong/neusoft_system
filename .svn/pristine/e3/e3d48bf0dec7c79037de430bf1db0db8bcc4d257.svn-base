@@ -1,0 +1,71 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from gevent.server import DatagramServer
+import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
+import pymysql
+import datetime
+
+db = pymysql.connect(host = 'localhost', passwd = '123456', user = 'root', db = 'richdatax')
+
+class EchoServer(DatagramServer):
+
+
+
+    def now_str(self):
+       return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    def handle(self, data, address): # pylint:disable=method-hidden
+        # for i in range(0, len(address)):
+            result ={}
+            obj = eval(data)
+            result['code']='00'
+            if obj.get('status','')=='0':
+                result['status']='1'
+                result['msg'] = 'R1'#目标服务器已经接收，未处理
+            elif obj.get('status','')=='3':
+                result['status']='3'
+                result['msg'] = 'R2'#目标服务器已经接收，并处理
+            start_time  =self.now_str()
+            self.socket.sendto(str(result), address)
+            cursor = db.cursor()
+            values=[]
+
+            if obj.get('status','')=='3':
+                print 'get answer......'
+                values.append(obj.get('back_content',''))
+                values.append('3')
+                values.append(self.now_str())
+                values.append('R2')
+                values.append(obj.get('msg_no',''))
+                sql = 'update send_msg set result=%s,status=%s,return_time=%s,result=%s where msg_no=%s'
+            else:
+                print 'get package......'
+                values.append(obj.get('content',''))
+                values.append(obj.get('msg_no',''))
+                # msg_no = obj.get('msg_no','')
+                values.append('2')
+                values.append('00')
+                values.append('R1')
+                values.append(start_time)
+                values.append(self.now_str())
+                values.append(address[0])
+                values.append(address[0])
+                values.append('127.0.0.1')
+                values.append('7000')
+
+                sql='insert into receive_msg(content,msg_no,status,code,result,receive_time,resp_time,from_ip,from_ip_port,local_ip,local_ip_port) ' \
+                    'VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) '
+                # sql='insert into receive_msg(`msg_no`) VALUES("'+msg_no+'") '
+                # print sql
+            cursor.execute(sql,values)
+            db.commit()
+            cursor.close()
+
+
+
+if __name__ == '__main__':
+    print('Receiving datagrams on :'+str(sys.argv[1:][0]))
+    EchoServer(':'+str(sys.argv[1:][0])).serve_forever()

@@ -1,0 +1,317 @@
+ 
+
+//商户选择事件
+jQuery(function($) { 
+
+    jQuery("#select-acq").change(function(){
+        do_change_acq_select();
+    });
+
+    function do_change_acq_select(){
+        var acq_id = jQuery("#select-acq  option:selected").attr("value");//受理机构商户号ID
+        var json_data  = {};//请求的json数据
+       
+
+        if(acq_id!=""){
+            var url = URL_YL_PARAM; 
+            url+="?acq_id="; url+=acq_id;
+
+        //var postdata = JSON.stringify(json_data);
+            $.get( url, function(data, status){
+                if(status=="success"){
+                    var json = JSON.parse(data);//返回的json数据
+                    if(json["code"]=="00")
+                        init_acq_mid_select(json["data"]);
+                }  
+            }); 
+        }
+        else{
+            jQuery("#select-acq-mid").empty();
+        }        
+    }
+
+//初始化商户下拉框
+    function init_acq_mid_select(mid_list){
+
+        var select_acq_mid = jQuery("#select-acq-mid");  
+        select_acq_mid.empty();
+
+        var select_acq_tid = jQuery("#select-acq-tid");  
+        select_acq_tid.empty();
+        
+        var opt = jQuery("<option>--------</option>");
+        opt.appendTo(select_acq_mid);
+
+        if(0==mid_list.length)return;
+
+        
+        for(var i=0; i<mid_list.length; i++){
+            var data = mid_list[i];
+
+            var opt = jQuery("<option></option>");
+            opt.text(data["name"]+"-"+data["mid"]);
+            opt.attr("value", data["id"]);
+            opt.attr("mid", data["mid"]);
+            opt.appendTo(select_acq_mid);
+        }
+
+        do_change_acq_mid();
+    }
+
+    jQuery("#select-acq-mid").change(function(){
+        do_change_acq_mid();
+    });
+
+    function do_change_acq_mid(){
+        var acq_mid_id = jQuery("#select-acq-mid  option:selected").attr("value");//受理机构商户号ID
+        var json_data  = {};//请求的json数据
+        
+        jQuery("#select-acq-tid").empty();
+        var opt = jQuery("<option>--------</option>");
+        opt.appendTo(jQuery("#select-acq-tid"));
+
+
+        if(acq_mid_id!=""){
+            var url = URL_YL_PARAM; 
+            url+="?acq_mid_id="; url+=acq_mid_id;
+ 
+            $.get( url, function(data, status){
+                if(status=="success"){
+                    var json = JSON.parse(data);//返回的json数据
+                    if(json["code"]=="00")
+                        init_acq_tid_select(json["data"]);
+                }  
+            }); 
+        }
+        else{
+            
+        }        
+    }
+
+
+//初始化终端选择框
+    function init_acq_tid_select(tid_list){
+
+        var select_acq_tid = jQuery("#select-acq-tid");  
+        select_acq_tid.empty();
+        var opt = jQuery("<option>--------</option>");
+        opt.appendTo(select_acq_tid);
+
+        if(0==tid_list.length)return;
+        
+        
+        for(var i=0; i<tid_list.length; i++){
+            var data = tid_list[i];
+
+            var opt = jQuery("<option></option>");
+            opt.text(data);
+            opt.attr("value", data);
+            opt.appendTo(select_acq_tid);
+        }
+    }
+
+
+    //银联参数绑定JS脚本
+    $("#btn-yl-bind").click(function () {
+        var acq_id      = jQuery("#select-acq  option:selected").attr("value");//商户号
+        var acq_mid     = jQuery("#select-acq-mid  option:selected").attr("mid");//商户号
+        var acq_tid     = jQuery("#select-acq-tid  option:selected").attr("value");//终端
+        var org_mid     = jQuery("#lb_mid").text(); //机构商户
+        var org_tid     = jQuery("#lb_tid").text(); //机构终端
+
+        var use_flag    = jQuery("#btn-check-yl").is(':checked')
+
+        var json_data={}
+        json_data["acq_id"]=acq_id
+        json_data["acq_mid"]=acq_mid
+        json_data["acq_tid"]=acq_tid
+        json_data["org_mid"]=org_mid
+        json_data["org_tid"]=org_tid
+        json_data['use_flag']=use_flag
+ 
+        if(acq_id==undefined){ alert("受理机构不能为空"); return;}
+        if(acq_mid==undefined){ alert("受理机构商户号不能为空"); return;}
+        if(acq_tid==undefined){ alert("受理机构终端不能为空"); return;}
+
+        var url = URL_BIND_YL;
+        var postdata = JSON.stringify(json_data);
+        $.post( url, postdata, function(data, status){
+            if(status=="success"){
+                var json = JSON.parse(data);//返回的json数据
+
+                var lb_yl_state = jQuery("#yl_state")
+                if(use_flag) {
+                    lb_yl_state.text("正常使用");
+                    lb_yl_state.removeClass("red");
+                    lb_yl_state.addClass("green");
+                }
+                else {
+                    lb_yl_state.text("已停用");
+                    lb_yl_state.removeClass("green");
+                    lb_yl_state.addClass("red");
+                }
+                alert(json["desc"])
+        }  
+    }); 
+    });
+
+/////////////////////////////////////////////////////////////////////////////////    
+    //支付宝参数绑定
+    $("#btn-al-bind").click(function () {
+        var form = new FormData();
+        use_flag = get_al_form(form);   
+
+        var fileobj = $("#id_card_private_key_path")[0].files[0];
+
+        form.append('private_key_path',fileobj);
+
+        if(-1!=use_flag){
+            $.ajax({
+                type:'POST',
+                url:URL_BIND_AL,
+                data:form,
+                processData:false,  // 告诉jquery不转换数据
+                contentType:false,  // 告诉jquery不设置内容格式
+                success:function (arg) {
+                    var json = JSON.parse(arg);//返回的json数据
+
+                    var lb_yl_state = jQuery("#al_state")
+                    if(use_flag) {
+                        lb_yl_state.text("正常使用");
+                        lb_yl_state.removeClass("red");
+                        lb_yl_state.addClass("green");
+                    }
+                    else {
+                        lb_yl_state.text("已停用");
+                        lb_yl_state.removeClass("green");
+                        lb_yl_state.addClass("red");
+                    }
+                        alert(json["desc"])                
+                    }
+            })
+        }
+
+    });
+
+
+
+ //支付宝表单参数获取
+    function get_al_form(form) { 
+        
+        var setting_type= jQuery("#select-setting-al  option:selected").attr("value");//商户号
+        var appid       = jQuery("#lb_al_appid").val(); //机构商户
+        var pid         = jQuery("#lb_al_pid").val(); //机构终端
+        var key         = jQuery("#lb_al_key").val();
+        var notify_url  = jQuery("#lb_al_tz_url").val();
+        var use_flag    = jQuery("#btn-check-al").is(':checked');
+
+ 
+
+        var org_mid     = jQuery("#lb_mid").text(); //机构商户
+        var org_tid     = jQuery("#lb_tid").text(); //机构终端
+
+        form.append('org_mid',org_mid);
+        form.append('org_tid',org_tid);
+        form.append('setting_type',setting_type);
+        form.append('appid',appid);
+        form.append('pid',pid);
+        form.append('key',key);
+        form.append('notify_url',notify_url);
+        
+        form.append('use_flag',use_flag);
+
+        
+        if(appid==""){ alert("APPID不能为空"); return -1}
+        if(pid==""){ alert("PID不能为空"); return -1}
+        if(key==""){ alert("秘钥不能为空"); return -1}
+        if(notify_url==""){ alert("通知url不能为空"); return -1;}
+
+
+        return use_flag;//返回是否正常使用状态
+    }
+//////////////////////////////////////////////////////////////////////////
+
+//微信参数绑定
+    $("#btn-wx-bind").click(function () {
+        var form = new FormData();
+        use_flag = get_wx_form(form);   
+
+        var f_public_key = $("#wx_public_key_path")[0].files[0];
+        form.append('wx_public_key_path',f_public_key);
+
+        var f_private_key = $("#wx_private_key_path")[0].files[0];
+        form.append('wx_private_key_path',f_private_key);
+
+
+        if(-1!=use_flag){
+            $.ajax({
+                type:'POST',
+                url:URL_BIND_WX,
+                data:form,
+                processData:false,  // 告诉jquery不转换数据
+                contentType:false,  // 告诉jquery不设置内容格式
+                success:function (arg) {
+                    var json = JSON.parse(arg);//返回的json数据
+
+                    var lb_yl_state = jQuery("#wx_state")
+                    if(use_flag) {
+                        lb_yl_state.text("正常使用");
+                        lb_yl_state.removeClass("red");
+                        lb_yl_state.addClass("green");
+                    }
+                    else {
+                        lb_yl_state.text("已停用");
+                        lb_yl_state.removeClass("green");
+                        lb_yl_state.addClass("red");
+                    }
+                        alert(json["desc"])                
+                    }
+            })
+        }
+
+    });
+
+  //微信表单参数获取
+    function get_wx_form(form) { 
+        
+        var setting_type= jQuery("#select-setting-wx  option:selected").attr("value");//商户号
+        var appid       = jQuery("#lb_wx_appid").val(); //机构商户
+        var app_sec_key = jQuery("#lb_wx_app_sec_key").val(); //机构终端
+        var wx_mid      = jQuery("#lb_wx_mid").val();
+        var wx_seckey   = jQuery("#lb_wx_seckey").val();
+        var use_flag    = jQuery("#btn-check-wx").is(':checked');
+
+        var wx_child_mid= jQuery("#lb_wx_child_mid").val();
+        var notify_url  = jQuery("#lb_wx_notify_url").val();
+
+
+        var org_mid     = jQuery("#lb_mid").text(); //机构商户
+        var org_tid     = jQuery("#lb_tid").text(); //机构终端
+
+        form.append('org_mid',org_mid);
+        form.append('org_tid',org_tid);
+
+        form.append('wx_setting_type',setting_type);
+        form.append('wx_appid',appid);
+        form.append('wx_app_sec_key',app_sec_key);
+        form.append('wx_mid',wx_mid);
+        form.append('wx_seckey',wx_seckey);
+        form.append('wx_child_mid',wx_child_mid);
+        form.append('wx_notify_url',notify_url);
+        
+        form.append('wx_use_flag',use_flag);
+
+        
+        if(appid==""){ alert("APPID不能为空"); return -1}
+        if(app_sec_key==""){ alert("微信APP Sec Key不能为空"); return -1}
+        if(wx_mid==""){ alert("微信商户号不能为空"); return -1}
+        if(wx_seckey==""){ alert("微信商户seckey 不能为空"); return -1;}
+        if(notify_url==""){ alert("通知url不能为空"); return -1;}
+
+
+        return use_flag;//返回是否正常使用状态
+    }
+ 
+
+
+});

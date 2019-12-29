@@ -1,0 +1,7 @@
+CREATE TABLE `sql_name` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `dbname` varchar(64) DEFAULT NULL COMMENT '数据库名',
+  `sqlname` varchar(128) DEFAULT NULL COMMENT 'sql描述',
+  `sqlcontent` varchar(2046) DEFAULT NULL COMMENT '动态sql语句',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8

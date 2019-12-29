@@ -1,0 +1,76 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+from protocol import ProtocoFactory
+from ...common.iso.iso_8583 import *
+from ...common.iso.iso_tool import *
+#QiuJL 2017.1.5 报文接口处理文件
+#入口参数：一维数组 list，以及协议ID
+class PackCtrl:
+    def __init__(self):
+        self.protocofactory = ProtocoFactory()
+
+    def create_pack(self, protocol_id='6000010000', msgtype='00', data_list=['610526198856547874'], bHex=False):
+        '''
+        :author QiuJL 2017.1.5
+        :param protocol_id: 协议ID
+        :param data_list: 一维数组，data_list=['李四', '男', '18127858207']
+        :return: 要发送的报文
+        '''
+
+        #根据协议ID获取列表所存放的域顺序信息
+
+        self.protocofactory.init(protocol_id, msgtype)
+        bit_index = self.protocofactory.get_bit_index()
+
+        iso = ISO8583()
+        iso.setTPDU(protocol_id)#协议ID就是TPDU
+        iso.setMsgtype(msgtype)#消息类型 00请求报文 01应答
+        iso.setHeader('000000')#报文头
+
+        #报文填值
+        try:
+            for index in range(0, len(bit_index)):
+                iso.setBit(int(bit_index[index]), data_list[index])
+        except Exception as e:
+            raise Exception('组织报文出现异常:'+str(e))
+
+        #返回要发送的网络报文信息
+        iso = iso.getNetworkISO()
+        if bHex:
+            iso = format_assic_to_str(iso, True)
+
+        return iso
+
+    #将存到数据库中的报文内容转换后send
+    def format_hex_to_assic(self, iso_hex):
+        return format_str_to_assic(iso_hex)
+
+    #将原始报文扔进去
+    def get_pack_content(self, assic_iso, bHex=True):
+        '''
+        :author QiuJL 2017.1.5
+        :assic_iso 报文内容
+        :return: 返回 list[list],[{'bit':'65','name':姓名', 'value':'李四'], {'bit':'66','name':性别', 'value':'男'], {'bit':'67','name':身份证', 'value':'87687866766']]
+        '''
+        try:
+
+            if bHex:
+                assic_iso = format_str_to_assic(assic_iso)
+
+            iso = ISO8583()
+
+            iso.setNetworkISO(assic_iso)
+            protocol_id = iso.get_TPDU()
+            # iso.showBitsAndValues()
+            msgtype = iso.get_msg_type()
+
+            bit_info_list = self.protocofactory.init(protocol_id, msgtype).get_bit_info()
+            list_dic = []
+            for info in bit_info_list:
+                bit_index = int(info[0])
+                value = iso.getBitAssicValue(bit_index)
+                dic={'bit':bit_index, 'name':info[1], 'value':value }
+                list_dic.append(dic)
+            return list_dic
+        except Exception as e:
+            raise  Exception('解析报文异常:'+str(e))

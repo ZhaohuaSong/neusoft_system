@@ -1,0 +1,98 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2016/12/27 下午6:06
+# @Author  : qiujunli
+# @Site    :
+# @File    : views_apps.py
+# @Software: PyCharm
+# @Function: 应用程序视图模型
+
+from django.http import HttpResponseRedirect, HttpResponse
+from django.core.urlresolvers import reverse
+from ..common.datatables.views import BaseDatatableView
+from django.views.generic import TemplateView
+import json
+import logging
+from models import SendMsg
+from forms import SendMsgForm,EditSendMsgForm
+from ..sysadmin.models import SysDict
+from ..vanilla import CreateView,UpdateView,DeleteView
+import datetime
+_logger = logging.getLogger('loggers')
+from PackData import PackData
+
+
+# Create your views here.
+
+class SendMsgListView(TemplateView):
+    template_name = 'richdataserver/richdataserver.sendmsg.list.html'
+
+
+
+class SendMsgDataView(BaseDatatableView):
+    model = SendMsg
+    columns = ['id', 'id', 'msg_no', 'content', 'status', 'code', 'result', 'create_time','return_time', 'id', 'id', ]
+    order_columns = ['id', 'id', 'msg_no', 'content', 'status', 'code', 'result', 'create_time','return_time', 'id', 'id', ]
+
+    def get_json(self, response):
+        data_list = response['data']
+        for data in data_list:
+            status = data[4]
+            code = data[5]
+            result = data[6]
+            data[4] = SysDict.objects.filter(dict_type='msgstatus').filter(dict_id=status).values_list(
+                                              "dict_name", flat=True)[0]
+            data[5] = SysDict.objects.filter(dict_type='msgcode').filter(dict_id=code).values_list(
+                                              "dict_name", flat=True)[0]
+            if data[6]:
+                data[6] = SysDict.objects.filter(dict_type='msgdesc').filter(dict_id=result).values_list(
+                                              "dict_name", flat=True)[0]
+            data[7]=data[7].strftime("%Y-%m-%d %H:%M:%S")
+            if data[8]:
+                data[8]=data[8].strftime("%Y-%m-%d %H:%M:%S")
+        return super(SendMsgDataView, self).get_json(response)
+
+
+def dosend(request):
+        sendmsg =  SendMsg.objects.get(id=request.GET.get('id',''))
+        packdata =  PackData()
+        json_data = {}
+        json_data['msg_no']=sendmsg.msg_no
+        json_data['content'] = sendmsg.content
+        json_data['status'] = sendmsg.status
+        packdata.message = str(json_data)
+        data,address =  packdata.send_message()
+        obj = eval(data)
+        sendmsg.result = obj['msg']
+        sendmsg.status=obj['status']
+        sendmsg.code = obj['code']
+        sendmsg.server_address = address
+        sendmsg.save()
+        return HttpResponse(json.dumps(obj,ensure_ascii=False), content_type="application/json")
+
+
+class CreateSendMsg(CreateView):
+    form_class = SendMsgForm
+    template_name = 'richdataserver/sendmsg_form.html'
+
+    def form_valid(self, form):
+        self.save(form)
+        return HttpResponseRedirect(reverse('richdataserver:sendmsg.list'))
+
+    def save(self,form):
+        sendmsg = SendMsg()
+        sendmsg.content = form.cleaned_data['content']
+        sendmsg.server_address = form.cleaned_data['server_address']
+        sendmsg.server_port = form.cleaned_data['server_port']
+        sendmsg.status='0'
+        sendmsg.code='-1'
+        sendmsg.create_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        sendmsg.save()
+
+class EditSendMsgView(UpdateView):
+    '''
+    编辑发送报文
+    '''
+    model = SendMsg
+    form_class = EditSendMsgForm
+    success_url = '/richdataserver/send/list'

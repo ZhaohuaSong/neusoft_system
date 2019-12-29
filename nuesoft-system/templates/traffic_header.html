@@ -1,0 +1,32 @@
+<!-- -->
+
+<div  id="ace-settings-box">
+    <div class="pull-left width-100">
+        <div style="width:100%; border-bottom:1px #dedede dashed; float:left">
+            <div class="input-group col-sm-8" style="margin-top: 20px; float: right;">
+                用户1：<input type="text" name="makeupCo" id="makeupCo" class="makeinp" onfocus="setfocus(this)" oninput="setinput(this);" placeholder="请选择或输入"/>
+                用户2：<input type="text" name="makeupCo" id="makeupCo_1" class="makeinp" onfocus="setfocus_1(this)" oninput="setinput_1(this);" placeholder="请选择或输入"/>
+                <select name="makeupCoSe" id="typenum" onchange="changeF(this)" size="5" style="display:none; width:142px;margin-left:48px"></select>
+                <select name="makeupCoSe" id="typenum_1" onchange="changeF_1(this)" size="5" style="display:none; width:142px;margin-left:240px"></select>
+
+                时间粒度：<input  id="in-search" style="margin-right:20px;" name="keywords" placeholder="请选择时间粒度" type="text" list="companys" size="14" maxlength="32" autocomplete="off" aria-required="true" tabindex="1" class="fieldValInit">
+                <datalist id="companys">
+                  <option value="1分钟">
+                  <option value="5分钟">
+                  <option value="1小时">
+                  <option value="1天">
+                </datalist>
+                起始时间：<input  id="in-search_1" style="margin-right:20px;" name="keywords" placeholder="请选择起始时间" type="text" onClick="WdatePicker({maxDate:'#F{$dp.$D(\'in-search_2\')}'})" size="14" maxlength="32" class="fieldValInit" autocomplete="off" aria-required="true" tabindex="2">
+                终止时间：<input  id="in-search_2" name="keywords" placeholder="请选择结束时间" type="text" onClick="WdatePicker({minDate:'#F{$dp.$D(\'in-search_1\')}', maxDate:'%y-%M-%d'})" size="14" maxlength="32" class="fieldValInit" autocomplete="off" aria-required="true" tabindex="3">
+                <div class="input-group-btn" style="padding-left: 10px">
+                    <button class="btn btn-info btn-sm tooltip-info" id="btn-traffic_search">
+                        查询
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div><!-- /.pull-left -->
+
+    <!-- /.pull-left -->
+</div><!-- /.ace-settings-box -->

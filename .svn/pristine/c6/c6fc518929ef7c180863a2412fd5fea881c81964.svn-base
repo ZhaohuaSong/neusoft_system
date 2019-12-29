@@ -1,0 +1,74 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2016/12/27 下午6:06
+# @Author  : qiujunli
+# @Site    :
+# @File    : views_apps.py
+# @Software: PyCharm
+# @Function: 应用程序视图模型
+
+from django.shortcuts import render
+from django.http import HttpResponseRedirect,HttpResponse
+from django.core.urlresolvers import reverse
+from ..common.datatables.views import BaseDatatableView
+from django.views.generic import TemplateView
+from ..vanilla import CreateView, UpdateView
+from django.http import JsonResponse
+from django.db.models import Q
+import datetime
+import json
+from ..sysadmin.models import SysDict
+import logging
+from models import ReceiveMsg
+_logger = logging.getLogger('loggers')
+from PackData import PackData
+
+
+# Create your views here.
+
+class ReceiveMsgListView(TemplateView):
+    template_name = 'richdataserver/richdataserver.receivemsg.list.html'
+
+
+
+class ReceiveMsgDataView(BaseDatatableView):
+    model = ReceiveMsg
+    columns = ['id', 'id', 'msg_no', 'content', 'back_content','status', 'code', 'result', 'resp_time', 'id', 'id', ]
+    order_columns = ['id', 'id', 'msg_no', 'content','back_content', 'status', 'code', 'result', 'resp_time', 'id', 'id', ]
+
+    def get_json(self, response):
+        data_list = response['data']
+        for data in data_list:
+            status = data[5]
+            code = data[6]
+            result = data[7]
+            data[5] = SysDict.objects.filter(dict_type='msgstatus').filter(dict_id=status).values_list(
+                                              "dict_name", flat=True)[0]
+            if data[6]:
+                data[6] = SysDict.objects.filter(dict_type='msgcode').filter(dict_id=code).values_list(
+                                              "dict_name", flat=True)[0]
+            if data[7]:
+                data[7] = SysDict.objects.filter(dict_type='msgdesc').filter(dict_id=result).values_list(
+                                              "dict_name", flat=True)[0]
+            data[8]=data[8].strftime("%Y-%m-%d %H:%M:%S")
+        return super(ReceiveMsgDataView, self).get_json(response)
+
+
+def doAnswer(request):
+        receivemsg =  ReceiveMsg.objects.get(id=request.GET.get('id',''))
+        packdata =  PackData()
+        json_data = {}
+        json_data['msg_no']=receivemsg.msg_no
+        json_data['back_content'] = receivemsg.back_content
+        json_data['status']='3'
+        packdata.message = str(json_data)
+        data,address =  packdata.send_message()
+        obj = eval(data)
+        receivemsg.result = obj['msg']
+        receivemsg.status=obj['status']
+        # sendmsg.server_address = address
+        receivemsg.save()
+        return HttpResponse(json.dumps(obj,ensure_ascii=False), content_type="application/json")
+
+
+

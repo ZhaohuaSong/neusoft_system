@@ -1,0 +1,202 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2016/12/27 上午10:03
+# @Author  : qiujunli
+# @Site    :
+# @File    : views_protocol_local.py
+# @Software: PyCharm
+# @Function: 本地适配器协议规则
+
+from django.http import HttpResponseRedirect
+from django.core.urlresolvers import reverse
+from ..common.datatables.views import BaseDatatableView
+from django.views.generic import TemplateView
+from ..vanilla import CreateView, QUpdateView
+from django.http import JsonResponse
+from django.db.models import Q
+import datetime
+import json
+import logging
+_logger = logging.getLogger('loggers')
+
+from models import ProtocolType, Apps, AppsProtocol, LocalApp
+from forms import FormPortocolType
+# Create your views here.
+
+class ListProtocolTypeView(TemplateView):
+    template_name = 'packmanage/packmanage.protocoltype.list.html'
+
+    # def get(self, request, *args, **kwargs):
+    #     context = self.get_context_data(**kwargs)
+    #
+    #     apps = Apps.objects.all().values_list('id', 'app_name')
+    #     context['apps'] = apps
+    #     return self.render_to_response(context)
+
+class JsonProtocolTypeView(BaseDatatableView):
+    model = ProtocolType
+    columns = ['id', 'id', 'protocol_name', 'protocol_id', 'bremoteconfig', 'protocol_state',  'id', 'id', 'id', 'app_id']
+    order_columns = ['id', 'id', 'protocol_name', 'protocol_id', 'bremoteconfig', 'protocol_state',  'id', 'id', 'id', ]
+
+    # 重写基类方法——当前页面数据加工
+    def get_json(self, response):
+        data_list = response['data']
+        new_data = []
+        for data in data_list:
+            data[4] = '本地适配器'
+            new_data.append(data)
+        response['data'] = new_data
+        return super(JsonProtocolTypeView, self).get_json(response)
+
+    # 基类的基础查询条件
+    def format_base_search_Q(self, search):
+        q = Q(bremoteconfig=0)
+        if search == u'正常使用':
+            q |= Q(protocol_state=1)
+        elif search == u'已停用':
+            q |= Q(protocol_state=0)
+        elif search == u'CSV文件':
+            q |= Q(protocol_srctype=1)
+        elif search == u'数据库表':
+            q |= Q(protocol_srctype=0)
+        return q
+
+class CreateProtocoltypeView(CreateView):
+    '''
+    创建视图
+    '''
+    form_class = FormPortocolType
+    template_name = 'packmanage/packmanage.protocoltype.form.html'
+
+    def post(self, request, *args, **kwargs):
+        self.user = request.user
+        return super(CreateProtocoltypeView, self).post(request, *args, **kwargs)
+
+    #成功后跳转
+    def form_valid(self, form):
+        self.save(form)
+        return HttpResponseRedirect(reverse('packmanage:protocoltype.list'))
+
+    #保存
+    def save(self, form):
+        protocol_name  = form.cleaned_data['protocol_name']
+        protocol_note    = form.cleaned_data['remarks']
+        protocol_id  = form.cleaned_data['protocol_id']
+        protocol_state  = form.cleaned_data['protocol_state']
+        #protocol_srctype = form.cleaned_data['protocol_srctype']
+        #protocol_msgtype = form.cleaned_data['protocol_msgtype']
+
+        protocol = ProtocolType()
+        protocol.protocol_name = protocol_name
+
+        protocol.protocol_id = protocol_id
+        protocol.protocol_state = protocol_state
+
+        try:
+            local_app = LocalApp.objects.all()[0]
+        except:
+            raise Exception("本地适配器参数丢失，请联系系统维护人员进行配置")
+
+
+        #protocol.protocol_srctype = protocol_srctype
+        protocol.app_id    = local_app.app_id
+        protocol.create_by = self.user.username
+        protocol.create_date = datetime.datetime.now()
+        protocol.update_date = protocol.create_date
+        #protocol.protocol_msgtype = protocol_msgtype
+        protocol.remarks = protocol_note
+        protocol.bremoteconfig = 0
+        protocol.save()
+
+class EditProtocoltypeView(QUpdateView):
+    '''
+    编辑视图
+    '''
+    model = ProtocolType
+    form_class = FormPortocolType
+    template_name = 'packmanage/packmanage.protocoltype.form.html'
+
+    def get_success_url(self):
+        return reverse('packmanage:protocoltype.list')
+
+    def save(self, form):
+        protocol_name = form.cleaned_data['protocol_name']
+        protocol_id = form.cleaned_data['protocol_id']
+        protocol_state = form.cleaned_data['protocol_state']
+        #protocol_srctype = form.cleaned_data['protocol_srctype']
+        protocol_note = form.cleaned_data['remarks']
+        #protocol_msgtype = form.cleaned_data['protocol_msgtype']
+
+        protocol = self.object
+        protocol.protocol_name = protocol_name
+        protocol.protocol_id = protocol_id
+        protocol.protocol_state = protocol_state
+        #protocol.protocol_srctype = protocol_srctype
+        protocol.update_date = datetime.datetime.now()
+        protocol.remarks = protocol_note
+        #protocol.protocol_msgtype = protocol_msgtype
+        protocol.save()
+
+# from pack.pack_ctrl import *
+# def protocoltype_delete(request):
+#     '''
+#     批量删除
+#     :param request:
+#     :return:
+#     '''
+#     # json_data = json.loads(request.GET.get('ids'))
+#     # list_id_del = json_data['ids']
+#     #
+#     # sql = Q()
+#     # for id in list_id_del:
+#     #     sql = sql | Q(id=id)
+#     #
+#     # qs = ProtocolType.objects.filter(sql)
+#     # if 0 != len(qs):
+#     #     qs.delete()
+#
+#     app_id = request.GET.get('app_id', None)
+#     if app_id is not None:
+#         try:
+#             app = Apps.objects.get(id=app_id)
+#         except Exception as e:
+#             name_dict = {'code': '01', 'desc': '写入失败：'+str(e)}
+#             return JsonResponse(name_dict)
+#
+#     iso = PackCtrl().create_pack(protocol_id='6000010000', msgtype='00', data_list=['610526198856547874'], bHex=True)
+#     info = SendMsg()
+#     info.content = iso
+#     info.status = 0
+#     info.code = -1
+#     info.server_address = app.id
+#     #info.server_port = app.app_port
+#     info.msg_no='000000'
+#     info.save()
+#
+#     name_dict = {'code': '00', 'desc': '写入成功!'}
+#     return JsonResponse(name_dict)
+
+def protocoltype_delete(request):
+    '''
+    批量删除
+    :param request:
+    :return:
+    '''
+    json_data = json.loads(request.GET.get('ids'))
+    list_id_del = json_data['ids']
+
+    sql = Q()
+    sq = Q()
+    for id in list_id_del:
+        sq = sq | Q(protocol_id=ProtocolType.objects.get(id=id).protocol_id)
+        sql = sql | Q(id=id)
+
+    # if AppsProtocol.objects.filter(sq).count() is not 0:
+    #     return JsonResponse({'code': '01', 'desc': '要删除的报文规格在适配器中被引用，请先解除引用关系再删除!'})
+
+    qs = ProtocolType.objects.filter(sql)
+    if 0 != len(qs):
+        qs.delete()
+
+    name_dict = {'code': '00', 'desc': '删除成功!'}
+    return JsonResponse(name_dict)

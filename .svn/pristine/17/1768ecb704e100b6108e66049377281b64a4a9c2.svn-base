@@ -1,0 +1,178 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+import copy
+from ...api.iso_interface import ISOInterface
+from ....common.iso.iso_response_code import *
+from ..pack.protocol import ProtocoFactory
+from handle_exception import *
+from data_src_interface import *
+from django.apps import apps
+ProtocolType = apps.get_model(app_label='packmanage', model_name='ProtocolType')
+
+
+class DataExchangeRequest:
+    '''
+    数据交换请求
+    '''
+
+    def __init__(self):
+        '''
+        初始化
+        '''
+        self.i_data_src = DataSRCInterface() #数据源逻辑接口
+
+    def handle(self, iso_8583):
+        try:
+            return self.__handle(iso_8583)
+        except Exception as e:
+            print '==DataExchangeRequest err:=', str(e)
+            code = str(e)
+            code = code[0:2]
+            i8583 = ISOInterface(iso_8583=iso_8583)
+
+            return self.__pack_response_error_pack(i8583, code)
+
+    def __handle(self, iso_8583):
+        '''
+        数据交换报文请求处理接口
+        :param iso_8583:
+        :return: 返回一个响应的数据包
+        '''
+        i8583 = ISOInterface(iso_8583=iso_8583)
+        #1、 获取协议规则
+        protocol_id = i8583.get_protocol_id()
+        # print '====request 8583===='
+        # i8583.show()
+
+        #2、获取条件参数
+        #2.1、获取条件参数索引
+        pro = self.__get_protocol_object(protocol_id)
+        list_in_param_index = pro.get_bit_index_in_param()
+        #2.2、在8583对象中获取输入参数
+        list_in_param_value = []
+        for index in list_in_param_index:
+            v = i8583.get_index_value(index)
+            list_in_param_value.append(v)
+
+        #2.3、在8583对象中获取输出参数
+        list_out_param_index = pro.get_bit_index_out_param()
+        list_out_value = []  # 数据源接口返回的值
+        for i in range(0, len(list_out_param_index)):
+            v = i8583.get_index_value(list_out_param_index[i])
+            list_out_value.append(v)
+
+        #3、将条件内容传给数据源处理接口，并按照出参（查询参数）列表顺序返回一个list：['张三', '男']
+        data_src_in_index = pro.get_data_src_in_col_index()
+        data_src_out_index = pro.get_data_src_out_col_index()
+        data_src_type = pro.get_data_src_type()
+        data_src_name = pro.get_data_src_name()
+        operation = pro.get_operation()  # 操作类型
+
+        self.operation = operation
+        is_over = i8583.get_is_over_flag()#是否传入最后一条了，在增加操作
+
+        #3.1 调用数据源接口，获取数据，返回需要的数据，以及结果代码
+        if OPERATOR_TYPE_SEARCH == operation:# 查询操作要特殊处理下，返回True则表示为查询操作，需要调用get_query_page_data()接口
+            self.list_in_param_value = list_in_param_value
+            self.list_out_value = list_out_value
+            self.data_src_in_index = data_src_in_index
+            self.data_src_out_index = data_src_out_index
+            self.data_src_type = data_src_type
+            self.data_src_name = data_src_name
+            self.list_out_param_index = list_out_param_index
+            self.i8583 = i8583
+            return True
+        else:#非查询操作
+            list_out_value, code = self.i_data_src.get_data_src(operation, list_in_param_value, list_out_value,
+                                                                data_src_in_index, data_src_out_index, data_src_type,
+                                                                data_src_name, is_over)
+            code = code[0:2]
+            # 3.2、创建新的响应报文
+            return self.__pack_response_pack(i8583, list_out_param_index, list_out_value, code,True)
+
+    def is_query_operation(self):
+        '''
+         返回是否为查询操作
+        :return:
+        '''
+        return self.operation == OPERATOR_TYPE_SEARCH
+
+    def get_query_page_data(self):
+        '''
+        查询专用接口
+        返回list，ret。list是8583数据包列表；ret表示是否还有内容
+        :return:
+        '''
+        try:
+            list_list_out_value, code, ret = self.i_data_src.get_data_src(self.operation, self.list_in_param_value, self.list_out_value,
+                                                            self.data_src_in_index, self.data_src_out_index, self.data_src_type,
+                                                            self.data_src_name, True)
+        except Exception as e:
+            code = str(e)[0:2]
+
+        response_list = []
+        code = code[0:2]
+        if code != '00':
+            iso8583 = self.__pack_response_error_pack(self.i8583, code, True)
+            response_list.append(iso8583)
+            return response_list, True
+
+        len_list = len(list_list_out_value)
+        for i in range(0, len_list):
+            list_out_value = list_list_out_value[i]
+            if ret is True:
+                if i == len_list -1:
+                    iso8583 = self.__pack_response_pack(self.i8583, self.list_out_param_index, list_out_value, code,
+                                                        True)
+                else:
+                    iso8583 = self.__pack_response_pack(self.i8583, self.list_out_param_index, list_out_value, code, False)
+            else:
+                iso8583 = self.__pack_response_pack(self.i8583, self.list_out_param_index, list_out_value, code, False)
+            response_list.append(iso8583)
+
+        return response_list, ret
+
+    def __get_protocol_object(self, protocol_id):
+        '''
+        返回协议解析对象
+        :param protocol_id: 协议ID
+        :return:
+        '''
+        pro = ProtocoFactory()
+        pro.init(protocol_id)
+        return pro
+
+    def __pack_response_error_pack(self, i8583, code, bOver=True):
+        '''
+        重组返回报文
+        :param i8583: 8583逻辑接口对象
+        :param list_out_param_index: 输出内容序列
+        :param list_out_value: 输出内容
+        :return:
+        '''
+        i8583 = copy.deepcopy(i8583)  # 重新再拷贝一份
+        i8583.set_response_code(code)
+        i8583.set_is_over_flag(bOver)
+
+        return i8583.get_iso_8583()
+
+    def __pack_response_pack(self, i8583, list_out_param_index, list_out_value, code, bOver):
+        '''
+        重组返回报文
+        :param i8583: 8583逻辑接口对象
+        :param list_out_param_index: 输出内容序列
+        :param list_out_value: 输出内容
+        :return:
+        '''
+        i8583 = copy.deepcopy(i8583)  # 重新再拷贝一份
+        if len(list_out_value) != 0:
+            for i in range(0, len(list_out_param_index)):
+                index = list_out_param_index[i]
+                v = list_out_value[i]
+                i8583.set_index_value(index, v)
+
+        i8583.set_response_code(code)
+        i8583.set_is_over_flag(bOver)
+
+        # i8583.show()
+        return i8583.get_iso_8583()

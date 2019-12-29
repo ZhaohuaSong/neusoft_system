@@ -1,0 +1,396 @@
+{% load staticfiles i18n compress %}
+{% load permission_extras %}
+
+<div id="sidebar" class="sidebar                  responsive">
+    <script type="text/javascript">
+        try {
+            ace.settings.check('sidebar', 'fixed')
+        } catch (e) {
+        }
+    </script>
+
+
+    <!--菜单开始-->
+    <ul class="nav nav-list">
+    {% if user|has_permission:"/cabinetmgr/industrypark/list" %}
+            {% if 'industry' in request.path %}
+                <li class="active open">
+            {% elif 'permission' in request.path %}
+                <li class="active open">
+            {% else %}
+                <li class="">
+            {% endif %}
+        <a href="#" class="dropdown-toggle">
+            <i class="fa fa-university"></i>
+            <span class="menu-text">
+                广州IDC
+            </span>
+            <b class="menu-icon fa fa-caret-right"></b>
+        </a>
+        <b class="arrow"></b>
+        <ul class="submenu">
+            {% if 'host' in request.path %}
+                <li class="active">
+            {% else %}
+                <li class="">
+            {% endif %}
+            <a href="{% url 'cabinetmgr:industrypark.list' %}">
+                <i class="menu-icon fa fa-caret-right"></i>
+                园区管理
+            </a>
+
+            {% if 'host' in request.path %}
+                <li class="active">
+            {% else %}
+                <li class="">
+            {% endif %}
+            <a href="{% url 'cabinetmgr:industrybuilding.list' %}">
+                <i class="menu-icon fa fa-caret-right"></i>
+                机楼管理
+            </a>
+            {% if 'host' in request.path %}
+                <li class="active">
+            {% else %}
+                <li class="">
+            {% endif %}
+            <a href="{% url 'cabinetmgr:industryroom.add' %}">
+                <i class="menu-icon fa fa-caret-right"></i>
+                机房管理
+            </a>
+
+            <b class="arrow"></b>
+        </ul>
+        {% endif %}
+    {% for key, value in industry_park.items %}
+        {% if user|has_permission:"/zabbixmgr/mgr/" %}
+            {% if 'host' in request.path %}
+                <li class="active open">
+            {% elif 'permission' in request.path %}
+                <li class="active open">
+                    {% else %}
+                <li class="">
+            {% endif %}
+        <a href="#" class="dropdown-toggle">
+            <i class="fa fa-database"></i>
+            <span class="menu-text">
+                {{ value }}数据监控中心
+            </span>
+            <b class="menu-icon fa fa-caret-right"></b>
+        </a>
+        <b class="arrow"></b>
+        <ul class="submenu">
+            {% if 'zabbixmgr' in request.path %}
+                <li class="active">
+            {% else %}
+                <li class="">
+            {% endif %}
+{#            <a href="{% url 'zabbixmgr:host.list' %}">#}
+            <a href="/zabbixmgr/host/list/{{ key }}" >
+                <i class="menu-icon fa fa-caret-right"></i>
+                设备监控
+            </a>
+
+            <b class="arrow"></b>
+            </li>
+            {% if user|has_permission:"/zabbixmgr/networkinterfacegroup/list" %}
+                {% if 'user' in request.path %}
+                    <li class="active">
+                        {% else %}
+                    <li class="">
+                {% endif %}
+{#            <a href="{% url 'zabbixmgr:networkinterfacegroup.list' %}">#}
+            <a href="/zabbixmgr/networkinterfacegroup/list/{{ key }}" >
+                <i class="menu-icon fa fa-caret-right"></i>
+                分组管理
+            </a>
+            <b class="arrow"></b>
+            </li>
+            {% endif %}
+            {% if user|has_permission:"/zabbixmgr/networkinterface/list" %}
+                {% if 'user' in request.path %}
+                    <li class="active">
+                        {% else %}
+                    <li class="">
+                {% endif %}
+{#            <a href="{% url 'zabbixmgr:networkinterface.list' %}">#}
+            <a href="/zabbixmgr/networkinterface/list/{{ key }}" >
+                <i class="menu-icon fa fa-caret-right"></i>
+                网络端口管理
+            </a>
+            <b class="arrow"></b>
+            </li>
+            {% endif %}
+            {% if user|has_permission:"/zabbixmgr/interfacechartshow/list/0/0/" %}
+                {% if 'user' in request.path %}
+                    <li class="active">
+                        {% else %}
+                    <li class="">
+                {% endif %}
+{#            <a href="{% url 'zabbixmgr:interfacechartshow.list' %}">#}
+            <a href="/zabbixmgr/interfacechartshow/list/0/0/{{ key }}" >
+                <i class="menu-icon fa fa-caret-right"></i>
+                端口流量图表
+            </a>
+            <b class="arrow"></b>
+            </li>
+            {% endif %}
+            {% if user|has_permission:"/zabbixmgr/cpuchartshow/list" %}
+                {% if 'user' in request.path %}
+                    <li class="active">
+                        {% else %}
+                    <li class="">
+                {% endif %}
+{#            <a href="{% url 'zabbixmgr:cpuchartshow.list' %}">#}
+            <a href="/zabbixmgr/cpuchartshow/list/{{ key }}" >
+                <i class="menu-icon fa fa-caret-right"></i>
+                cpu负载图表
+            </a>
+            <b class="arrow"></b>
+            </li>
+            {% endif %}
+{#            {% if user|has_permission:"/zabbixmgr/clientinterfacemgr/list" %}#}
+{#                {% if 'user' in request.path %}#}
+{#                    <li class="active">#}
+{#                        {% else %}#}
+{#                    <li class="">#}
+{#                {% endif %}#}
+{#            <a href="{% url 'zabbixmgr:clientinterfacemgr.list' %}">#}
+{#                <i class="menu-icon fa fa-caret-right"></i>#}
+{#                客户管理#}
+{#            </a>#}
+{#            <b class="arrow"></b>#}
+{#            </li>#}
+{#            {% endif %}#}
+
+{#            {% if user|has_permission:"/zabbixmgr/clientgroupport/list" %}#}
+{#                {% if 'user' in request.path %}#}
+{#                    <li class="active">#}
+{#                        {% else %}#}
+{#                    <li class="">#}
+{#                {% endif %}#}
+{#            <a href="{% url 'zabbixmgr:clientgroupport.list' %}">#}
+{#                <i class="menu-icon fa fa-caret-right"></i>#}
+{#                客户端口管理#}
+{#            </a>#}
+{#            <b class="arrow"></b>#}
+{#            </li>#}
+{#            {% endif %}#}
+{#            {% if user|has_permission:"/zabbixmgr/sheetsmanager/list" %}#}
+{#                {% if 'user' in request.path %}#}
+{#                    <li class="active">#}
+{#                        {% else %}#}
+{#                    <li class="">#}
+{#                {% endif %}#}
+{#            <a href="{% url 'zabbixmgr:sheetsmanager.list' %}">#}
+{#                <i class="menu-icon fa fa-caret-right"></i>#}
+{#                网络端口流量日报#}
+{#            </a>#}
+{#            <b class="arrow"></b>#}
+{#            </li>#}
+{#            {% endif %}#}
+{#            {% if user|has_permission:"/zabbixmgr/sheetsactual/list" %}#}
+{#                {% if 'user' in request.path %}#}
+{#                    <li class="active">#}
+{#                        {% else %}#}
+{#                    <li class="">#}
+{#                {% endif %}#}
+{#            <a href="{% url 'zabbixmgr:sheetsactual.list' %}">#}
+{#                <i class="menu-icon fa fa-caret-right"></i>#}
+{#                网络端口实时流量#}
+{#            </a>#}
+{#            <b class="arrow"></b>#}
+{#            </li>#}
+{#            {% endif %}#}
+            {% if user|has_permission:"zabbixmgr/analysis/list" %}
+                {% if 'user' in request.path %}
+                    <li class="active">
+                        {% else %}
+                    <li class="">
+                {% endif %}
+{#            <a href="{% url 'zabbixmgr:analysis.list' %}">#}
+            <a href="/zabbixmgr/analysis/list/{{ key }}" >
+                <i class="menu-icon fa fa-caret-right"></i>
+                基础流量分析
+            </a>
+            <b class="arrow"></b>
+            </li>
+            {% endif %}
+            {% if user|has_permission:"zabbixmgr/nowdayanalysis/list" %}
+                {% if 'user' in request.path %}
+                    <li class="active">
+                        {% else %}
+                    <li class="">
+                {% endif %}
+{#            <a href="{% url 'zabbixmgr:nowdayanalysis.list' %}">#}
+            <a href="/zabbixmgr/nowdayanalysis/list/{{ key }}" >
+                <i class="menu-icon fa fa-caret-right"></i>
+                实时流量分析
+            </a>
+            <b class="arrow"></b>
+            </li>
+            {% endif %}
+            {% if user|has_permission:"zabbixmgr/networkcost/list" %}
+                {% if 'user' in request.path %}
+                    <li class="active">
+                        {% else %}
+                    <li class="">
+                {% endif %}
+{#            <a href="{% url 'zabbixmgr:networkcost.list' %}">#}
+            <a href="/zabbixmgr/networkcost/list/{{ key }}" >
+                <i class="menu-icon fa fa-caret-right"></i>
+                95流量计费(按客户）
+            </a>
+            <b class="arrow"></b>
+            </li>
+            {% endif %}
+            {% if user|has_permission:"zabbixmgr/devicedialing/list" %}
+                {% if 'user' in request.path %}
+                    <li class="active">
+                        {% else %}
+                    <li class="">
+                {% endif %}
+{#            <a href="{% url 'zabbixmgr:devicedialing.list' %}">#}
+            <a href="/zabbixmgr/devicedialing/list/{{ key }}" >
+                <i class="menu-icon fa fa-caret-right"></i>
+                常规ip拨测列表
+            </a>
+            <b class="arrow"></b>
+            </li>
+            {% endif %}
+            {% if user|has_permission:"zabbixmgr/autoping/list" %}
+                {% if 'user' in request.path %}
+                    <li class="active">
+                        {% else %}
+                    <li class="">
+                {% endif %}
+{#            <a href="{% url 'zabbixmgr:autoping.list' %}">#}
+            <a href="/dialing/autoping/list/{{ key }}" >
+                <i class="menu-icon fa fa-caret-right"></i>
+                自定义拨测ip
+            </a>
+            <b class="arrow"></b>
+            </li>
+            {% endif %}
+        </ul>
+        </li>
+        {% endif %}
+        <!--脚本管理菜单结束-->
+
+
+        <!--机房空间资源理开始-->
+        {% include "cabinetmgr/cabinetmgr_submenus.html" %}
+
+    <!--菜单结束-->
+    {% endfor %}
+        <!--个人中心菜单开始-->
+        {% if user|has_permission:"/sysadmin/mgr/" %}
+            {% if 'sysadmin' in request.path %}
+                <li class="active open">
+                    {% elif 'permission' in request.path %}
+                <li class="active open">
+                    {% else %}
+                <li class="">
+            {% endif %}
+        <a href="#" class="dropdown-toggle">
+            <i class="menu-icon fa fa-user"></i>
+            <span class="menu-text">
+                            系统管理
+                            </span>
+
+            <b class="menu-icon fa fa-caret-right"></b>
+        </a>
+
+        <b class="arrow"></b>
+        <ul class="submenu">
+            {% if user|has_permission:"/sysadmin/user/list" %}
+                {% if 'user' in request.path %}
+                    <li class="active">
+                        {% else %}
+                    <li class="">
+                {% endif %}
+            <a href="{% url 'sysadmin:user.list' %}">
+                <i class="menu-icon fa fa-caret-right"></i>
+                用户管理
+            </a>
+            <b class="arrow"></b>
+            </li>
+            {% endif %}
+            {% if user|has_permission:"/sysadmin/role/list" %}
+                {% if 'role' in request.path %}
+                    <li class="active">
+                        {% else %}
+                    <li class="">
+                {% endif %}
+            <a href="{% url 'sysadmin:role.list' %}">
+                <i class="menu-icon fa fa-caret-right"></i>
+                角色管理
+            </a>
+            <b class="arrow"></b>
+            </li>
+            {% endif %}
+            {% if user|has_permission:"/sysadmin/permission/list" %}
+                {% if 'permission' in request.path %}
+                    <li class="active">
+                        {% else %}
+                    <li class="">
+                {% endif %}
+            <a href="{% url 'sysadmin:permission.list' %}">
+
+                <i class="menu-icon fa fa-caret-right"></i>
+                权限管理
+            </a>
+            <b class="arrow"></b>
+            </li>
+            {% endif %}
+
+            {% if user|has_permission:"/sysadmin/syslog/list/" %}
+                {% if '/sysadmin/syslog/list/' in request.path %}
+                    <li class="active">
+                {% else %}
+                    <li class="">
+                {% endif %}
+                <a href="{% url 'sysadmin:syslog_list' %}">
+
+                    <i class="menu-icon fa fa-caret-right"></i>
+                    操作记录
+                </a>
+            {% endif %}
+            <b class="arrow"></b>
+            </li>
+        </ul>
+        </li>
+        {% endif %}
+        <!--个人中心菜单结束-->
+
+    </ul>
+
+
+    <!--菜单结束-->
+
+    <!--菜单收缩开始-->
+    <div class="sidebar-toggle sidebar-collapse" id="sidebar-collapse">
+        <i class="ace-icon fa fa-angle-double-left" data-icon1="ace-icon fa fa-angle-double-left"
+           data-icon2="ace-icon fa fa-angle-double-right"></i>
+    </div>
+
+    <script type="text/javascript">
+        try {
+            ace.settings.check('sidebar', 'collapsed')
+        } catch (e) {
+        }
+    </script>
+    <script>
+        //获取当前的页面路径
+        var pathname = window.location.pathname;
+        //获取标签中的路径
+        $("li a").each(function () {
+            var href = $(this).attr("href");
+            //如果相等就激活 ,否则就移除
+            if (pathname == href) {
+                $(this).parents("ul").parent("li").addClass("active");
+                $(this).parent("li").addClass("active");
+            }
+        });
+    </script>
+    <!--菜单收缩结束-->
+</div>

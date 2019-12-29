@@ -1,0 +1,133 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2016/12/27 上午10:03
+# @Author  : qiujunli
+# @Site    :
+# @File    : views_protocol.py
+# @Software: PyCharm
+# @Function: 报文协议视图模型
+
+from django.shortcuts import render
+from django.http import HttpResponseRedirect
+from django.core.urlresolvers import reverse
+from ..common.datatables.views import BaseDatatableView
+from django.views.generic import TemplateView
+from ..vanilla import CreateView, QUpdateView
+from django.http import JsonResponse
+from django.db.models import Q
+import datetime
+import json
+import logging
+_logger = logging.getLogger('loggers')
+
+from models import ProtocolType
+from forms import FormPortocolType
+# Create your views here.
+
+class ListProtocolTypeView(TemplateView):
+    template_name = 'packmanage/packmanage.protocoltype.list.html'
+
+class JsonProtocolTypeView(BaseDatatableView):
+    model = ProtocolType
+    columns = ['id', 'id', 'protocol_name', 'protocol_id', 'protocol_srctype', 'protocol_state', 'create_by', 'id', 'id', ]
+    order_columns = ['id', 'id', 'protocol_name', 'protocol_id', 'protocol_srctype', 'protocol_state', 'create_by', 'id', 'id', ]
+
+    # 基类的基础查询条件
+    def format_base_search_Q(self, search):
+        q = Q()
+        if search == u'正常使用':
+            q |= Q(protocol_state=1)
+        elif search == u'已停用':
+            q |= Q(protocol_state=0)
+        elif search == u'CSV文件':
+            q |= Q(protocol_srctype=1)
+        elif search == u'数据库表':
+            q |= Q(protocol_srctype=0)
+        return q
+
+class CreateProtocoltypeView(CreateView):
+    '''
+    创建视图
+    '''
+    form_class = FormPortocolType
+    template_name = 'packmanage/packmanage.protocoltype.form.html'
+
+    def post(self, request, *args, **kwargs):
+        self.user = request.user
+        return super(CreateProtocoltypeView, self).post(request, *args, **kwargs)
+
+    #成功后跳转
+    def form_valid(self, form):
+        self.save(form)
+        return HttpResponseRedirect(reverse('packmanage:protocoltype.list'))
+
+    #保存
+    def save(self, form):
+        protocol_name  = form.cleaned_data['protocol_name']
+        protocol_note    = form.cleaned_data['remarks']
+        protocol_id  = form.cleaned_data['protocol_id']
+        protocol_state  = form.cleaned_data['protocol_state']
+        protocol_srctype = form.cleaned_data['protocol_srctype']
+
+        protocol = ProtocolType()
+        protocol.protocol_name = protocol_name
+
+        protocol.protocol_id = protocol_id
+        protocol.protocol_state = protocol_state
+        protocol.protocol_srctype = protocol_srctype
+
+        protocol.create_by = self.user.username
+        protocol.create_date = datetime.datetime.now()
+        protocol.update_date = protocol.create_date
+        protocol.remarks = protocol_note
+        protocol.save()
+
+class EditProtocoltypeView(QUpdateView):
+    '''
+    编辑视图
+    '''
+    model = ProtocolType
+    form_class = FormPortocolType
+    template_name = 'packmanage/packmanage.protocoltype.form.html'
+
+    def get_success_url(self):
+        return reverse('packmanage:protocoltype.list')
+
+    def save(self, form):
+        protocol_name = form.cleaned_data['protocol_name']
+        protocol_id = form.cleaned_data['protocol_id']
+        protocol_state = form.cleaned_data['protocol_state']
+        protocol_srctype = form.cleaned_data['protocol_srctype']
+        protocol_note = form.cleaned_data['remarks']
+
+        protocol = self.object
+        protocol.protocol_name = protocol_name
+        protocol.protocol_id = protocol_id
+        protocol.protocol_state = protocol_state
+        protocol.protocol_srctype = protocol_srctype
+        protocol.update_date = datetime.datetime.now()
+        protocol.remarks = protocol_note
+        protocol.save()
+
+from Protocol import *
+def protocoltype_delete(request):
+    '''
+    批量删除
+    :param request:
+    :return:
+    '''
+    # json_data = json.loads(request.GET.get('ids'))
+    # list_id_del = json_data['ids']
+    #
+    # sql = Q()
+    # for id in list_id_del:
+    #     sql = sql | Q(id=id)
+    #
+    # qs = ProtocolType.objects.filter(sql)
+    # if 0 != len(qs):
+    #     qs.delete()
+
+    a, b = ProtocoFactory().init()
+    print a,b
+    name_dict = {'code': '00', 'desc': '删除成功!'}
+    return JsonResponse(name_dict)

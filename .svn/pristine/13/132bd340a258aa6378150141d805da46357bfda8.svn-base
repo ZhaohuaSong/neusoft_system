@@ -1,0 +1,39 @@
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : posp
+Source Server Version : 50628
+Source Host           : localhost:3306
+Source Database       : richdatax
+
+Target Server Type    : MYSQL
+Target Server Version : 50628
+File Encoding         : 65001
+
+Date: 2017-01-04 11:50:14
+*/
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for packmanage_protocoltype
+-- ----------------------------
+DROP TABLE IF EXISTS `packmanage_protocoltype`;
+CREATE TABLE `packmanage_protocoltype` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `protocol_id` varchar(255) DEFAULT NULL COMMENT 'TPDU，来区分定义协议类型 6位数',
+  `protocol_name` varchar(255) DEFAULT NULL,
+  `protocol_state` int(11) DEFAULT NULL,
+  `protocol_srctype` int(11) DEFAULT NULL COMMENT '协议来源：数据库或者csv文件',
+  `protocol_content` text COMMENT '报文协议内容 json数据',
+  `create_date` datetime DEFAULT NULL COMMENT '创建日期',
+  `update_date` datetime DEFAULT NULL COMMENT '修改日期',
+  `create_by` varchar(255) DEFAULT NULL COMMENT '协议创建者',
+  `remarks` varchar(255) DEFAULT NULL COMMENT '协议注释',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of packmanage_protocoltype
+-- ----------------------------
+INSERT INTO `packmanage_protocoltype` VALUES ('1', '6000010000', 'CSV v0.1', '1', '1', '{\"0\": {\"bit_index\": \"65\", \"field_name\": \"\\u59d3\\u540d\", \"field_index\": \"1\"}, \"00\": {\"bit_index\": \"66\", \"field_name\": \"\\u6027\\u522b\", \"field_index\": \"2\"}, \"000\": {\"bit_index\": \"67\", \"field_name\": \"\\u8eab\\u4efd\\u8bc1\", \"field_index\": \"3\"}}', '2016-12-29 10:41:12', '2017-01-04 11:49:49', 'admin', '无');

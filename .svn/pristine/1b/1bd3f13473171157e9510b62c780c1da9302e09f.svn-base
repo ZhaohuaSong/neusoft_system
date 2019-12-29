@@ -1,0 +1,266 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+from django.http import HttpResponseRedirect, HttpResponse
+from ..common.datatables.views import BaseDatatableView
+from django.template.response import TemplateResponse
+from models_resource_catalog import OrgInfo, CentralNodeIPPort
+import urllib2
+import urllib
+from forms import EditOrgForm, CreateOrgForm
+from django.core.urlresolvers import reverse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.generic import TemplateView
+from django.db.models import Q
+import json
+from django.shortcuts import render_to_response
+
+
+# Create your views here.
+class OrgBaList(TemplateView):
+    template_name = 'source_catalog/orgbase.list.html'
+
+
+class OrgBaJson(BaseDatatableView):
+    '''
+    Json 数据格式(表信息显示)
+    '''
+    model = OrgInfo
+    columns = ['id', 'id', 'app_name', 'app_id', 'local_ip', 'local_port', 'org_name', 'org_address',
+               'org_phone', 'org_content', 'audit_status']
+    order_columns = ['id', 'id', 'app_name', 'app_id', 'local_ip', 'local_port', 'org_name', 'org_address',
+                     'org_phone', 'org_content', 'audit_status']
+
+    def get_initial_queryset(self):
+        # 如果数据有错误，则过滤数据
+        try:
+            save_son_data()
+        except:
+            pass
+        data = self.model.objects.all()
+        return data
+
+    def filter_queryset(self, qs):
+        # 部分条目查询
+        if not self.pre_camel_case_notation:
+            search = self._querydict.get('search[value]', None)
+            q = Q()
+            if 0 != len(search):
+                q = q | Q(app_name__contains=search)
+                q = q | Q(app_id__contains=search)
+                q = q | Q(local_ip__contains=search)
+                q = q | Q(local_port__contains=search)
+                q = q | Q(org_name__contains=search)
+                q = q | Q(org_address__contains=search)
+                q = q | Q(org_phone__contains=search)
+                q = q | Q(org_content__contains=search)
+            qs = qs.filter(q)
+        return qs
+
+    def prepare_results(self, qs):
+        json_data = []
+        for item in qs:
+            audit_status = ''
+            if item.audit_status == '0':
+                audit_status = '待审核'
+            elif item.audit_status == '1':
+                audit_status = '审核中'
+            elif item.audit_status == '2':
+                audit_status = '已审核'
+
+            json_data.append([
+                item.id,
+                item.id,
+                item.app_name,
+                item.app_id,
+                item.local_ip,
+                item.local_port,
+                item.org_name,
+                item.org_address,
+                item.org_phone,
+                item.org_content,
+                audit_status,
+            ])
+        return json_data
+
+
+@csrf_exempt
+def org_add_update(request):
+    """添加或编辑资源目录基本信息"""
+    orginfo = OrgInfo.objects.first()
+
+    if request.method == "POST":
+        app_name = request.POST.get('app_name', '')
+        app_id = request.POST.get('app_id', '')
+        local_ip = request.POST.get('local_ip', '')
+        local_port = request.POST.get('local_port', '')
+        org_name = request.POST.get('org_name', '')
+        org_address = request.POST.get('org_address', '')
+        org_phone = request.POST.get('org_phone', '')
+        org_content = request.POST.get('org_content', '')
+        if orginfo:
+            form = CreateOrgForm(request.POST)
+            if form.is_valid():
+                orginfo.app_name = app_name
+                orginfo.app_id = app_id
+                orginfo.local_ip = local_ip
+                orginfo.local_port = local_port
+                orginfo.org_name = org_name
+                orginfo.org_address = org_address
+                orginfo.org_phone = org_phone
+                orginfo.org_content = org_content
+                org_dict = urllib.urlencode({'app_name': app_name, 'app_id': app_id, 'local_ip': local_ip,
+                                             'local_port': local_port,
+                                             'org_name': org_name, 'org_address': org_address, 'org_phone': org_phone,
+                                             'org_content': org_content,
+                                             'audit_status': orginfo.audit_status})
+                try:
+                    save_central_data(org_dict)
+                    orginfo.save()
+                except:
+                    orginfo.save()
+            else:
+                form = EditOrgForm(orginfo, None)
+                return form
+        else:
+            form = CreateOrgForm(request.POST)
+            if form.is_valid():
+                orginfo = OrgInfo.objects.create(
+                    app_name=app_name, app_id=app_id,
+                    local_ip=local_ip, local_port=local_port,
+                    org_name=org_name, org_address=org_address, org_phone=org_phone, org_content=org_content,
+                    audit_status='0', resource_id=app_id)
+
+                org_dict = urllib.urlencode({'app_name': app_name, 'app_id': app_id, 'local_ip': local_ip,
+                                             'local_port': local_port,
+                                             'org_name': org_name, 'org_address': org_address, 'org_phone': org_phone,
+                                             'org_content': org_content,
+                                             'audit_status': '0'})
+                try:
+                    save_central_data(org_dict)
+                    orginfo.save()
+                except:
+                    orginfo.save()
+
+        return HttpResponseRedirect(reverse('source_catalog:org.manage.list'))
+    else:
+        if orginfo:
+            form = EditOrgForm(orginfo, None)
+        else:
+            form = CreateOrgForm()
+
+        kwvars = {
+            'form': form,
+            'request': request,
+        }
+    return TemplateResponse(request=request, template='source_catalog/org.manage.html', context=kwvars)
+
+
+def save_central_data(dict):
+    '''
+    ============================================================================
+    developer:  wangyingqi
+    add-time:   2017.4.11
+    note:       链接中心节点的接口
+    ============================================================================
+    '''
+    print '-------子节点保存到中心节点数据-------'.decode('utf-8')
+    ip = CentralNodeIPPort.objects.all()
+    ip_port = ''
+    for c in ip:
+        central_node_ip = c.central_node_ip
+        central_node_port = c.central_node_port
+        ip_port = 'http://' + central_node_ip + ':' + central_node_port
+    urllib2.urlopen(ip_port + '/catalog/basicinfo/central_data', dict)
+
+
+@csrf_exempt
+def central_org_data(request):
+    '''
+    ============================================================================
+    developer:  wangyingqi
+    add-time:   2017.4.11
+    note:       存入中心节点数据
+    ============================================================================
+    '''
+    data = []
+    app_name = request.POST.get('app_name', '')
+    app_id = request.POST.get('app_id', '')
+    local_ip = request.POST.get('local_ip', '')
+    local_port = request.POST.get('local_port', '')
+    org_name = request.POST.get('org_name', '')
+    org_address = request.POST.get('org_address', '')
+    org_phone = request.POST.get('org_phone', '')
+    org_content = request.POST.get('org_content', '')
+    audit_status = request.POST.get('audit_status', '')
+    try:
+        orginfo = OrgInfo.objects.get(app_id=app_id)
+        orginfo.app_name = app_name
+        orginfo.app_id = app_id
+        orginfo.local_ip = local_ip
+        orginfo.local_port = local_port
+        orginfo.org_name = org_name
+        orginfo.org_address = org_address
+        orginfo.org_phone = org_phone
+        orginfo.org_content = org_content
+        orginfo.save()
+    except:
+        orginfo = OrgInfo.objects.create(
+            app_name=app_name, app_id=app_id,
+            local_ip=local_ip, local_port=local_port,
+            org_name=org_name, org_address=org_address, org_phone=org_phone, org_content=org_content,
+            audit_status=audit_status, resource_id=app_id)
+        orginfo.save()
+    return HttpResponse(data)
+
+
+@csrf_exempt
+def get_central_org_data(request):
+    '''
+    ============================================================================
+    developer:  wangyingqi
+    add-time:   2017.4.14
+    note:       从中心节点获取审核状态
+    ============================================================================
+    '''
+    list = []
+    data = []
+    org_info = OrgInfo.objects.all()
+    for info in org_info:
+        dict = {}
+        dict['resource_id'] = info.resource_id
+        dict['audit_status'] = info.audit_status
+        list.append(dict)
+    data.append(list)
+    data = json.dumps(data)
+    print '-------中心节点返回终端注册数据-------'.decode('utf-8')
+    return HttpResponse(data)
+
+
+@csrf_exempt
+def save_son_data():
+    '''
+    ============================================================================
+    developer:  wangyingqi
+    add-time:   2017.4.14
+    note:       请求中心节点数据并返回
+    ============================================================================
+    '''
+    print '-------子节点请求中心节点数据-------'.decode('utf-8')
+    ip = CentralNodeIPPort.objects.all()
+    ip_port = ''
+    for c in ip:
+        central_node_ip = c.central_node_ip
+        central_node_port = c.central_node_port
+        ip_port = 'http://' + central_node_ip + ':' + central_node_port
+    response = urllib2.urlopen(ip_port + '/catalog/basicinfo/get_central_data')
+    central_data = response.read()
+    central_data = json.loads(central_data)
+    for i in range(len(central_data[0])):
+        cen = central_data[0][i]
+        app_id = cen['resource_id']
+        try:
+            org_info = OrgInfo.objects.get(app_id=app_id)
+            org_info.audit_status = cen['audit_status']
+            org_info.save()
+        except:
+            continue

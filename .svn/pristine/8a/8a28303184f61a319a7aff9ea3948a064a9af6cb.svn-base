@@ -1,0 +1,12 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
+from user_info import *
+class InstanceFactory:
+    def __init__(self):
+        self.instance['6000010000'] = UserInfo()
+    def get_instance(self, protocol_id):
+        try:
+            ins = self.instance[protocol_id]
+        except Exception as e:
+            raise Exception("不支持该类型协议" + protocol_id)

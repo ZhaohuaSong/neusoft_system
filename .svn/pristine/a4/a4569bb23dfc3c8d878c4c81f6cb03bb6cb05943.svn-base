@@ -1,0 +1,183 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
+
+from django.http import HttpResponse
+from ..common.datatables.views import BaseDatatableView
+from django.db.models import Q
+import json
+import datetime
+
+from django.views.generic import TemplateView
+from ws4redis.redis_store import RedisMessage
+from ws4redis.publisher import RedisPublisher
+
+from models import Message
+from django.http import JsonResponse
+
+from ..sysadmin.models import SysUser
+from django.views.decorators.csrf import csrf_exempt
+from response import get_n_msg, get_y_msg
+
+
+class MessageList(TemplateView):
+    '''
+    消息列表
+    '''
+    template_name = 'message/message.list.html'
+
+
+class MessageDetail(TemplateView):
+    '''
+    消息详细信息
+    '''
+    template_name = 'message/message.detail.html'
+
+    def get(self, request, *args, **kwargs):
+        pk = kwargs.get("pk")
+        message = Message.objects.get(id=pk)
+        message.type = 1
+        message.save()
+        context = self.get_context_data(**kwargs)
+        context["message"] = message
+        return self.render_to_response(context)
+
+
+# def test(request):
+#     '''
+#     根据email发送
+#     Args:
+#         request:
+#
+#     Returns:
+#
+#     '''
+#     toUsers = []
+#     toUsers.append('admin@admin.com')
+#     send('<tr><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td><td>9</td><td>10</td><td>11</td><td>12</td></tr>', toUsers)
+#     return HttpResponse("success");
+#
+
+class PackageMessageJson(BaseDatatableView):
+    # TODO Qiailin
+    '''
+    Json 数据格式
+    1、关联关系数据绑定
+    如果 models 里面有外键表的属性
+    eg: user = models.ForeignKey(User)
+    外键数据绑定示例
+    columns = ['id', 'id', 'txn_id', 'txn_name', 'user.username']
+
+    2、如果需要业务扩展 请继承 BaseDatatableView 重写 DatatableMixin
+
+    '''
+    model = Message
+    columns = ['id', 'id', 'sender', 'sub', 'time', 'type', 'id']
+    order_columns = ['id', 'id', 'sender', 'sub', 'time', 'type', 'id']
+
+    def filter_queryset(self, qs):
+        # Qiailin
+        return super(PackageMessageJson, self).filter_queryset(qs).filter(Q(recipients__contains=self.request.user.email))
+
+
+from django.utils.timezone import utc
+
+
+class MessageCreateView(TemplateView):
+    template_name = 'message/message.create.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(MessageCreateView, self).get_context_data(**kwargs)
+        context.update(users=SysUser.objects.all())
+        return context
+
+    @csrf_exempt
+    def dispatch(self, *args, **kwargs):
+        return super(MessageCreateView, self).dispatch(*args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            context = request.POST.get('message')
+            sub = request.POST.get('sub')
+            users = request.POST.getlist('users[]')
+
+            if (len(users) == 0):
+                return HttpResponse(get_n_msg('发送失败,收件人不能为空!'))
+
+            if (sub == ''):
+                return HttpResponse(get_n_msg('发送失败,发送主题不能为空!'))
+
+            if (context == ''):
+                return HttpResponse(get_n_msg('发送失败,发送消息不能为空!'))
+
+            redis_publisher = RedisPublisher(facility='foobar', users=users)
+            data = self.populdate_data(context, request, sub, users)
+            message = RedisMessage(data)
+            redis_publisher.publish_message(message)
+            return HttpResponse(get_y_msg('发送成功!'))
+        except:
+            return HttpResponse(get_n_msg('系统异常！'))
+
+    def populdate_data(self, context, request, sub, users):
+        me = Message()
+        me.sub = sub
+        me.sender = request.user.email
+        me.data = context
+        me.type = 0
+        me.recipients = users
+        me.time = datetime.datetime.now().strftime("%Y-%m-%d %H:%I:%S");
+        me.save()
+        message_dict = {"id": me.id, "username": request.user.email, "sub": sub, "type": 0, "data": context, "time": me.time}
+        data = json.dumps(message_dict)
+        return data
+
+
+def batches_delete(request):
+    '''
+    批量删除
+    :param request:
+    :return:
+    '''
+    json_data = json.loads(request.GET.get('ids'))
+    # print json_data
+    list_id_del = json_data['ids']
+    # print list_id_del
+    sql = Q()
+    for id in list_id_del:
+        sql = sql | Q(id=id)
+    Message.objects.filter(sql).delete()
+    name_dict = {'code': '00', 'desc': '删除成功!'}
+    return JsonResponse(name_dict)
+
+
+def send(msg, toUsers):
+    """发送消息"""
+    print msg
+    response_data = {}
+    redis_publisher = RedisPublisher(facility='foobar', users=toUsers)
+    message = RedisMessage(msg)
+    redis_publisher.publish_message(message)
+    return response_data
+
+    # if __name__ == '__main__':
+    #     send('<tr><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td><td>9</td><td>10</td><td>11</td><td>12</td></tr>','admin')
+
+
+class MessageAsyncView(TemplateView):
+    @csrf_exempt
+    def dispatch(self, *args, **kwargs):
+        return super(MessageAsyncView, self).dispatch(*args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            id = request.POST.get('id')
+            print id
+            if id is not None:
+                me = Message.objects.get(id=id)
+                message_dict = {"id": me.id, "username": request.user.email, "sub": me.sub, "type": me.type}
+                data = json.dumps(message_dict)
+                return HttpResponse(data)
+            else:
+                return HttpResponse(get_n_msg('系统异常！'))
+        except:
+            return HttpResponse(get_n_msg('系统异常！'))

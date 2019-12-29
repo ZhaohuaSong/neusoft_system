@@ -1,0 +1,55 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2017/3/2 13:39
+# @Author  : qiujunli
+# @Site    :
+# @File    : data_interface.py
+# @Software: PyCharm
+# @Function: 报文通用接口
+
+from pack.data_src_config import DataSrcConfig
+from data_src.data_src_interface import IDataSrc
+from pack.pack_ctrl import PackCtrl
+class IDataRequest:
+    '''
+    触发器请求数据源处理接口
+    '''
+    def __init__(self, trigger_id):
+        '''
+        初始化，解析触发器绑定的数据源参数
+        :param trigger_id: 触发器ID
+        '''
+        dsc = DataSrcConfig()
+        dsc.init(trigger_id, True)
+        self.src_name = dsc.get_src_name()  # 数据源名称或者ID
+        self.src_type = dsc.get_src_type()  # 数据源类型
+        self.in_cols = dsc.get_data_src_in_col_index()  # 入参做出参在此处查询
+        self.out_cols = dsc.get_data_src_out_index()  # 出参不做处理
+        self.trigger_id = trigger_id
+
+    def add_request(self):
+        '''
+        添加请求，将本地数据源内容添加到远程去
+        :return:
+        '''
+        # 1.在数据源中查询出来数据集
+        ids = IDataSrc(self.src_type)
+        v_list = ids.query(self.src_name, {}, self.in_cols)
+
+    def query_request(self):
+        '''
+        查询,查询条件来自本地数据源
+        :return:
+        '''
+
+        ids = IDataSrc(self.src_type)
+        # 查询条件来自本地数据源，即放在in_cols里边
+        v_list = ids.query(self.src_name, {}, self.in_cols)
+        print '==========================='
+        print v_list
+        print '==========================='
+        #iso_net = PackCtrl().create_pack(self.trigger_id, v_list)  # 网络传输报文
+        # iso_recv = Client(app.app_ip, app.app_port).send_and_recv(iso_net)  # 收到的报文信息
+        # list_out = PackCtrl().get_pack_out_param_list(protocol.protocol_id, iso_recv)
+        # code = ISOInterface(iso_net=iso_recv).get_response_code()
+        # desc = ECode().get_desc(code)

@@ -1,0 +1,74 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+# @Time    : 2017/3/23
+# @Author  : wangyingqi
+# @Site    : 资源目录url
+# @File    : urls.py
+# @Software: PyCharm
+# @Function:
+
+from django.conf.urls import url
+from views_resource_catalog import ResourceCatalogList, ResourceCatalogJson, ResourceCatalogTreeview, \
+    ResourceCatalogTreeview2, central_data, resource_delete
+from views_resource_details import ResourceCatalogListconfig, ResourceCatalogListconfigjson
+from souregister_views import OrgList, OrgJson, org_add, org_edit, org_delete, OrgDetailJson, org_details_add, DOrgList, \
+    org_details_edit, org_detail_delete, edit_org_details_add, edit_org_details_edit, edit_org_details_delete, \
+    central_re_data, save_central_org_detail_data, get_central_re_data
+from views_central_ip_port import CentralList, EditCentralList
+from soucheck_views import OrgCheck, OrgCheckJson, CheckOrgCheckManage, OrgAuditHistory, OrgBaseCheckJson, \
+    CheckOrgBaseManage
+from orgnization_view import org_add_update, OrgBaList, OrgBaJson, central_org_data, get_central_org_data
+
+urlpatterns = [
+
+    # 资源目录基础信息申请、编辑
+    url(r'^catalog/basicinfo/list$', OrgBaList.as_view(), name='org.manage.list'),  # 显示资源目录基础信息列表
+    url(r'^catalog/basicinfo/data', OrgBaJson.as_view(), name='org.manage.data'),  # 获取数据
+    url(r'^catalog/basicinfo/org_add_update$', org_add_update, name='org.manage'),  # 注册资源目录基础信息
+    url(r'^catalog/basicinfo/central_data$', central_org_data, name='org.manage.central_data'),  # 存入中心节点json数据
+    url(r'^catalog/basicinfo/get_central_data', get_central_org_data, name='org.manage.get_central_data'),  # 向中心节点读取json数据
+
+    # 资源目录申请
+    url(r'^catalog/org/list$', OrgList.as_view(), name='org.list'),  # 显示资源目录注册列表
+    url(r'^catalog/org/data$', OrgJson.as_view(), name='org.data'),  # 获取数据
+    url(r'^catalog/org/add$', org_add, name='org.add'),  # 注册资源目录(表信息)
+    url(r'^catalog/org/edit/(\d+)/$', org_edit, name='org.edit'),  # 编辑资源目录
+    url(r'^catalog/org/delete$', org_delete, name='org.delete'),  # 删除资源目录注册
+    url(r'^catalog/org/central_data$', central_re_data, name='org.central_data'),  # 存入中心节点json数据
+    url(r'^catalog/org/get_central_data', get_central_re_data, name='org.manage.get_central_data'),  # 向中心节点读取json数据
+    url(r'^catalog/org/field/list', DOrgList.as_view(), name='org.field.list'),  # 显示资源目录(字段信息)注册列表
+    url(r'^catalog/org/field/data$', OrgDetailJson.as_view(), name='org.field.data'),  # 获取数据(字段信息)
+    url(r'^catalog/org/field/add$', org_details_add, name='org.field.add'),  # 注册资源目录(字段信息)
+    url(r'^catalog/org/field/edit$', org_details_edit, name='org.field.edit'),  # 修改资源目录(字段信息)
+    url(r'^catalog/org/field/delete$', org_detail_delete, name='org.field.delete'),  # 删除资源目录(字段信息)
+    url(r'^catalog/org/field/central_data$', save_central_org_detail_data, name='org.field.central_data'),  # 存入中心节点json数据
+    url(r'^catalog/org/edit/(\d+)/field/add$', edit_org_details_add, name='org.field.add1'),  # 注册资源目录(字段信息)
+    url(r'^catalog/org/edit/(\d+)/field/edit$', edit_org_details_edit, name='org.field.edit1'),  # 修改资源目录(字段信息)
+    url(r'^catalog/org/edit/(\d+)/field/delete$', edit_org_details_delete, name='org.field.edit1'),  # 修改资源目录(字段信息)
+
+    # 资源目录审核
+    url(r'^catalog/orgcheck/list$', OrgCheck.as_view(), name='org.check.list'),  # 显示资源目录注册列表
+    url(r'^catalog/orgcheck/data$', OrgCheckJson.as_view(), name='orgcheck.data'),  # 获取数据
+    url(r'^catalog/orgbasecheck/data$', OrgBaseCheckJson.as_view(), name='orgbase.check.data'),  # 获取数据(基础信息)
+    url(r'^catalog/orgcheck/basecheck/(?P<pk>\d+)/$', CheckOrgBaseManage.as_view(), name='org.check'),  # 审核基础信息
+    url(r'^catalog/orgcheck/check/(?P<pk>\d+)/$', CheckOrgCheckManage.as_view(), name='org.check'),  # 审核资源目录
+    url(r'^catalog/orgcheck/history/(?P<pk>\d+)/$', OrgAuditHistory.as_view(), name='org.history'),  # 资源目录审核记录
+
+    # 资源目录
+    url(r'^catalog/resourcecatalog/list$', ResourceCatalogList.as_view(), name='resourcecatalog.list'),  # 资源目录列表
+    url(r'^catalog/resourcecatalog/data$', ResourceCatalogJson.as_view(), name='resourcecatalog.data'),  # 资源目录数据
+    url(r'^catalog/resourcecatalog/treeview$', ResourceCatalogTreeview, name="resourcecatalog.treeview"),  # 资源目录（按部门）
+    url(r'^catalog/resourcecatalog/treeview2$', ResourceCatalogTreeview2, name="resourcecatalog.treeview2"),
+    # 资源目录（安领域）
+    url(r'^catalog/resourcecatalog/central_data', central_data, name='resourcecatalog.central_data'),  # 中心节点返回json数据
+    url(r'^catalog/resourcecatalog/delete', resource_delete, name='resourcecatalog.delete'),  # 删除
+
+    # 资源详细信息
+    url(r'^catalog/config/list', ResourceCatalogListconfig.as_view(), name='resourcecatalog.config'),  # 资源详细信息列表
+    url(r'^catalog/config/data', ResourceCatalogListconfigjson.as_view(), name='resourcecatalog.config.data'),  # 资源信息数据
+
+    # 中心节点ip端口
+    url(r'^catalog/central/$', CentralList.as_view(), name='central.list'),  # ip端口列表
+    url(r'^catalog/central/edit$', EditCentralList.as_view(), name='central.list.edit'),  # 编辑ip端口
+
+]

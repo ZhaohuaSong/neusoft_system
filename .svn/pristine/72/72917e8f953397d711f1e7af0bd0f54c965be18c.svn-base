@@ -1,0 +1,90 @@
+jQuery(function ($) {
+
+    $.each(column_array_list, function (i) {
+        var $html = "<option value=\"" + column_array_list[i][0] + "\">" + column_array_list[i][1] + "</option>"
+        $('#id_category_name').append($html)
+    })
+    $("#id_category_name").val(select_column_id)
+    var select_val = $("#id_category_name").val()
+    $("#category_name").val(select_val)
+    $("#id_category_name").change(function () {
+        ktn = $(this).val()
+        $("#category_name").val(ktn)
+    });
+
+    $.each(power_list, function (i) {
+        var $html = "<option value=\"" + power_list[i][0] + "\">" + power_list[i][1] + "</option>"
+        $('#id_power').append($html)
+    })
+    $("#id_power").val(select_power_id)
+    var select_val6 = $("#id_power").val()
+    $("#power").val(select_val6)
+    $("#id_power").change(function () {
+        ktn = $(this).val()
+        $("#power").val(ktn)
+    });
+
+
+    $.each(update_list, function (i) {
+        var $html = "<option value=\"" + update_list[i][0] + "\">" + update_list[i][1] + "</option>"
+        $('#id_update').append($html)
+    })
+    $("#id_update").val(select_update_id)
+    var select_val7 = $("#id_update").val()
+    $("#update").val(select_val7)
+    $("#id_update").change(function () {
+        ktn = $(this).val()
+        $("#update").val(ktn)
+    });
+
+    $.each(search_list, function (i) {
+        var $html = "<option value=\"" + search_list[i][0] + "\">" + search_list[i][1] + "</option>"
+        $('#id_search').append($html)
+    })
+    $("#id_search").change(function () {
+        ktn = $(this).val()
+        $("#search").val(ktn)
+    });
+
+
+    $.each(result_list, function (i) {
+        var $html = "<option value=\"" + result_list[i][0] + "\">" + result_list[i][1] + "</option>"
+        $('#id_result').append($html)
+    })
+    $("#id_result").change(function () {
+        ktn = $(this).val()
+        $("#result").val(ktn)
+    });
+
+
+    $.each(modify_list, function (i) {
+        var $html = "<option value=\"" + modify_list[i][0] + "\">" + modify_list[i][1] + "</option>"
+        $('#id_modify').append($html)
+    })
+    $("#id_modify").change(function () {
+        ktn = $(this).val()
+        $("#modify").val(ktn)
+    });
+
+
+    $.each(add_list, function (i) {
+        var $html = "<option value=\"" + add_list[i][0] + "\">" + add_list[i][1] + "</option>"
+        $('#id_add').append($html)
+    })
+    $("#id_add").change(function () {
+        ktn = $(this).val()
+        $("#add").val(ktn)
+    });
+
+
+    $.each(delete_list, function (i) {
+        var $html = "<option value=\"" + delete_list[i][0] + "\">" + delete_list[i][1] + "</option>"
+        $('#id_delete').append($html)
+    })
+    $("#id_delete").change(function () {
+        ktn = $(this).val()
+        $("#delete").val(ktn)
+    });
+
+
+})

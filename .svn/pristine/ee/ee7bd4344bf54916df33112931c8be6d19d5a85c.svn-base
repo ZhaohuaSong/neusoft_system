@@ -1,0 +1,30 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2016/1/13 14:18
+# @Author  : qiujunli
+# @Site    :
+# @File    : iso_response_code.py
+# @Software: PyCharm
+# @Function: 定义报文应答码
+
+CODE_SUCCESS                   = '00' #成功
+CODE_PROTOCOL_REFUSE           = '01' #  报文配置协议拒绝
+CODE_REQUEST_PROTOCOL_NOT_FIND = '02' #该适配器请求的协议规则不存在了
+CODE_TRANSLATE_ERROR           = '03' #解析协议失败，请重新配置协议内容
+CODE_NET_ERROR                 = '04' #网络通讯失败
+
+CODE_DB_ERROR                  = '99'
+
+class ECode:
+    CODE = {}
+    CODE[CODE_SUCCESS] = '操作成功'
+    CODE[CODE_PROTOCOL_REFUSE] = '报文配置协议拒绝'
+    CODE[CODE_REQUEST_PROTOCOL_NOT_FIND] = '该适配器请求的协议规则不存在了'
+    CODE[CODE_TRANSLATE_ERROR] = '解析协议失败，请重新配置协议内容'
+    CODE[CODE_NET_ERROR] = '网络链接失败'
+    CODE[CODE_DB_ERROR] = 'DB数据源出现异常'
+    def get_desc(self, code):
+        try:
+            return self.CODE[code]
+        except:
+            return ''

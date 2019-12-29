@@ -1,0 +1,164 @@
+{% extends "mainbase.html" %}
+{% load staticfiles %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body class="no-skin">
+{% block content %}
+    <div class="main-content">
+        <div class="breadcrumbs" id="breadcrumbs">
+            <script type="text/javascript">
+                try {
+                    ace.settings.check('breadcrumbs', 'fixed')
+                } catch (e) {
+                }
+                                                  jQuery(function ($) {
+                    $("#btn-back").bind("click",
+                            function () {
+                                window.location.href = "{% url 'cabinetmgr:electricbox.list' %}"
+                            });
+                })
+            </script>
+
+            <ul class="breadcrumb">
+                <li>
+                    <i class="ace-icon fa fa-home home-icon"></i>
+                    <a href="#">首页</a>
+                </li>
+
+                <li><a href="#">机柜管理模块</a></li>
+                  <li><a href="{% url 'cabinetmgr:electricbox.list' %}">机柜内部空间详情</a></li>
+{#                <li class="active">编辑ip</li>#}
+            </ul><!-- /.breadcrumb -->
+        </div>
+
+              <div class="page-content">
+
+            <div class="row">
+                <div class="col-xs-12" >
+                    <div class="widget-box col-xs-12" >
+                        <div class="widget-header widget-header-blue widget-header-flat">
+                            <h4 class="widget-title lighter">编辑设备信息</h4>
+
+                        </div>
+                        <div class="space-20"></div>
+                    <form   class="form-horizontal" role="form" action="" method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right"> {{ form.on_state_date.label }} </label>
+                                <div class="col-sm-9">
+                                    {{ form.on_state_date }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.on_state_date.errors }} </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right"> {{ form.power_on_date.label }} </label>
+                                <div class="col-sm-9">
+                                    {{ form.power_on_date }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.power_on_date.errors }} </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right"> {{ form.device_num.label }} </label>
+                                <div class="col-sm-9">
+                                    {{ form.device_num }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.device_num.errors }} </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right"> {{ form.start_u_num.label }} </label>
+                                <div class="col-sm-9">
+                                    {{ form.start_u_num }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.start_u_num.errors }} </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right"> {{ form.end_u_num.label }} </label>
+                                <div class="col-sm-9">
+                                    {{ form.end_u_num }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.end_u_num.errors }} </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right"> {{ form.device_code.label }} </label>
+                                <div class="col-sm-9">
+                                    {{ form.device_code }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.device_code.errors }} </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right"> {{ form.device_type.label }} </label>
+                                <div class="col-sm-9">
+                                    {{ form.device_type }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.device_type.errors }} </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right"> {{ form.device_status.label }} </label>
+                                <div class="col-sm-9">
+                                    {{ form.device_status }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.device_status.errors }} </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right"> {{ form.power_num.label }} </label>
+                                <div class="col-sm-9">
+                                    {{ form.power_num }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.power_num.errors }} </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right"> {{ form.device_alternating.label }} </label>
+                                <div class="col-sm-9">
+                                    {{ form.device_alternating }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.device_alternating.errors }} </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right"> {{ form.device_threshold_rt.label }} </label>
+                                <div class="col-sm-9">
+                                    {{ form.device_threshold_rt }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.device_threshold_rt.errors }} </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <div class="space-4"></div>
+                         <div class="space-20"></div>
+                            <hr>
+
+                       {% include "form_buttons.html" %}<!-- /.form_buttons -->
+                            <div class="space-10"></div>
+
+                    </form>
+                </div><!-- /.col -->
+            </div><!-- /.row -->
+        </div>
+
+    </div>
+{% endblock %}
+<!-- /.main-content -->
+</body>
+</html>

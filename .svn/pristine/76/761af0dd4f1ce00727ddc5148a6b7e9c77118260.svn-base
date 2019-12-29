@@ -1,0 +1,34 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 16/7/19 18:27
+# @Author  : czw@mtaiyi.com
+# @Site    : ws-ex.com
+# @File    : superEmail.py
+# @Software: 太乙支付网关管理平台
+# @Function: 通用邮件发送程序
+
+from django.core.mail import EmailMultiAlternatives
+from django.conf import settings
+
+import logging
+
+_logger = logging.getLogger('loggers')
+
+
+class superMail(object):
+    def __init__(self, emails, subject, text, html, form_email=settings.DEFAULT_FROM_EMAIL):
+        self.emails = emails  # 邮箱LIST列表
+        self.subject = subject  # 邮件的标题
+        self.text = text  # 文本正文
+        self.html = html  # Html正文
+        self.form_email = form_email  # 邮件发送者
+
+    def sendMail(self):
+        try:
+            msg = EmailMultiAlternatives(self.subject, self.text, self.form_email, self.emails)
+            msg.attach_alternative(self.html, 'text/html')
+            msg.send()
+            return True
+        except Exception, e:
+            logging.exception(e)
+            return False

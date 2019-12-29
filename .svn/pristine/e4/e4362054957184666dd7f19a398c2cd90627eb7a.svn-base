@@ -1,0 +1,80 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+
+from gevent.server import DatagramServer, StreamServer
+import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
+from gevent.pool import Pool
+
+
+import os,sys
+sys.path.append(os.path.dirname(os.path.abspath("__file__")))
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.local')
+import django
+django.setup()
+
+
+
+
+# from django.apps import apps
+# sysDict = apps.get_model(app_label='sysadmin', model_name='SysDict')
+
+from django.apps import apps
+localApp = apps.get_model(app_label='packmanage', model_name='LocalApp')
+from redismodels import PidRs
+from time import sleep
+
+from ReceiveData import ReceiveData
+class EchoServer(StreamServer):
+    """
+    socketserver服务器接收报文和规则
+    """
+
+    def handle(self, data, address):
+            result ={}
+            sock = data
+            data = sock.recv(1024*10)
+            if str(data)=='test':
+                sock.sendto(str('ok'), address)
+            else:
+                rd = ReceiveData()
+                response = rd.answer_message(message=str(data))
+
+                if response is True:
+                    ret = False
+                    i = 0
+                    while ret is False:
+                        data_list, ret = rd.get_query_data()
+                        for data in data_list:
+                            #self.socket.sendto(str(data), address)
+                            sock.sendall(str(data))
+                            sock.recv(1024*10)
+                    #         sleep(0.01)
+                            i = i+1
+                    print '-------total query--------', i
+                else:
+                    sock.sendall(str(response))
+                    #self.socket.sendto(str(response), address)
+
+
+
+
+
+if __name__ == '__main__':
+    [proc.delete() for proc in PidRs.objects.all()];
+    proc = PidRs()
+    proc.p_id = str(os.getpid())
+    proc.save()
+    lapp = localApp.objects.all()[0]
+    server  = EchoServer(':'+str(lapp.local_port))
+    server.set_spawn(spawn=Pool(10000))
+    server.serve_forever()
+
+
+
+
+
+
+

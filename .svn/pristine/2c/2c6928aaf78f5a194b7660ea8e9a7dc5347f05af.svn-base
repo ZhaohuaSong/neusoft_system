@@ -1,0 +1,22 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+from django.conf.urls import url
+from views_send import SendMsgListView,SendMsgDataView,dosend,CreateSendMsg,EditSendMsgView,senddetail,sendmsg_batches_delete
+from views_receive import ReceiveMsgListView,ReceiveMsgDataView,doAnswer,recedetail
+urlpatterns = [
+    url(r'^richdataserver/send/list$', SendMsgListView.as_view(), name='sendmsg.list'),  # 发送报文列表
+    url(r'^richdataserver/send/data$', SendMsgDataView.as_view(), name="sendmsg.data"),  # 获取数据
+    url(r'^richdataserver/send/msg$', dosend, name="sendmsg.msg"),  # 发送信息
+    url(r'^richdataserver/send/delete$', sendmsg_batches_delete, name="sendmsg.delete"),  # 删除信息
+    url(r'^richdataserver/send/add$', CreateSendMsg.as_view(), name="sendmsg.add"),  # 新增发送报文信息
+    url(r'^richdataserver/send/edit/(?P<pk>\d+)/$', EditSendMsgView.as_view(), name="sendmsg.edit"),  # 编辑发送报文信息
+    url(r'^richdataserver/send/detail/$', senddetail, name="sendmsg.detail"),  # 报文详情
+
+    url(r'^richdataserver/receive/list$', ReceiveMsgListView.as_view(), name='receivemsg.list'),  # 接收报文列表
+    url(r'^richdataserver/receive/data$', ReceiveMsgDataView.as_view(), name="receivemsg.data"),  # 获取数据
+    url(r'^richdataserver/receive/msg$', doAnswer, name="receivemsg.msg"),  # 回复报文
+    url(r'^richdataserver/receive/detail/$', recedetail, name="receivemsg.detail"),  # 报文详情
+    url(r'^richdataserver/receive/delete$', dosend, name="receivemsg.delete"),  # 删除信息
+
+
+ ]

@@ -1,0 +1,5 @@
+CREATE TABLE `file_name` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `file_name` varchar(64) DEFAULT NULL COMMENT '文件路径',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8;

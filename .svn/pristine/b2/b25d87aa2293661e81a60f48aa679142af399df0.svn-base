@@ -1,0 +1,16 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
+from django.conf.urls import url
+
+from views import MessageList, PackageMessageJson, MessageCreateView, MessageDetail, batches_delete, MessageAsyncView
+
+urlpatterns = [
+
+    url(r'^message/list$', MessageList.as_view(), name='message.list'),  # 实时交易
+    url(r'message/add/$', MessageCreateView.as_view(), name='message.add'),  # 新增
+    url(r'message/detail/(?P<pk>\d+)/$', MessageDetail.as_view(), name='message.detail'),  # 新增
+    url(r'^message/data$', PackageMessageJson.as_view(), name="message.data"),  # 获取数据
+    url(r'^message/delete/$', batches_delete, name="message.delete"),  # 删除
+    url(r'message/async/$', MessageAsyncView.as_view(), name='message.async'),  # 新增
+]

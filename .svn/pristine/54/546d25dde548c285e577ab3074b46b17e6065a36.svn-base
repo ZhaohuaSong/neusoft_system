@@ -1,0 +1,243 @@
+{% extends "mainbase.html" %}
+{% load staticfiles %}
+{% load i18n staticfiles %}
+{% load url from future %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% block scripts %}
+
+    <script src="{% static "js/jquery.bootstrap-duallistbox.min.js" %}"></script>
+    <script src="{% static "js/jquery.raty.min.js" %}"></script>
+    <script src="{% static "js/bootstrap-multiselect.min.js" %}"></script>
+    <script src="{% static "js/select2.min.js" %}"></script>
+    <script src="{% static "js/jquery-typeahead.js" %}"></script>
+    <script src="{% static "js/selectbox/selectbox.js" %}"></script>
+    <!-- page specific plugin scripts -->
+    <link href="{% static 'css/bootstrap-duallistbox.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/bootstrap-multiselect.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/select2.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/ace-skins.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/ace-rtl.min.css' %}" rel="stylesheet">
+
+
+        <script src="{% static "js/dbadmin/queryservice.setting.js" %}"></script>
+        <script type="text/javascript">
+        var SQL_ADD_PARAMS = '{% url "dbadmin:queryservice.addsql" %}'
+        var SQL_QUERY = '{% url 'dbadmin:api'%}'
+        var QUERYSERVICE_SETTING_URL = '{% url 'dbadmin:queryservice.setting' %}'
+        var QUERYSERVICE_LIST_URL='{% url 'dbadmin:queryservice.list' %}'
+            jQuery(function ($) {
+                $("#btn-back").bind("click",
+                        function () {
+                            window.location.href = SERVICE_LIST_URL
+                        });
+            })
+
+        var SQL_PARAMS_URL ="{% url 'dbadmin:sql.detail' %}"
+        var SQL_SERVICE_DETAIL_SAVE="{% url 'dbadmin:service.add.detail' %}"
+        </script>
+
+        <style type="text/css">
+            /*table#table_protocol
+            {
+                margin-left:auto; margin-right:auto
+            }*/
+
+            table.tb tr td {
+                padding: 1px;
+                padding-left: 5px;
+            }
+        </style>
+    {% endblock %}
+</head>
+<body class="no-skin">
+{% block content %}
+    <div class="main-content">
+        <div class="breadcrumbs" id="breadcrumbs">
+            <ul class="breadcrumb">
+                <li>
+                    <i class="ace-icon fa fa-home home-icon"></i>
+                    <a href="#">首页</a>
+                </li>
+                <li>
+                    <a href="#">数据库配置中心</a>
+                </li>
+                <li>
+                    <a href="{% url 'dbadmin:queryservice.list' %}">多业务变更设置</a>
+                </li>
+            </ul><!-- /.breadcrumb -->
+        </div>
+
+        <div class="page-content">
+            <div class="page-header " style="border-bottom:1px dashed #DEDEDE">
+               <input type="hidden" value="{{ dbname }}" id="dbname">
+                <input type="hidden" value="{{ sqlnameid }}" id="sqlnameid">
+                业务名称：{{ sql_name }}
+                <br/>
+
+
+
+            </div><!-- /.page-header -->
+
+            <div class="row">
+                      <div style="padding-bottom:20px">
+                          <div class="col-xs-6">
+                            <table id="dynamic-sql" class="table table-striped table-bordered table-hover"><!--table -->
+                                <tbody id="sqlcontent">
+                                   <tr>
+                                       <td>
+                                           <input type="hidden" value="" id="queryflag">
+                                           <label>输入业务SQL语句:</label><br><textarea cols="75" rows="10" id="sqltext">{{ sqlcontent }}</textarea><br/>
+                                           <input type="button" value="业务数据综合查询" id="sqlquery" onclick="sql_query_data();">&nbsp;
+                                           <input type="button" value="业务请求预览"  data-toggle="modal" id="queryfilterbtn">&nbsp;
+                                           <input type="button" value="业务请求参数设置"  data-toggle="modal" id="setqueryparamsbtn">&nbsp;
+                                           <input type="button" value="返回"   id="back">
+                                       </td>
+                                   </tr>
+                                </tbody>
+                            </table><!--table -->
+                          </div>
+                        <div class="col-xs-6">
+                            {% if sqlparams %}
+
+                                <table class="table table-striped table-bordered table-hover dataTable no-footer" id="params_detail">
+                                <thead>
+                                    <th>查询参数</th>
+                                    <th >参数类型</th>
+                                    <th >参数描述</th>
+                                    </thead>
+                                {% for sqlparam in sqlparams %}
+                                    <tr>
+                                        <td>{{ sqlparam.field_name }}</td>
+                                        <td>{{ sqlparam.field_type }}</td>
+                                        <td>{{ sqlparam.field_memo }}</td>
+                                    </tr>
+                                {% endfor %}
+                                </table>
+                            {% endif %}
+                        </div>
+                        </div>
+
+                      <div class="col-xs-12">
+                        <table id="dynamic-sql-list" class="table table-striped table-bordered table-hover" style="display: none">
+                         <!--table -->
+                         <thead>
+                            <tr id="thdata_sql">
+                                <input type="hidden" id="table_th_sql">
+
+                            </tr>
+                            </thead>
+                            <tbody id="table_datas_sql">
+
+                            </tbody>
+                            <div style="margin-bottom: 10px"><input type="hidden" value="1" id="pageindex"><input type="hidden" value="5" id="pagesize"><input type="hidden" value="" id="allpage"><input type="button" value="<" id="prev_page">&nbsp;<input type="button" value=">" id="next_page"></div>
+                        </table>
+                      </div>
+            </div><!-- /.row -->
+            </div>
+        </div>
+
+        <div class="modal fade" id="filterModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" >
+        <div class="modal-dialog" style="width: 800px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true" >
+                        &times;
+                    </button>
+                    <h4 class="modal-title" id="filterModalLabel">
+                        过滤筛选
+                    </h4>
+                </div>
+                <div class="modal-body" id="filter_body">
+
+                    <div style="margin-bottom: 2px" class="conditions">
+                    <select class="field_select field_name"></select>
+                    <select class="field_where field_opt">
+                        <option value="=">=</option>
+
+                        <option value="<>"><></option>
+                        <option value=">">></option>
+                        <option value="<"><</option>
+                        <option value="like">like</option>
+                    </select>
+                    <input type="text" value="" class="whatcontent" style="height:30px">
+                    <select class="condition field_link">
+                        <option value="">无</option>
+                        <option value="and">and</option>
+                        <option value="or">or</option>
+                        <option value="and not">and not</option>
+                        <option value="or not">or not</option>
+                    </select>
+                    <input type="button" value="+" id="add_filter"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal"  id="sqlfilter">过滤
+                    </button>
+
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal -->
+
+
+
+    </div>
+
+
+ <!--业务请求参数设置-->
+    <div class="modal fade" id="setQueryParamsModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" >
+        <div class="modal-dialog" style="width: 800px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true" >
+                        &times;
+                    </button>
+                    <h4 class="modal-title" id="setQueryParamsModalLabel">
+                        设置请求输入输出参数
+                    </h4>
+                </div>
+                <div class="modal-body" id="filter_body">
+
+                    <div style="margin-bottom: 2px" class="conditions_params">
+                    <select class="field_select_params"></select>
+                    <input type="hidden" value="" class="data_type_select">
+                    <select class="field_where field_opt_params">
+                        <option value="=">=</option>
+
+                        <option value="<>"><></option>
+                        <option value=">">></option>
+                        <option value="<"><</option>
+                        <option value="like">like</option>
+                    </select>
+                    <select class="condition field_link_params">
+                        <option value="">无</option>
+                        <option value="and">and</option>
+                        <option value="or">or</option>
+                        <option value="and not">and not</option>
+                        <option value="or not">or not</option>
+                    </select>
+                    <input type="text" value="" class="field_memo_params" style="height:30px" placeholder="字段描述" >
+                    <select class="field_type_params">
+                            <option value="">--请选择类型--</option>
+                            <option value="1">--输入/查询--</option>
+                            <option value="2">--输出/变更--</option>
+                    </select>
+                    <input type="button" value="+" id="add_filter_params"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-dismiss="modal"  id="" onclick="save_query_sql()">保存
+                    </button>
+
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal -->
+
+
+
+    </div>
+    </div>
+    {% include "message.html" %}
+{% endblock %}
+<!-- /.main-content -->
+</body>
+</html>

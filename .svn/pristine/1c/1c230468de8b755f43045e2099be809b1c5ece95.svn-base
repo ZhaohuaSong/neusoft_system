@@ -1,0 +1,92 @@
+/*
+SQLyog Ultimate v11.24 (32 bit)
+MySQL - 5.7.11-log : Database - richdatax
+*********************************************************************
+*/
+
+/*!40101 SET NAMES utf8 */;
+
+/*!40101 SET SQL_MODE=''*/;
+
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+CREATE DATABASE /*!32312 IF NOT EXISTS*/`richdatax` /*!40100 DEFAULT CHARACTER SET utf8 */;
+
+USE `richdatax`;
+
+/*Table structure for table `sql_name` */
+
+DROP TABLE IF EXISTS `sql_name`;
+
+CREATE TABLE `sql_name` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `dbname` varchar(64) DEFAULT NULL COMMENT '数据库名',
+  `sqlname` varchar(128) DEFAULT NULL COMMENT 'sql描述',
+  `sqlcontent` varchar(2046) DEFAULT NULL COMMENT '动态sql语句',
+  `sqltype` varchar(4) DEFAULT NULL COMMENT 'C-新增;U-更改;R-查询;D-删除',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=37 DEFAULT CHARSET=utf8;
+
+/*Data for the table `sql_name` */
+
+insert  into `sql_name`(`id`,`dbname`,`sqlname`,`sqlcontent`,`sqltype`) values (29,'richdatax','新增员工信息业务','test_3','C'),(30,'richdatax','查询员工信息业务','select a.*,b.address from test_3 a, test_4 b where a.id=b.test3_id','R'),(32,'richdatax','删除员工信息业务','test_3','D'),(33,'richdatax','编辑员工信息业务','test_3','U'),(34,'richdatax','编辑员工信息','test_3','U'),(35,'richdatax','查询员工数据业务','select * from test_3','R');
+
+/*Table structure for table `sql_params` */
+
+DROP TABLE IF EXISTS `sql_params`;
+
+CREATE TABLE `sql_params` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `sql_name_id` int(11) DEFAULT NULL COMMENT 'sql_id',
+  `field_name` varchar(64) DEFAULT NULL COMMENT '输入参数字段',
+  `field_opt` varchar(64) DEFAULT NULL COMMENT '操作符',
+  `field_link` varchar(64) DEFAULT NULL COMMENT '连接符',
+  `field_type` varchar(2) DEFAULT NULL COMMENT '1-输入参数;2-输出参数',
+  `field_memo` varchar(64) DEFAULT NULL COMMENT '字段描述',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=42 DEFAULT CHARSET=utf8;
+
+/*Data for the table `sql_params` */
+
+insert  into `sql_params`(`id`,`sql_name_id`,`field_name`,`field_opt`,`field_link`,`field_type`,`field_memo`) values (21,29,'name','','','1','员工姓名'),(22,29,'personid','','','1','员工身份证'),(23,29,'mobile','','','1','员工电话'),(24,29,'sex','','','1','员工性别'),(25,30,'mobile','=','','1','手机查询'),(30,32,'id','=','and','1','根据id删除'),(31,33,'id','=','','1','根据id编辑'),(32,33,'mobile','=','','2','编辑员工电话'),(33,34,'mobile','=','','1','根据员工手机编辑'),(34,34,'id','=','','1','根据员工编号编辑'),(35,34,'name','=','','2','编辑员工姓名'),(36,35,'id','=','and','1','根据员工id查询'),(37,35,'sex','=','','1','根据员工性别'),(38,35,'personid','=','','1','根据员工身份证'),(39,35,'name','=','','1','输出员工姓名'),(40,35,'mobile','=','','1','根据员工电话查询');
+
+/*Table structure for table `test_3` */
+
+DROP TABLE IF EXISTS `test_3`;
+
+CREATE TABLE `test_3` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(64) DEFAULT NULL COMMENT '姓名',
+  `sex` varchar(16) DEFAULT NULL COMMENT '1-男;2-女',
+  `mobile` varchar(256) DEFAULT NULL COMMENT '手机号',
+  `personid` varchar(256) DEFAULT NULL COMMENT '身份证号',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
+
+/*Data for the table `test_3` */
+
+insert  into `test_3`(`id`,`name`,`sex`,`mobile`,`personid`) values (1,'张三','1','15112121622','4453811984090721'),(2,'李四','1','13214141367','3602231521211322'),(3,'吴燕','2','18915168766','3231123212123212'),(5,'小白','1','19798888828828','83483787837488');
+
+/*Table structure for table `test_4` */
+
+DROP TABLE IF EXISTS `test_4`;
+
+CREATE TABLE `test_4` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `address` varchar(256) DEFAULT NULL COMMENT '地址',
+  `test3_id` int(11) DEFAULT NULL COMMENT 'test3表id',
+  PRIMARY KEY (`id`),
+  KEY `test3_id` (`test3_id`),
+  CONSTRAINT `test_4_ibfk_1` FOREIGN KEY (`test3_id`) REFERENCES `test_3` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
+
+/*Data for the table `test_4` */
+
+insert  into `test_4`(`id`,`address`,`test3_id`) values (1,'广东顺德',1),(2,'广东汕头',2),(3,'广东佛山',3);
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;

@@ -1,0 +1,30 @@
+<!-- -->
+
+<div  id="ace-settings-box">
+    <div class="pull-left width-100">
+        <div style="width:100%; border-bottom:1px #dedede dashed; float:left">
+            <div class="input-group col-sm-4" style="margin-top: 10px; float: right;">
+                <input class="form-control" id="in-search" name="keywords" placeholder="输入要查询的内容" type="text">
+                <div class="input-group-btn" style="padding-left: 10px">
+                    <button class="btn btn-info btn-sm tooltip-info" id="btn-search">
+                        查询
+                    </button>
+                </div>
+            </div>
+            <button class="btn btn-info btn-sm tooltip-info" id="btn-add" style="float:left; margin:10px 3px 10px 3px;">
+                添加
+            </button>
+            <button class="btn btn-success btn-sm popover-success" id="btn-update-1" style="float:left; margin:10px 3px 10px 3px;">
+                合同注销
+            </button>
+            <button class="btn btn-success btn-sm popover-success" id="btn-update-2" style="float:left; margin:10px 3px 10px 3px;">
+                资金注销
+            </button>
+            <button class="btn btn-danger btn-sm tooltip-error" id="btn-delete" style="float:left; margin:10px 3px 10px 3px;">
+                删除
+            </button>
+        </div>
+    </div><!-- /.pull-left -->
+
+    <!-- /.pull-left -->
+</div><!-- /.ace-settings-box -->

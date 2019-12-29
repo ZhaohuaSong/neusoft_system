@@ -1,0 +1,9 @@
+function check() {
+    var current = $('#id_current').val();
+    var next = $('#id_next').val();
+    if(current == next){
+        $('#errors').html('当前用户和下一用户不能相同');
+    }else{
+        $('#_form').submit();
+    }
+};

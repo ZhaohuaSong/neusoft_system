@@ -1,0 +1,42 @@
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : posp
+Source Server Version : 50628
+Source Host           : localhost:3306
+Source Database       : richdatax
+
+Target Server Type    : MYSQL
+Target Server Version : 50628
+File Encoding         : 65001
+
+Date: 2017-01-03 14:07:24
+*/
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for packmanage_apps
+-- ----------------------------
+DROP TABLE IF EXISTS `packmanage_apps`;
+CREATE TABLE `packmanage_apps` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '默认django使用的ID',
+  `app_id` varchar(255) DEFAULT NULL COMMENT 'ID',
+  `app_name` varchar(255) DEFAULT NULL COMMENT '应用程序名称',
+  `app_ip` varchar(255) DEFAULT NULL COMMENT 'IP地址',
+  `app_port` varchar(255) DEFAULT NULL COMMENT '端口号',
+  `app_state` int(11) DEFAULT NULL COMMENT '1=正常使用 0=停用',
+  `app_triggertype` int(11) DEFAULT NULL COMMENT '报文触发方式',
+  `create_by` varchar(255) DEFAULT NULL COMMENT '创建者',
+  `remarks` varchar(255) DEFAULT NULL,
+  `create_date` datetime DEFAULT NULL COMMENT '创建日期',
+  `update_date` datetime DEFAULT NULL COMMENT '修改日期',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of packmanage_apps
+-- ----------------------------
+INSERT INTO `packmanage_apps` VALUES ('1', '1', '工商系统v0.1', '121.0.0.5', '5545', '0', '1', 'admin', '广州', '2016-12-27 16:34:14', '2016-12-28 17:47:51');
+INSERT INTO `packmanage_apps` VALUES ('11', '11', '工商系统v0.2', '121.0.0.7', '8854', '1', '2', 'admin', '无', '2016-12-28 17:14:17', '2016-12-28 17:48:57');
+INSERT INTO `packmanage_apps` VALUES ('14', '14', '工商', '121.0.0.8', '55', '1', '1', 'admin', '4545', '2017-01-03 13:40:03', '2017-01-03 13:40:03');

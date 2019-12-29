@@ -1,0 +1,38 @@
+{% extends "mainbase.html" %}
+{% load staticfiles %}
+{% load i18n staticfiles %}
+{% load url from future %}
+<html lang="en">
+<body class="no-skin">
+{% block content %}
+    <div class="main-content">
+        <div class="breadcrumbs" id="breadcrumbs">
+            <script type="text/javascript">
+                try {
+                    ace.settings.check('breadcrumbs', 'fixed')
+                } catch (e) {
+                }
+            </script>
+            <ul class="breadcrumb">
+                <li>
+                    <i class="ace-icon fa fa-home home-icon"></i>
+                    <a href="#">首页</a>
+                </li>
+                <li>
+                    <a href="#">安全中心</a>
+                <li>
+                    <a href="#">任务向导</a>
+                </li>
+            </ul><!-- /.breadcrumb -->
+        </div>
+
+        <div class="main">
+            <iframe src="/security/taskwizard/demo" id="myiframe" scrolling="yes"
+                    frameborder="0" style="width: 100%; min-height: 600px;"></iframe>
+        </div>
+        {% include "message.html" %}
+    </div>
+{% endblock %}
+<!-- /.main-content -->
+</body>
+</html>

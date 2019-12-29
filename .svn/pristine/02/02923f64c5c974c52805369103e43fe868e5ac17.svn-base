@@ -1,0 +1,148 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2016/12/23 下午6:06
+# @Author  : czw@rich-f.com
+# @Site    : www.rich-f.com
+# @File    : models.py
+# @Software: PyCharm
+# @Function: 数据模型
+
+import logging
+from django.db import models
+import base64
+
+# Create your models here.
+
+_logger = logging.getLogger('loggers')
+
+class DbConfig(models.Model):
+    """
+     ===============================================================================
+     function：    数据链接设置Model
+     developer:    Rich.Chen
+     add-time      2016/12/23
+     ===============================================================================
+    """
+    appname = models.CharField(max_length=64,unique=True)   #应用名称,unique该字段值唯一
+    dbtype = models.CharField(max_length=64)  #数据库驱动
+    dbname=models.CharField(max_length=64)      #数据库名
+    dbusername=models.CharField(max_length=64)  #数据库用户名
+    dbpassword=models.CharField(max_length=64) #数据库密码
+    dbhost=models.CharField(max_length=64) #数据库主机IP
+    dbport=models.CharField(max_length=64) #数据库端口
+
+    def __unicode__(self):
+        return '%s(%s)' % (self.appname, self.dbname)
+
+    def set_dbpassword(self,i_password):
+        self.dbpassword=base64.b64encode(i_password)
+
+    def get_dbpassword(self):
+        return base64.b64decode(self.dbpassword)
+
+    class Meta:
+        db_table = 'dbconfig'
+
+
+
+
+class SysDict(models.Model):
+    """
+      ===============================================================================
+      function：    统一字典表
+      developer:    Rich.Chen
+      add-time      2016/12/28
+      Note:         因为dbadmin的app会使用到sys_dict表，为了松耦合在此定义Model
+      ===============================================================================
+    """
+    dict_name = models.CharField(max_length=100)  # 名称
+    dict_id = models.CharField(max_length=100)  # 代码
+    dict_type = models.CharField(max_length=100)  # 字典表类型
+    description = models.CharField(max_length=100)  # 注释
+    sort = models.IntegerField()  # 排序
+    create_by = models.CharField(max_length=64, blank=True, null=True)  # 创建人
+    create_date = models.DateTimeField(blank=True, null=True)  # 创建时间
+    update_by = models.CharField(max_length=64, blank=True, null=True)  # 修改人
+    update_date = models.DateTimeField(blank=True, null=True)  # 修改时间
+    remarks = models.CharField(max_length=255, blank=True, null=True)  # 备注
+    del_flag = models.CharField(max_length=1)  # 删除标志
+
+    def __unicode__(self):
+        return u'%s' % (self.dict_name)
+
+    class Meta:
+        db_table = 'sys_dict'
+
+
+class SqlName(models.Model):
+    """
+      ===============================================================================
+      function：    保存动态多业务sql
+      developer:    zzm
+      add-time      2017/02/15
+      ===============================================================================
+    """
+    dbname = models.CharField(max_length=64)  # 所属数据库
+    sqlname = models.CharField(max_length=128)  # sql命名
+    sqlcontent = models.CharField(max_length=2056)  # 动态sql语句
+    sqltype = models.CharField(max_length=4)  # C-新增;U-更改;R-查询;D-删除
+
+
+    class Meta:
+        db_table = 'sql_name'
+
+
+class SqlParams(models.Model):
+    """
+      ===============================================================================
+      function：    保存动态单业务sql
+      developer:    zzm
+      add-time      2017/02/15
+
+
+      ===============================================================================
+    """
+    sql_name_id  = models.IntegerField()
+    field_name = models.CharField(max_length=64)  # 输入参数字段
+    field_opt = models.CharField(max_length=64)  # 操作符
+    field_link = models.CharField(max_length=64)  # 连接符
+    field_type = models.CharField(max_length=2)  # 1-输入参数;2-输出参数
+    field_memo = models.CharField(max_length=64) #字段描述
+    data_type = models.CharField(max_length=64) #数据类型
+
+    class Meta:
+        db_table = 'sql_params'
+
+
+class SqlService(models.Model):
+    """
+      ===============================================================================
+      function：    保存动态多业务sql
+      developer:    zzm
+      add-time      2017/02/27
+      ===============================================================================
+    """
+    service_name = models.CharField(max_length=256)  # 多业务描述
+    dbname = models.CharField(max_length=64) #数据库名称
+    create_time = models.DateTimeField()  #创建时间
+
+    class Meta:
+        db_table = 'sql_service'
+
+class SqlServiceDetail(models.Model):
+    """
+      ===============================================================================
+      function：    保存动态多业务sql详情
+      developer:    zzm
+      add-time      2017/02/27
+      ===============================================================================
+    """
+    sql_name_id = models.IntegerField() #单业务sql编号
+    sql_service_id = models.IntegerField() #所属业务id
+
+    class Meta:
+        db_table = 'sql_service_detail'
+
+
+
+

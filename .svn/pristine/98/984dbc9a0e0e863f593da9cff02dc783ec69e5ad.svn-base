@@ -1,0 +1,11 @@
+#!/usr/bin/env python
+#-*- coding: utf-8 -*-
+
+from __future__ import unicode_literals
+
+from django.apps import AppConfig
+
+
+class RichdataserverConfig(AppConfig):
+    name = 'richDataX-system.richdataserver'
+    verbose_name = "richdataserver"

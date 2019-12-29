@@ -1,0 +1,166 @@
+{% extends "mainbase.html" %}
+{% load staticfiles %}
+{% load i18n staticfiles %}
+{% load url from future %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% block scripts %}  
+    
+    <script type="text/javascript">
+                jQuery(function ($) {
+                    $("#btn-back").bind("click",
+                        function () {
+                            window.location.href = "{% url 'packmanage:protocoltype.config.list' %}"
+                        });
+                })
+
+        var protocol_id = {{protocol.id}}
+
+
+    </script>
+    <script src="{% static "js/packmanage/packmanage.protocoltype.config.content.js" %}"></script>
+    
+    <style type="text/css">
+            /*table#table_protocol
+            {
+                margin-left:auto; margin-right:auto
+            }*/
+
+            table.tb tr td {
+                padding: 1px;
+                padding-left: 5px;
+            }
+        </style>
+
+    {% endblock %}
+</head>
+<body class="no-skin">
+{% block content %}
+    <div class="main-content">
+        <div class="breadcrumbs" id="breadcrumbs">
+            <div class="breadcrumbs" id="breadcrumbs">
+            <ul class="breadcrumb">
+                <li>
+                    <i class="ace-icon fa fa-home home-icon"></i>
+                    <a href="#">首页</a>
+                </li>
+                <li>
+                    <a href="#">适配器通讯管理</a>
+                </li>
+                <li>
+                    <a href="{% url 'packmanage:protocoltype.config.list' %}">报文协议配置请求</a>
+                </li>
+                <li class="active">协议内容</li>
+            </ul><!-- /.breadcrumb -->
+        </div>
+        </div>
+
+        <div class="page-content">   
+            <div class="page-header " style="border-bottom:1px dashed #DEDEDE" >  
+                        远程适配器名称：<span class="blue"  >{{app.app_name}}</span>&nbsp;&nbsp;&nbsp;&nbsp;
+                        远程适配器编号：<span class="blue"  >{{app.app_id}}</span>&nbsp;&nbsp;&nbsp;&nbsp;    
+                        协议名称：<span class="blue"  >{{protocol.protocol_id}}</span>&nbsp;&nbsp;&nbsp;&nbsp;
+                        协议ID：<span id="lb_mid" class="blue">{{protocol.protocol_id}}</span> &nbsp;&nbsp;&nbsp;&nbsp;
+                        状态：{% if protocol.protocol_state == 0 %}<strong id="lb_state">等待处理</strong>
+                              {% elif protocol.protocol_state == 1  %}<strong id="lb_state" class="green">已接受</strong>
+                              {% elif protocol.protocol_state == 2  %}<strong id="lb_state" class="red">已拒绝</strong> {%endif%}
+                        &nbsp;&nbsp;&nbsp;&nbsp;
+                      
+
+                        <br/><br/>
+                        <span class="red">
+                            <strong >备注：</strong>【请求】表示作为远程适配器获取数据的条件参数；【响应】表示远程适配器请求的数据内容。
+                        </span>
+
+            </div><!-- /.page-header -->
+
+            <div style="padding-bottom:30px">
+                                                    <ul class="steps">
+                                                        <li data-step="1" class="active">
+                                                            <span class="step">1</span>
+                                                            <span class="title">请求处理</span>
+                                                        </li>
+
+                                                        <li data-step="2">
+                                                            <span class="step">2</span>
+                                                            <span class="title">触发器设置</span>
+                                                        </li>
+
+                                                        <li data-step="3">
+                                                            <span class="step">3</span>
+                                                            <span class="title">数据源配置</span>
+                                                        </li> 
+                                                    </ul>
+            </div>
+
+
+                <div class="row">
+                <div class="col-xs-6 ">
+                    <strong class="background-blue">输入参数</strong>
+                    <table class="tb" id="protocol_in">
+                        <tr>
+                            <td><input type='text' disabled value='域名称' style="width:180px"></input></td>
+                            <td><input type='text' disabled value='域索引' style="width:120px;"></input></td>
+                             
+                        </tr>
+                        {% for data in protocol_content_in %}
+                            <tr class="content">
+                                <td><input type="text" class="field_name" value="{{ data.field_name }}"
+                                           style="width:180px"></input></td>
+                                <td><input type="number" class="bit_index" value="{{ data.bit_index }}"
+                                           style="width:120px"></input></td>
+                                 
+                            </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+                <div class="col-xs-6">  
+                    <strong class="background-blue">输出参数</strong>
+                    <table class="tb" id="protocol_out">
+                        <tr>
+                            <td><input type='text' disabled value='域名称' style="width:180px"></input></td>
+                            <td><input type='text' disabled value='域索引' style="width:120px;"></input></td>
+                            
+                        </tr>
+                        {% for data in protocol_content_out %}
+                            <tr class="content">
+                                <td><input type="text" class="field_name" value="{{ data.field_name }}"
+                                           style="width:180px"></input></td>
+                                <td><input type="number" class="bit_index" value="{{ data.bit_index }}"
+                                           style="width:120px"></input></td>
+                                
+                            </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+            </div>
+            </div>
+            <div class="space-10"></div>
+            <div class="col-xs-12 clearfix " style="text-align:center; margin-bottom: 10px">
+                {% if protocol.protocol_state == 0 %}
+                
+                <button id="btn-accept" class="btn btn-success"   style="margin-right: 10px;">
+                        <i class="fa fa-plus" aria-hidden="true"></i>
+                        接 受
+                </button>
+                <button id="btn-refuse" class="btn btn-info sumbmit_input"   style="margin-right: 10px;">
+                        <i class="ace-icon fa fa-check bigger-110"></i>
+                        拒 绝
+                </button>
+                {% endif %}
+        
+                <button  id="btn-back" class="btn"    style="margin-left: 10px;">
+                        <i class="ace-icon fa fa-undo bigger-110"></i>
+                        取 消
+                </button>
+            </div>
+            <div class="space-30"></div>
+
+        </div>
+    </div>
+    {% include "message.html" %}
+{% endblock %}
+<!-- /.main-content -->
+</body>
+</html>

@@ -1,0 +1,105 @@
+<div class="widget-box col-xs-12 step_1  {% if is_over == 1 %}hidden{% endif %} " >
+    <div class="widget-header widget-header-blue widget-header-flat">
+        <h4 class="widget-title lighter">请求报文协议配置</h4>
+    </div>
+    <div class="space-20"></div>
+
+    <div class="form-horizontal">
+
+        <div class="form-group "> 
+            <label class="col-sm-3 control-label no-padding-right"> 报文操作类型 </label>
+            <div class="col-sm-3"  >
+                 <select id="sel_protocol_operation" class="select2" data-placeholder="请点击选择"
+                                    tabindex="-1" aria-hidden="true">
+                                <option value="-1">--------</option>
+                                {% for key, value in protocol_operation.items %} 
+                                    {% if protocol_opt_type == value %}
+                                        <option  selected value={{ key }}>{{ value }}</option>
+                                    {% else %}
+                                        <option value={{ key }}>{{ value }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                </select>
+            </div>
+        </div>
+        <hr class="in_div {% if b_ok != 1 %} hidden {% endif %}" />
+        <div class="form-group in_div {% if b_ok != 1 %} hidden {% endif %}">
+            <label class="col-sm-3 control-label no-padding-right"> 输入参数 </label>
+            <div class="col-sm-8">
+                <table class="tb" id="protocol_in">
+                        <tr>
+                            <td><input type='text' disabled value='域名称' style="width:180px"></input></td>
+                            <td><input type='text' disabled value='域索引' style="width:120px;"></input></td>
+                            <td style="width:75px;">
+                             
+                                <button type="button" class="btn btn-white  btn-sm btn_add"><i
+                                            class="ace-icon fa fa-plus blue"></i>添加
+                                </button>
+                            
+                            </td>
+                        </tr>
+                        {% for data in protocol_content_in %}
+                            <tr class="content">
+                                <td><input type="text" class="field_name" value="{{ data.field_name }}"
+                                           style="width:180px"></input></td>
+                                <td><input type="number" class="bit_index" value="{{ data.bit_index }}"
+                                           style="width:120px"></input></td>
+                                <td>
+                                   
+                                    <button type="button" class="btn btn-white btn-danger btn-sm btn_delete"><i
+                                            class="ace-icon fa fa-times red2"></i>删除
+                                    </button>
+                                 
+                                </td>
+                            </tr>
+                        {% endfor %}
+                </table>
+            </div>
+        </div>
+ 
+        <div class="form-grou out_div " >
+            <label class="col-sm-3 control-label no-padding-right"> 输出参数 </label>
+            <div class="col-sm-8">
+                <table class="tb" id="protocol_out">
+                        <tr>
+                            <td><input type='text' disabled value='域名称' style="width:180px"></input></td>
+                            <td><input type='text' disabled value='域索引' style="width:120px;"></input></td>
+                            <td style="width:75px;">
+                                
+                                <button type="button" class="btn btn-white  btn-sm btn_add"><i
+                                            class="ace-icon fa fa-plus blue"></i>添加
+                                </button>
+                             
+                            </div>
+                        </tr>
+                        {% for data in protocol_content_out %}
+                            <tr class="content">
+                                <td><input type="text" class="field_name" value="{{ data.field_name }}"
+                                           style="width:180px"></input></td>
+                                <td><input type="number" class="bit_index" value="{{ data.bit_index }}"
+                                           style="width:120px"></input></td>
+                                <td>
+                                 
+                                    <button type="button" class="btn btn-white btn-danger btn-sm btn_delete"><i
+                                            class="ace-icon fa fa-times red2"></i>删除
+                                    </button>
+                               
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+            </div>
+        </div>
+        <div class="space-20"></div>
+        <hr/>
+        <div class="form-group {% if b_ok != 1 %} hidden {% endif %} btn_save">
+            <label class="col-sm-3 control-label no-padding-right"></label>
+            <div class="col-sm-9">
+                <button id="btn-save" class="btn btn-success btn-sm popover-success">保存</button>
+            </div>
+        </div>
+ 
+        <div class="space-10"></div>
+    </div>
+</div> 
+            

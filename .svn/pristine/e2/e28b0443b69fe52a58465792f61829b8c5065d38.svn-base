@@ -1,0 +1,1 @@
+﻿ALTER TABLE `sql_params` ADD COLUMN `data_type` VARCHAR(64) COMMENT '数据类型';

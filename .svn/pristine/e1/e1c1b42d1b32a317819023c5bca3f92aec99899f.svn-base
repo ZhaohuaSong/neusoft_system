@@ -1,0 +1,35 @@
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : posp
+Source Server Version : 50628
+Source Host           : localhost:3306
+Source Database       : richdatax
+
+Target Server Type    : MYSQL
+Target Server Version : 50628
+File Encoding         : 65001
+
+Date: 2017-01-10 17:09:39
+*/
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for packmanage_triggertype
+-- ----------------------------
+DROP TABLE IF EXISTS `packmanage_triggertype`;
+CREATE TABLE `packmanage_triggertype` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `trigger_id` int(11) DEFAULT NULL COMMENT '报文触发ID',
+  `trigger_name` varchar(255) DEFAULT NULL COMMENT '报文触发名称',
+  `remarks` varchar(255) DEFAULT NULL COMMENT '注释',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of packmanage_triggertype
+-- ----------------------------
+INSERT INTO `packmanage_triggertype` VALUES ('1', '1', '外部事件触发', null);
+INSERT INTO `packmanage_triggertype` VALUES ('2', '2', '数据库更改触发', null);
+INSERT INTO `packmanage_triggertype` VALUES ('3', '3', '定时器触发', null);

@@ -1,0 +1,237 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# ##################################################
+#  16进制数据转换工具类 Qiailin
+#######################################################
+
+import json
+
+from des import *
+
+
+################################################################################################
+# format_hex 格式化16进制显示
+################################################################################################
+def format_hex(msg):
+    if msg is None:
+        return None
+    ret = ''
+    for i in range(len(msg)):
+        ret += '%02X' % (ord(msg[i]))
+    return ret
+
+
+################################################################################################
+# triple_des_decrypt 3倍DES解密
+# triple_des_encrypt 3倍DES加密
+# 备注：主要用在解密MACKEY和PINK以及计算MAC值
+################################################################################################
+def triple_des_decrypt(strKey, strData):
+    ins = triple_des(strKey)
+    str_value = ins.decrypt(strData)
+    return str_value
+
+def triple_des_encrypt(strKey, strData):
+    ins = triple_des(strKey)
+    str_value = ins.encrypt(strData)
+    return str_value
+
+################################################################################################
+# xor 两个相同长度字符串异或运算
+# 返回运算结果
+################################################################################################
+def xor(str_Data1, str_Data2):
+    str_xor = ''
+    for i in range(0, len(str_Data1)):
+        a = ord(str_Data1[i])
+        b = ord(str_Data2[i])
+        str_xor += (chr(a ^ b))
+    return str_xor
+    pass
+
+
+################################################################################################
+# str_to_bcd BCD压缩算法
+# 返回运算结果 如果不够偶数 那么左靠 末尾补0
+################################################################################################
+def str_to_bcd(str):
+    str_BCD = ''
+    len_str = len(str)
+    if len_str % 2 != 0:
+        st = list(str)
+        st.append(chr(0))
+        str = ''.join(st)
+
+    len_str = len(str)
+    i = 0
+    while True:
+        if i + 1 < len_str:
+            a = ord(str[i])
+            b = ord(str[i + 1])
+            a = a << 4
+            b = b & 0x0f
+            str_BCD += chr(a + b)
+            i += 2
+        else:
+            break
+
+    return str_BCD
+
+
+################################################################################################
+# format_str_to_assic 字符串格式化为ASSIC码显示 比如'0020C0'->'\x00\x20\xC0'表示  字符串长度会减半
+# 返回ASSIC码字符串
+# QiuJL 2015-7-15
+# 使用例子:
+#       self.m_pack_s.setTPDU(FormatStrToAssic('6000040000'))==self.m_pack_s.setTPDU('\x60\x00\x04\x00\x00')
+#	    print FormatAssicToStr(self.m_pack_s.get_TPDU())->6000040000
+################################################################################################
+def format_str_to_assic(str_value):
+    len_str = len(str_value)
+    str_ret = ''
+    if len_str % 2 == 0:
+        for i in range(0, len_str, 2):
+            h = ord(str_value[i])
+            if h >= 65:  # A B C D E F
+                h = h - 65 + 10
+            else:
+                h = h - 48
+
+            l = ord(str_value[i + 1])
+            if l >= 65:  # A B C D E F
+                l = l - 65 + 10
+            else:
+                l = l - 48
+
+            r = chr(h * 16 + l)
+            str_ret += r
+        return str_ret
+    else:  # 提示错误 并抛出异常
+        # print '配置数据错误:参数长度应该是偶数'
+        pospLogger.error(msg=('配置数据错误:参数长度应该是偶数'))
+
+
+################################################################################################
+# FormatAssicToStr  和  FormatStrToAssic相互对应
+# 返回字符串
+# QiuJL 2015-7-18
+# 备注：辅助助函数   \x00\x20\x00\x01\x20\xC0\x00\x12->0020000120C00012  主要提供与数据库参数对比
+################################################################################################
+def format_assic_to_str(str_value, bBCD=True):
+    ret = ''
+    if True == bBCD:
+        for i in range(len(str_value)):
+            ret += '%02X' % (ord(str_value[i]))
+    else:
+        for i in range(0, len(str_value)):
+            a = ord(str_value[i])
+            ret += str(a)
+
+    return ret
+
+
+################################################################################################
+# str2Hex 字符串格式格式化成16进制\x格式表示
+# 返回运算结果  纯粹辅助手动填写域值
+# 1234=\x12\x34
+################################################################################################
+def str_to_hex(str_str):
+    str_ret = ''
+    for i in range(0, len(str_str)):
+        if i % 2 == 0: str_ret += '\\x'
+        str_ret += str_str[i]
+    return str_ret
+
+
+################################################################################################
+# str_to_bcd_hex 字符串格式串格式化为BCD字符串表示  16进制
+# 返回运算结果 纯粹辅助手动填写域值
+# 1234 = \x01\x02\x03\x04
+################################################################################################
+def str_to_bcd_hex(str_str):
+    str_ret = ''
+    len_str = len(str_str)
+    for i in range(0, len_str):
+        if len_str - 1 == i and len_str % 2 == 1:
+            str_ret += '\\x'
+            str_ret += str_str[i]
+            str_ret += '0'
+        else:
+            str_ret += '\\x0'
+            str_ret += str_str[i]
+
+    return str_ret
+
+
+################################################################################################
+# str2BCDHex 字符串格式转换为BCD字符串表示  16进制
+# 用于调试
+# 1234 = \x01\x02\x03\x04
+################################################################################################
+def str2BCDHex_Debug(str, flag=0):
+    '''
+    str:字符串
+    flag：=1--右靠 =0--左靠
+    '''
+    ret = ''
+    len_str = len(str)
+    for i in range(0, len_str):
+        if flag == 0:  # 左靠或者偶数长
+            tmp = ord(str[i])
+            if tmp > 64:
+                tmp = tmp - 65
+                tmp = chr(tmp)
+                ret += tmp
+            else:
+                tmp = tmp - 48
+                tmp = chr(tmp)
+                ret += tmp
+    return ret
+
+
+xxxdata = '\xCD\xA8\xC1\xAA\xD0\xC2\xD0\xCB'
+
+
+# 离散输入的数据
+# inData：字符串类型
+def despersed(inData):
+    strTmp = ''
+    tmp = 0
+    outData = ''
+    list1 = list(inData[4:8]) + list(inData[:4])
+    print('输入数据为：%s' % (list1))
+    list2 = list(xxxdata)
+
+    for i in range(0, 8):
+        tmp = (((ord(list1[i]) ^ ord(list2[i])) / 9) ^ ((ord(list1[i]) ^ ord(list2[i])) % 9))
+        outData += chr(tmp)
+
+    return outData
+
+
+def createZeroStr(zeroLen):
+    str1 = ''
+    for i in range(zeroLen):
+        str1 += '0'
+
+    return format_str_to_assic(str1)
+
+
+if __name__ == '__main__':
+    pass
+    '''
+    data = '\x49\x88\x4F\x80\x27\x90\x43\xB5\x93\x9D\xE2\xCA\x3B\x1B\xDD\x89'
+    key  = '\x20\x85\x83\x31\xF7\x34\xD0\x07\x92\x3E\x92\xDA\x94\xD5\x26\x76'
+    str_d = TripleDesDecrypt(key, data)
+    str = StrToBCD('\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x03')
+    print FormatHex(str)
+
+
+    print str2Hex('9F2608C73DFCBD2FE777169F2701809F101307080103A0A800010A01000000000049931EF49F3704848342A89F360203C19505088004E0009A031607149C01009F02060000000000015F2A02015682027C009F1A0201569F03060000000000009F3303E0E1C89F34030203009F3501128408A0000003330101019F09020020')
+    print str2BCDHex('6228480086288628778D24052215820230000')
+
+    str_ret = FormatStrToAssic('0020000120C00012')
+    print len(str_ret)
+    print FormatHex(str_ret)
+    '''
+    #print FormatHex(StrToBCD('\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x03'))

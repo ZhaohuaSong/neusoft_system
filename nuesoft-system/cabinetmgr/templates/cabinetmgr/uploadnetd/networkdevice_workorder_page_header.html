@@ -1,0 +1,46 @@
+<!-- -->
+
+<div  id="ace-settings-box">
+    <div class="pull-left width-100">
+        <div style="width:100%; border-bottom:1px #dedede dashed; float:left">
+            <div class="input-group col-sm-3" style="margin-top: 10px; float: right;">
+                <input class="form-control" id="in-search" name="keywords" placeholder="输入要查询的内容" type="text" >
+                <div class="input-group-btn" style="padding-left: 10px">
+                    <button class="btn btn-info btn-sm tooltip-info" id="btn-search">
+                        查询
+                    </button>
+                </div>
+            </div>
+            {% if operate_device == 1 and submit == 0 %}
+                <button class="btn btn-info btn-sm tooltip-info" id="btn-distribute-networkdevice" style="float:left; margin:10px 3px 10px 3px;">
+                    批量添加或回收设备
+                </button>
+                <button class="btn btn-success btn-sm popover-success" id="btn-update" style="float:left; margin:10px 3px 10px 3px;">
+                    编辑
+                </button>
+                <button class="btn btn-danger btn-sm tooltip-error" id="btn-delete" style="float:left; margin:10px 3px 10px 3px;">
+                    回退
+                </button>
+            {% elif operate_device == 3 %}
+                <button class="btn btn-info btn-sm tooltip-info" id="btn-retry" style="float:left; margin:10px 3px 10px 3px;">
+                    重新操作
+                </button>
+                <button class="btn btn-info btn-sm tooltip-info" id="btn-disvertify"  style="float:left; margin:10px 3px 10px 3px;">
+                    审核不通过
+                </button>
+                <button class="btn btn-info btn-sm tooltip-info" id="btn-vertify-detail"  style="float:left; margin:10px 3px 10px 3px;">
+                    审核详情
+                </button>
+            {% elif operate_device == 2 %}
+                <button class="btn btn-info btn-sm tooltip-info" id="btn-vertify"  style="float:left; margin:10px 3px 10px 3px;">
+                    审核通过
+                </button>
+                <button class="btn btn-info btn-sm tooltip-info" id="btn-vertify-detail"  style="float:left; margin:10px 3px 10px 3px;">
+                    审核详情
+                </button>
+            {% endif %}
+        </div>
+    </div><!-- /.pull-left -->
+
+    <!-- /.pull-left -->
+</div><!-- /.ace-settings-box -->

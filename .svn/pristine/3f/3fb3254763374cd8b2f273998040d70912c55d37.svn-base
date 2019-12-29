@@ -1,0 +1,72 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2016/1/14 10:39
+# @Author  : qiujunli
+# @Site    :
+# @File    : iso_log_interface.py
+# @Software: PyCharm
+# @Function: 日志接口，提供给钟志明保存日志时要解析报文的逻辑接口
+
+from ..common.iso.iso_8583 import *
+from ..common.iso.iso_tool import *
+class ISOLogInterface:
+    def __init__(self, iso_net):
+        '''
+        初始化
+        :param iso_net: 网络传输报文
+        '''
+
+        if iso_net:
+            self.iso_8583 = ISO8583()
+            self.iso_8583.setNetworkISO(iso_net)
+
+    def get_app_id(self):
+        '''
+        获取适配器APP编号（ID），即终端号
+        :return:
+        '''
+        return self.iso_8583.getBit(41)
+
+    def get_protocol_id(self):
+        '''
+        获取协议规则编号
+        :return:
+        '''
+        return self.iso_8583.get_TPDU()
+
+    def get_msg_type(self):
+        '''
+        获取消息类型
+        :return:
+        '''
+        return format_assic_to_str(self.iso_8583.get_msg_type())
+
+    def get_iso_hex(self):
+        '''
+        获取报文的hex格式字符串信息,方便数据库存储记忆
+        :return:
+        '''
+        return format_assic_to_str(self.iso_8583.getNetworkISO(), True)
+
+    def get_response_code(self):
+        '''
+        获取应答码 00表示成功
+        :return:
+        '''
+        return self.iso_8583.getBit(39)
+
+    def is_response(self):
+        '''
+        是否为响应报文
+        :return:
+        '''
+        ret = self.iso_8583.getBit(39)
+        if ret is None or len(ret)==0:
+            return False
+
+    def show(self):
+        '''
+        显示报文域信息内容
+        :return:
+        '''
+        self.iso_8583.showBitsAndValues()

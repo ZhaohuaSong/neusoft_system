@@ -1,0 +1,108 @@
+{% extends "mainbase.html" %}
+{% load staticfiles %}
+{% load i18n staticfiles %}
+{% load url from future %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% block scripts %}
+    <script src="{% static "js/jquery.bootstrap-duallistbox.min.js" %}"></script>
+    <script src="{% static "js/jquery.raty.min.js" %}"></script>
+    <script src="{% static "js/bootstrap-multiselect.min.js" %}"></script>
+    <script src="{% static "js/select2.min.js" %}"></script>
+    <script src="{% static "js/jquery-typeahead.js" %}"></script>
+    <script src="{% static "js/selectbox/selectbox.js" %}"></script>
+    <!-- page specific plugin scripts -->
+    <link href="{% static 'css/bootstrap-duallistbox.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/bootstrap-multiselect.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/select2.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/ace-skins.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/ace-rtl.min.css' %}" rel="stylesheet">
+
+        <script src="{% static "js/packmanage/packmanage.protocolcontent.js" %}"></script>
+        <script type="text/javascript">
+            jQuery(function ($) {
+                $("#btn-back").bind("click",
+                        function () {
+                            window.location.href = "{% url 'packmanage:protocoltype.list' %}"
+                        });
+            })
+        </script>
+
+        <style type="text/css">
+            /*table#table_protocol
+            {
+                margin-left:auto; margin-right:auto
+            }*/
+
+            table.tb tr td {
+                padding: 0px;
+                padding-bottom:3px;
+                padding-right: 5px;
+            }
+
+            .form-control1{
+                height:28px;
+                width:100%; 
+            }
+
+
+
+        </style>
+    {% endblock %}
+</head>
+<body class="no-skin">
+{% block content %}
+    <div class="main-content">
+        <div class="breadcrumbs" id="breadcrumbs">
+            <ul class="breadcrumb">
+                <li>
+                    <i class="ace-icon fa fa-home home-icon"></i>
+                    <a href="#">首页</a>
+                </li>
+                <li>
+                    <a href="#">适配器通讯管理</a>
+                </li>
+                <li>
+                    <a href="{% url 'packmanage:protocoltype.list' %}">本地报文协议管理</a>
+                </li>
+                <li class="active">协议内容编辑({{ protocol_name }})</li>
+            </ul><!-- /.breadcrumb -->
+        </div>
+
+        <div class="page-content">
+            <div class="page-header " style="border-bottom:1px dashed #DEDEDE">
+                协议名称：<span class="blue">{{ protocol_name }}</span>&nbsp;&nbsp;&nbsp;&nbsp;
+                协议ID：<span id="lb_mid" class="blue">{{ protocol_id }}</span> &nbsp;&nbsp;&nbsp;&nbsp;
+
+                创建者：<span id="lb_tid" class="blue">{{ protocol_creater }}</span>&nbsp;&nbsp;&nbsp;&nbsp;
+
+                使用状态：
+                {% if 1 == protocol_state %}<span class="green">正常使用</span>{% elif 0 == protocol_state %}
+                    <span class="red">已停用</span>
+                {% else %} <span class="red">已停用</span> {% endif %}
+
+                <br/> 
+            </div><!-- /.page-header -->
+
+            <div style="padding-bottom:30px">
+                 
+            </div>
+
+
+            <div class="row">
+                <div class="col-xs-12"  style="margin-bottom:80px;"> 
+                    {% include "packmanage/in_datasrc_step_1.html" %}<!-- 
+                    {% include "packmanage/in_datasrc_step_2.html" %} 
+                    {% include "packmanage/in_datasrc_step_3.html" %}
+                    {% include "packmanage/in_datasrc_step_4.html" %} -->
+                </div><!-- /.col -->
+            </div><!-- /.row -->
+             
+        </div>
+    </div>
+    {% include "message.html" %}
+{% endblock %}
+<!-- /.main-content -->
+</body>
+</html>

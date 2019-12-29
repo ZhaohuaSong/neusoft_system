@@ -1,0 +1,186 @@
+<div class="widget-box col-xs-12"> 
+    <div class="widget-header widget-header-blue widget-header-flat">
+        <h4 class="widget-title lighter">{{operation_name}}</h4>
+    </div> 
+    <div class="space-20"></div>
+
+    <div class="form-horizontal"> 
+        <div class="form-group ">
+            <label class="col-sm-3 control-label no-padding-right"> 请求数据源类型 </label>
+            <div class="col-sm-3">
+                <select id="sel-datasrc" class="select2  form-control" data-placeholder="请点击选择" tabindex="-1"
+                        aria-hidden="true">
+                    <option value="-1">--------</option>
+
+                    {% for key, value in datasrc_list.items %}
+                        {% if src_type == value %}
+                            <option  selected value={{ key }}>{{ value }}</option>
+                        {% else %}
+                            <option value={{ key }}>{{ value }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+ 
+        <div class="form-group ">
+            <label class="col-sm-3 control-label no-padding-right">请求数据源名称</label>
+            <div class="col-sm-3">
+                            <select id="src_list" class="select2  form-control" data-placeholder="请点击选择"
+                                    tabindex="-1" aria-hidden="true">
+                                <option value="-1">--------</option>
+                                {% for data in src_list %} 
+                                        <option  value={{ data.0 }}>{{ data.1 }}</option>
+                                {% endfor %}
+                            </select>
+            </div>
+        </div>
+
+        <div class="space-10"></div> 
+        <div class="form-group">
+            <label class="col-sm-3 control-label no-padding-right">请求数据源协议</label>
+            <div class="col-xs-9 ">
+                <table class="tb" id="protocol_in">
+                    <tr>
+                        <td><input type='text' disabled value='输入参数名称' style="width:180px"></input>
+                        </td>
+                        <td><input type='text' disabled value='数据源字段'
+                                   style="width:180px;"></input></td>
+                    </tr>
+                    {% for data in protocol_content_in %}
+                        <tr class="content">
+                            <td><input disabled type="text" class="field_name" value="{{ data.field_name }}"
+                                       style="width:180px"></input></td>
+                            <td>
+                                <select class="form-control1 in_sel_src"> 
+                                    <option value="-1">---------</option>  
+                                     
+                                </select>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+
+        <div class="space-10"></div>
+        <div class="form-group">
+            <label class="col-sm-3 control-label no-padding-right">请求数据源查询条件</label>
+            <div class="col-xs-9 ">
+                <table class="tb" id="query_param"> 
+                    <!-- <tr>
+                        <td><input type='text' disabled value='输入参数名称' style="width:180px"></input>
+                        </td>
+                        <td><input type='text'  value='' style="width:180px;"></input></td>
+                    </tr>  -->
+                </table>
+            </div>
+        </div>
+
+        <div class="form-group {% if is_updata %} {% else %}hidden{% endif %} ">
+            <label class="col-sm-3 control-label no-padding-right">
+                修改数据源配置
+            </label>
+            <div class="col-xs-9 ">
+                <table class="tb" id="protocol_out">
+                    <tr>
+                        <td><input type='text' disabled value='输出参数名称' style="width:180px"></input>
+                        </td>
+                        <td><input type='text' disabled value='数据源字段'
+                                   style="width:180px;"></input></td>
+
+                    </tr>
+                    {% for data in protocol_content_out %}
+                        <tr class="content">
+                            <td><input disabled type="text" class="field_name" value="{{ data.field_name }}"
+                                       style="width:180px"></input></td>
+                            <td>
+                                <select class="form-control1 out_sel_src"> 
+                                    <option value="-1">---------</option>  
+                                    
+                                </select>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+
+        <div class="space-10"></div>
+        <div class="form-group {% if is_search %} {% else %} hidden{% endif %} ">
+            <label class="col-sm-3 control-label no-padding-right"> 响应数据源类型 </label>
+            <div class="col-sm-3">
+                <select id="sel-datasrc-response" class="select2  form-control" data-placeholder="请点击选择" tabindex="-1"
+                        aria-hidden="true">
+                    <option value="-1">--------</option>
+                    {% for key, value in datasrc_list.items %}
+                        {% if src_type == value %}
+                            <option  selected value={{ key }}>{{ value }}</option>
+                        {% else %}
+                            <option value={{ key }}>{{ value }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+ 
+        <div class="form-group  {% if is_search %} {% else %} hidden{% endif %}">
+            <label class="col-sm-3 control-label no-padding-right">响应数据源名称</label>
+            <div class="col-sm-3">
+                            <select id="src_list_response" class="select2  form-control" data-placeholder="请点击选择"
+                                    tabindex="-1" aria-hidden="true">
+                                <option value="-1">--------</option>
+                                {% for data in src_list %} 
+                                        <option  value={{ data.0 }}>{{ data.1 }}</option>
+                                {% endfor %}
+                            </select>
+            </div>
+        </div>
+
+        <div class="form-group  {% if is_search %}{% else %}hidden{% endif %}">
+            <label class="col-sm-3 control-label no-padding-right">
+                {% if is_search %} 响应数据源协议配置 {% elif is_updata %} 修改字段配置 {% endif %}
+            </label>
+            <div class="col-xs-9 ">
+                <table class="tb" id="data_src_response">
+                    <thead>
+                        <tr>
+                        <td><input type='text' disabled value='输出参数名称' style="width:180px"></input>
+                        </td>
+                        <td><input type='text' disabled value='数据源字段' style="width:180px;"></input></td>
+
+                        </tr>
+                    </thead>
+                    
+                    <tbody>
+                        {% for data in protocol_content_out %}
+                        <tr class="content">
+                            <td><input disabled type="text" class="field_name" value="{{ data.field_name }}"
+                                       style="width:180px"></input></td>
+                            <td>
+                                <select class="form-control1 sel_to_src" id="{{ data.bit_index }}"> 
+                                    <option value="-1">---------</option>  
+                                    
+                                </select>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                     
+                </table>
+            </div>
+        </div>
+
+        <div class="space-10"></div>
+
+        <hr/>
+        <div class="form-group ">
+            <label class="col-sm-3 control-label no-padding-right"></label>
+            <div class="col-sm-9">
+                <button id="btn-save" class="btn btn-success btn-sm popover-success">保存配置</button>
+                
+            </div>
+        </div>
+        <div class="space-10"></div>
+    </div>
+</div>

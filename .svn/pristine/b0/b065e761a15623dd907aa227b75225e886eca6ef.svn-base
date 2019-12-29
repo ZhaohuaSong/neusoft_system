@@ -1,0 +1,65 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
+from __future__ import unicode_literals
+
+from django.db import models
+
+# Create your models here.
+
+
+
+class SendMsg(models.Model):
+    """
+      ===============================================================================
+      function：    发送报文信息
+      developer:    zzm
+      add-time      2016/01/04
+      Note:
+      ===============================================================================
+    """
+
+    msg_no = models.CharField(max_length=64, verbose_name='报文编号', blank=True, null=True)
+    status = models.CharField(max_length=8, verbose_name='0-未发送,1-已发送', blank=True, null=True)
+    content = models.CharField(max_length=500, verbose_name='信息内容', blank=True, null=True)
+    create_time = models.DateTimeField(null=True, blank=True) #创建时间
+    return_time = models.DateTimeField(null=True, blank=True) #创建时间
+    code = models.CharField(max_length=16, verbose_name='00-响应成功,-1-未响应', blank=True, null=True)
+    result = models.CharField(max_length=500, verbose_name='响应结果', blank=True, null=True)
+    ip_address = models.CharField(max_length=32, verbose_name='发送ip', blank=True, null=True)
+    ip_port = models.CharField(max_length=16, verbose_name='发送ip端口', blank=True, null=True)
+    server_address = models.CharField(max_length=32, verbose_name='目标ip', blank=True, null=True)
+    server_port = models.CharField(max_length=16, verbose_name='目标端口', blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'send_msg'
+
+
+class ReceiveMsg(models.Model):
+    """
+      ===============================================================================
+      function：    接收报文信息
+      developer:    zzm
+      add-time      2016/01/04
+      Note:
+      ===============================================================================
+    """
+
+
+    msg_no = models.CharField(max_length=64, verbose_name='报文编号', blank=True, null=True)
+    status = models.CharField(max_length=8, verbose_name='0-未回复;1-已回复', blank=True, null=True)
+    content = models.CharField(max_length=500, verbose_name='接收信息内容', blank=True, null=True)
+    back_content = models.CharField(max_length=500, verbose_name='回应信息内容', blank=True, null=True)
+    receive_time = models.DateTimeField(null=True, blank=True) #接收报文时间
+    resp_time = models.DateTimeField(null=True, blank=True) #响应报文时间
+    code = models.CharField(max_length=16, verbose_name='00-响应成功,-1-未响应', blank=True, null=True)
+    result = models.CharField(max_length=500, verbose_name='响应结果', blank=True, null=True)
+    from_ip = models.CharField(max_length=32, verbose_name='ip来源', blank=True, null=True)
+    from_ip_port = models.CharField(max_length=16, verbose_name='ip来源端口', blank=True, null=True)
+    local_ip = models.CharField(max_length=32, verbose_name='本机响应ip', blank=True, null=True)
+    local_ip_port = models.CharField(max_length=16, verbose_name='本地响应ip端口', blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'receive_msg'

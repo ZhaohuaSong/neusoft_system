@@ -1,0 +1,23 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
+from handle_config_protocol_request import *
+from handle_config_protocol_response import *
+from handle_data_exchange_request import DataExchangeRequest
+from ...api.iso_msg_type import *
+
+class InstanceFactory:
+    '''
+    实例工厂
+    '''
+    INSTANCE = {}
+    INSTANCE[MSG_PROTOCOL_CONFIG_REQUEST]  = ConfigProtocolRequest #报文配置求情逻辑
+    INSTANCE[MSG_PROTOCOL_CONFIG_RESPONSE] = ConfigProtocolResponse #报配置响应逻辑
+    INSTANCE[MSG_DATAEXCHANGE] = DataExchangeRequest #数据交换逻辑
+
+    def get_instance(self, msg_type):
+        try:
+            ins = self.INSTANCE[msg_type]
+            return ins()
+        except Exception as e:
+            raise Exception("不支持该消息类型：" + msg_type)

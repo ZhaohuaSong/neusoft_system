@@ -1,0 +1,73 @@
+{% extends "mainbase.html" %}
+{% load staticfiles %}
+{% load i18n staticfiles %}
+{% load url from future %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% block scripts %}
+        <script type="text/javascript">
+            var TXNNAMES_LIST_URL = '{% url "packmanage:protocoltype.data" %}';
+        </script>
+        <script src="{% static "js/packmanage/packmanage.protocoltype.list.js" %}"></script>
+    {% endblock %}
+</head>
+<body class="no-skin">
+{% block content %}
+    <div class="main-content">
+        <div class="breadcrumbs" id="breadcrumbs">
+            <ul class="breadcrumb">
+                <li>
+                    <i class="ace-icon fa fa-home home-icon"></i>
+                    <a href="#">首页</a>
+                </li>
+                <li>
+                    <a href="#">数据报文管理</a>
+                </li>
+                <li class="active">报文协议管理</li>
+            </ul><!-- /.breadcrumb -->
+        </div>
+
+        <div class="page-content">
+            {% include "page_header.html" %}<!-- /.page-header -->
+            
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="clearfix" style="padding-top: 10px">
+                        <div class="tableTools-container"></div>
+                    </div>
+                    <div class="table-header"> <!--table-header -->
+                        报文协议列表
+                    </div>
+                    <div>
+                        <table id="dynamic-table" class="table table-striped table-bordered table-hover"><!--table -->
+                            <thead>
+                            <tr>
+                                <th class="hidden-480 center" width='45px'>
+                                    <label class="pos-rel">
+                                        <input type="checkbox" class="ace"/>
+                                        <span class="lbl"></span>
+                                    </label>
+                                </th>
+                                <th class="hidden-480" width='55px'>序号</th>
+                                <th>协议名称</th>
+                                <th>协议ID</th> 
+                                <th>数据来源方式</th> 
+                                <th>状态</th> 
+                                <th>创建者</th>
+                                <th>操作</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table><!--table -->
+                    </div>
+                </div><!-- /.span -->
+            </div><!-- /.row -->
+        </div>
+    </div>
+    {% include "message.html" %}
+{% endblock %}
+<!-- /.main-content -->
+</body>
+</html>

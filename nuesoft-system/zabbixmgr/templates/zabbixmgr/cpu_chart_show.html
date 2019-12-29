@@ -1,0 +1,176 @@
+{% extends "mainbase.html" %}
+{% load staticfiles %}
+{% load i18n staticfiles %}
+{% load url from future %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% block scripts %}
+
+        <!-- page specific plugin scripts -->
+        <link rel="stylesheet" href="{% static "css/jquery-ui.min.css" %}"/>
+{#        <link rel="stylesheet" href="{% static "css/datatables/buttons.dataTables.min.css" %}"/>#}
+        <!-- jquery scripts -->
+        <script src="{% static "js/dataTables.buttons.min.js" %}"></script>
+        <!-- datatables buttons scripts -->
+        <script src="{% static "js/datatables/buttons.flash.min.js" %}"></script>
+        <script src="{% static "js/datatables/jszip.min.js" %}"></script>
+        <script src="{% static "js/datatables/pdfmake.min.js" %}"></script>
+        <script src="{% static "js/datatables/vfs_fonts.js" %}"></script>
+        <script src="{% static "js/datatables/buttons.html5.min.js" %}"></script>
+        <script src="{% static "js/datatables/buttons.print.min.js" %}"></script>
+
+        <!-- ace scripts -->
+        <script src="{% static "js/buttons.colVis.min.js" %}"></script>
+        <script src="{% static "js/dataTables.select.min.js" %}"></script>
+
+        <script src="{% static "js/jquery-ui.custom.min.js" %}"></script>
+        <script src="{% static "js/jquery.ui.touch-punch.min.js" %}"></script>
+        <script src="{% static "js/bootstrap-colorpicker.min.js" %}"></script>
+        <script src="{% static "js/jquery-ui.min.js" %}"></script>
+        <script src="{% static "js/jquery.easypiechart.min.js" %}"></script>
+
+        <script src="/static/js/zabbixmgr/highcharts.js"></script>
+
+<script>
+var level_1 = {{ level_1 | safe }};
+var level_5 = {{ level_5 | safe }};
+var level_15 = {{ level_15 | safe }};
+var level = [level_1, level_5, level_15];
+var url = {{ url | safe }};
+$(function () {
+        String.prototype.format = function () {
+        var values = arguments;
+        return this.replace(/\{(\d+)\}/g, function (match, index) {
+            if (values.length > index) {
+                return values[index];
+            } else {
+                return "";
+            }
+        });
+    };
+    var avg_time = [1, 5, 15]
+    for (i=0; i< 3; i++) {
+        var pie_id = '#container' + i.toString();
+        var pie_title = "Processor load ({0} min average per core)".format(avg_time[i])
+        $(pie_id).highcharts({
+            chart: {
+                plotBackgroundColor: null,
+                plotBorderWidth: null,
+                plotShadow: false
+            },
+            title: {
+                text: pie_title
+            },
+            tooltip: {
+                headerFormat: '{series.name}<br>',
+                {#            pointFormat: '{point.name}: <b>{point.percentage:.1f}%</b>'#}
+            },
+            plotOptions: {
+                pie: {
+                    allowPointSelect: true,
+                    cursor: 'pointer',
+                    events: {
+                        click: function (e) {
+                            location.href = e.point.url + e.point.tag; //上面是当前页跳转，如果是要跳出新页面，那就用
+                            {#                                window.open(e.point.url);#}
+                            //这里的url要后面的data里给出
+                        }
+                    },
+                    dataLabels: {
+                        enabled: true,
+                        format: '<b>{point.name}</b>: {point.percentage:.1f} %',
+                        style: {
+                            color: (Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black'
+                        }
+                    }
+                }
+            },
+            series: [{
+                type: 'pie',
+                name: 'CPU数量占比',
+                data: [
+                    {
+                        name: '负载范围：0~0.5',
+                        y: level[i][0],
+                        sliced: true,
+                        selected: true,
+                        url: url,
+                        tag: '/0'
+                    },
+                    {
+                        name: '负载范围：0.5~1',
+                        y: level[i][1],
+                        sliced: true,
+                        selected: true,
+                        url: url,
+                        tag: '/1'
+                    },
+                    {
+                        name: '负载范围：1~1.5',
+                        y: level[i][2],
+                        sliced: true,
+                        selected: true,
+                        url: url,
+                        tag: '/2'
+                    },
+                    {
+                        name: '负载范围：1.5~2',
+                        y: level[i][3],
+                        sliced: true,
+                        selected: true,
+                        url: url,
+                        tag: '/3'
+                    },
+                    {
+                        name: '负载范围：大于2',
+                        y: level[i][4],
+                        sliced: true,
+                        selected: true,
+                        url: url,
+                        tag: '/4'
+                    }
+                ]
+            }]
+        });
+    }
+});
+</script>
+
+    {% endblock %}
+</head>
+<body class="no-skin">
+{% block content %}
+    <div id="cpu_pie" class="main-content" >
+        <div class="breadcrumbs" id="breadcrumbs">
+         <ul class="breadcrumb">
+                <li>
+                    <i class="ace-icon fa fa-home home-icon"></i>
+                    <a href="#">首页</a>
+                </li>
+
+                <li>
+                    <a href="#">数据监控中心</a>
+                </li>
+                <li>
+                    <a href="#">项目数据</a>
+                </li>
+             <li class="active">项目图表</li>
+            </ul><!-- /.breadcrumb -->
+        </div>
+
+        <script>
+            var pie = '';
+            for (i=0; i<3; i++) {
+                pie += '<div id=' + 'container' + i + ' style="min-width:1000px;height:400px; float: left; padding-left:0px; margin-top: 10px;" class="col-xs-0"></div>'
+            }
+            $('#cpu_pie').append( pie)
+            </script>
+    </div>
+    {% include "message.html" %}
+{% endblock %}
+
+<!-- /.main-content -->
+</body>
+</html>
+

@@ -1,0 +1,53 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
+
+
+import requests
+import json
+import thread,threading
+
+
+def add(threadName):
+    params ={'dbname':'richdatax','tables':[{'table_name': 'test_1','field': [
+        {'name':'test_1_name','u_value':'test1',},
+        {'name':'test_1_sex','u_value':'0',},
+        {'name':'test_1_address','u_value':'opppppp'},
+    ]},]}
+    r = requests.post(url='http://127.0.0.1:8000/dbadmin/dynamic/add/',data=json.dumps(params))
+    print str(threadName)+'>>>>>>>>>>>>>>>'+str(r.text)
+
+
+def list(threadName):
+    params ={'dbname':'richdatax','tables': [{'table_name': 'test_1',
+   'query_field': [
+        {'name':'test_1_name','opt':'==', 'value':'test1',},
+    ],
+    'show_field':[],
+    },]}
+    r = requests.post(url='http://127.0.0.1:8000/dbadmin/dynamic/list/',data=json.dumps(params))
+    print str(threadName)+'>>>>>>>>>>>>>>>'+str(r.text)
+
+
+def edit(threadName):
+    params ={'dbname':'richdatax','tables': [{'table_name': 'test_1','field': [
+        {'name':'test_1_name',},
+        {'name':'test_1_sex','u_value':'1'},
+        {'name':'test_1_address','q_value':'opppppp'},
+    ]},]}
+    r = requests.post(url='http://127.0.0.1:8000/dbadmin/dynamic/edit/',data=json.dumps(params))
+    print str(threadName)+'>>>>>>>>>>>>>>>'+str(r.text)
+
+if __name__ == '__main__':
+
+
+    # for i in range(0,1):
+    #     threading.Thread(target = edit, args = ('1thread-'+str(i),), name = '1thread-' + str(i)).start()
+    # for i in range(0,1):
+    #     threading.Thread(target = add, args = ('1thread-'+str(i),), name = '1thread-' + str(i)).start()
+    # for i in range(0,1):
+    #     threading.Thread(target = list, args = ('1thread-'+str(i),), name = '1thread-' + str(i)).start()
+
+    a = '1,2,3,4,'
+    a = a[0:a.__len__()-1]
+    print a

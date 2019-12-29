@@ -1,0 +1,24 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+from django.conf.urls import url
+from views_apps import ListAppsView, JsonAppsView, apps_delete, CreateAppView, EditAppView
+from views_protocol import ListProtocolTypeView, JsonProtocolTypeView, protocoltype_delete, CreateProtocoltypeView, EditProtocoltypeView
+from views_protocol_content import PageProtocolContentView
+urlpatterns = [
+    #应用程序管理
+    url(r'^packmanage/apps/list$', ListAppsView.as_view(), name='apps.list'),  # 页面模板
+    url(r'^packmanage/apps/data$', JsonAppsView.as_view(), name="apps.data"),  # 获取数据
+    url(r'^packmanage/apps/delete$', apps_delete, name="apps.delete"),  # 删除
+    url(r'^packmanage/apps/add$',  CreateAppView.as_view(), name='apps.add'),  # 添加
+    url(r'^packmanage/apps/edit/(?P<pk>\d+)/$', EditAppView.as_view(), name="acqinfo.edit"),  # 编辑
+
+    #报文协议类型管理
+    url(r'^packmanage/protocoltype/list$', ListProtocolTypeView.as_view(), name='protocoltype.list'),  # 报文协议页面
+    url(r'^packmanage/protocoltype/data$', JsonProtocolTypeView.as_view(), name='protocoltype.data'),  # 获取当前页面数据
+    url(r'^packmanage/protocoltype/delete$', protocoltype_delete, name="protocoltype.delete"),  # 删除
+    url(r'^packmanage/protocoltype/add$',  CreateProtocoltypeView.as_view(), name='protocoltype.add'),  # 添加
+    url(r'^packmanage/protocoltype/edit/(?P<pk>\d+)/$', EditProtocoltypeView.as_view(), name="protocoltype.edit"),  # 编辑
+
+    #报文协议内容管理
+    url(r'^packmanage/protocoltype/content$', PageProtocolContentView.as_view(), name='protocoltype.content'),  # 协议内容
+]

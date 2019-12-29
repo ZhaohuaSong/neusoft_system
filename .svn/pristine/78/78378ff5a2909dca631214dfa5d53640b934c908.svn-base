@@ -1,0 +1,67 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+
+import os,sys
+sys.path.append(os.path.dirname(os.path.abspath("__file__")))
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.local')
+import django
+import base64
+django.setup()
+
+from django.apps import apps
+procData = apps.get_model(app_label='richdataserver', model_name='ProcData')#进程记录
+protocoltrigger = apps.get_model(app_label='packmanage', model_name='Protocoltrigger')#触发协议
+dbconfig = apps.get_model(app_label='dbadmin', model_name='DbConfig')#数据源
+sqlservice = apps.get_model(app_label='dbadmin', model_name='SqlService')#多数据变更数据源
+sqlname = apps.get_model(app_label='dbadmin', model_name='SqlName')#多业务查询数据源
+from mysql_process import  main
+from oracle_process import MonitorProcess
+from dbconfig import dbengine
+import re
+
+if __name__ == "__main__":
+
+    print 'test............'+str(sys.argv[1])
+
+    # proc = procData()
+    # proc.trigger_id = int(sys.argv[1])
+    # proc.proc_id = str(os.getpid())
+    # proc.save()
+    pt =  protocoltrigger.objects.get(id=int(sys.argv[1]))
+    sql_name = sqlname.objects.get(id = pt.datasrc_id)
+    db_config = dbconfig.objects.get(dbname=sql_name.dbname)
+    dburl = db_config.dbusername+'/'+db_config.get_dbpassword()+'@'+db_config.dbhost+'/'+db_config.dbname
+    config = {}
+    config['host'] = db_config.dbhost
+    config['port'] = db_config.dbport
+    config['user'] = db_config.dbusername
+    config['password'] = db_config.get_dbpassword()
+    config['dbname'] = db_config.dbname
+    config['dbtype'] = db_config.dbtype
+    mydb = dbengine(config)
+    table_list = mydb.get_tables()
+    tables = []
+    sql = sql_name.sqlcontent
+    for tablename in table_list:
+        m = re.search(tablename, sql, re.IGNORECASE)
+        if m is None:
+            pass
+        else:
+            tables.append(str(tablename))
+    if db_config.dbtype=='MySQL':
+        mysql_stting={
+                "host": db_config.dbhost,
+                "port": int(db_config.dbport),
+                "user": db_config.dbusername,
+                "passwd": base64.b64decode(db_config.dbpassword)
+        }
+        main(os.getpid(),mysql_stting,tables)
+    elif db_config.dbtype=='Oracle':
+        MonitorProcess(os.getpid(),dburl,tables).start()
+    elif db_config.dbtype=='MSSQLSERVER':
+        while True:
+            print ""
+
+
+

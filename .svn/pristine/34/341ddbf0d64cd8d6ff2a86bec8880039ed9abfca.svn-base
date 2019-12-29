@@ -1,0 +1,6 @@
+CREATE TABLE `file_upload` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  -- `file_path_name` varchar(64) DEFAULT NULL COMMENT '原始文件',
+  `file_standard_name` varchar(64) DEFAULT NULL COMMENT '标准文件',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8;

@@ -1,0 +1,12 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
+
+class InstanceBase:
+    # 请求处理
+    def request(self, iso):
+        return None
+
+    # 响应处理
+    def response(self, iso):
+        return None

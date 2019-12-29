@@ -1,0 +1,17 @@
+<div class="footer">
+    <div class="footer-inner">
+        <div class="footer-content">
+						<span class="bigger-120">
+							<span class="blue bolder">恒鑫大数据云平台-数据交换中心</span>
+                            &copy; 2016 广州恒鑫信息技术有限公司
+						</span>
+
+            &nbsp; &nbsp;
+
+        </div>
+    </div>
+</div>
+<!-- scroll up  -->
+<a href="#" id="btn-scroll-up" class="btn-scroll-up btn btn-sm btn-inverse display">
+    <i class="ace-icon fa fa-angle-double-up icon-only bigger-110"></i>
+</a>

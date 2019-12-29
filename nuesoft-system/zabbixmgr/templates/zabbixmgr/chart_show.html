@@ -1,0 +1,248 @@
+{% extends "mainbase.html" %}
+{% load staticfiles %}
+{% load i18n staticfiles %}
+{% load url from future %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% block scripts %}
+
+        <!-- page specific plugin scripts -->
+        <link rel="stylesheet" href="{% static "css/jquery-ui.min.css" %}"/>
+{#        <link rel="stylesheet" href="{% static "css/datatables/buttons.dataTables.min.css" %}"/>#}
+        <!-- jquery scripts -->
+        <script src="{% static "js/dataTables.buttons.min.js" %}"></script>
+        <!-- datatables buttons scripts -->
+        <script src="{% static "js/datatables/buttons.flash.min.js" %}"></script>
+        <script src="{% static "js/datatables/jszip.min.js" %}"></script>
+        <script src="{% static "js/datatables/pdfmake.min.js" %}"></script>
+        <script src="{% static "js/datatables/vfs_fonts.js" %}"></script>
+        <script src="{% static "js/datatables/buttons.html5.min.js" %}"></script>
+        <script src="{% static "js/datatables/buttons.print.min.js" %}"></script>
+
+        <!-- ace scripts -->
+        <script src="{% static "js/buttons.colVis.min.js" %}"></script>
+        <script src="{% static "js/dataTables.select.min.js" %}"></script>
+
+        <script src="{% static "js/jquery-ui.custom.min.js" %}"></script>
+        <script src="{% static "js/jquery.ui.touch-punch.min.js" %}"></script>
+        <script src="{% static "js/bootstrap-colorpicker.min.js" %}"></script>
+        <script src="{% static "js/jquery-ui.min.js" %}"></script>
+        <script src="{% static "js/jquery.easypiechart.min.js" %}"></script>
+
+        <script src="/static/js/zabbixmgr/highcharts.js"></script>
+{#        <script src="/static/exporting.js"></script>#}
+
+        <!-- txnname scripts -->
+{#        <script type="text/javascript">#}
+{#            var TXNNAMES_LIST_URL = '{% url "zabbixmgr:items.data" %}';#}
+{#        </script>#}
+{#        <script src="{% static "js/zabbixmgr/items.list.js" %}"></script>#}
+
+        <script>
+            $(function () {
+                var t = {{ text_title | safe }};
+                var val = {{ value | safe }};
+                var v = eval(val);
+                var b = t;
+                $('#container').highcharts({
+                    chart: {
+                        type: 'line', //可选图形
+
+{#                        backgroundColor: {#} //可调节背景色
+{#                            linearGradient: [0, 0, 500, 500],#}
+{#                            stops: [#}
+{#                                [0, 'rgb(300, 100, 255)'],#}
+{#                                [1, 'rgb(300, 100, 255)']#}
+{#                            ]#}
+{#                        },#}
+{#                        plotBackgroundColor:'black',#}
+                        margin: [ 50, 50, 100, 80]
+                    },
+                    title: {
+                        text: b
+                    },
+                    xAxis: {
+                        categories: {{ clock | safe }},
+                        labels: {
+
+                            y:10,
+                            rotation: -90,
+                            align: 'right',
+                            style: {
+                                fontSize: '13px',
+                                fontFamily: 'Verdana, sans-serif'
+                            }
+                        }
+                    },
+                    yAxis: {
+{#                        min: 0,#}
+{#                        minPadding: 0.5,#}
+{#                        maxPadding: 0.5,#}
+{#                        tickInterval:0.5, // 刻度值#}
+                        title: {
+                            text: ''
+                        },
+                        labels: {
+                            formatter:function() {
+{#                                return ''+Highcharts.dateFormat('%Y-%m-%d %H:%M',this.value);#}
+                                return this.value + ' ' + {{ units | safe }};
+                            }
+                        },
+                        plotLines:[{
+                            value:0,
+                            width:1,
+                            color:'#808080'
+                        }]
+                    },
+                    legend: {
+                        layout:'vertical',
+                        align:'right',
+                        verticalalign:'middle',
+                        borderwidth:0,
+            {#            enabled: false#}
+                    },
+                    plotOptions: {
+                        area: {
+                            fillColor: {
+                                linearGradient: {
+                                    x1: 0,
+                                    y1: 0,
+                                    x2: 0,
+                                    y2: 1
+                                },
+                                stops: [
+                                    [0, Highcharts.getOptions().colors[0]],
+                                    [1, Highcharts.Color(Highcharts.getOptions().colors[0]).setOpacity(0).get('rgba')]
+                                ]
+                            },
+                            marker: {
+                                radius: 3
+                            },
+                            lineWidth: 1,
+                            states: {
+                                hover: {
+                                    lineWidth: 1
+                                }
+                            },
+                            threshold: null
+                        }
+                    },
+                    tooltip: {
+                        pointFormat: '数值: <b>{point.y:.2f}</b>'
+                    },
+                    series: [{
+                        type:'area',
+                        name: b,
+                        data: v,
+                        dataLabels: {
+                            enabled: false,
+                            rotation: -90,
+                            color: '#FFFFFF',
+                            align: 'right',
+                            x: 4,
+                            y: 10,
+                            style: {
+                                fontSize: '13px',
+                                fontFamily: 'Verdana, sans-serif',
+            {#                    textShadow: '0 0 3px black'#}
+                            }
+                        }
+                    }
+                    ]
+                });
+            });
+            </script>
+
+<script>
+$(function(){
+    var timer = {{ timer | safe }};
+    var outside_url = {{ outside_url | safe }};
+    var item_id = {{ item_id | safe }}
+    var div = '';
+    if (timer === '1小时') {
+        div ='<label>请选择时间段：</label>\
+                <select name="qq" onchange="javascript:location.href=this.value;">\
+                <option value="/zabbixmgr/chart/show/' + item_id + '/0/" selected="selected">1小时</option>\
+                <option value="/zabbixmgr/chart/show/' + item_id + '/1/" >2小时</option>\
+                <option value="/zabbixmgr/chart/show/' + item_id + '/2/" >1天</option>\
+                </select>';
+    } else if (timer === '2小时') {
+        div ='<label>请选择时间段：</label>\
+                <select name="qq" onchange="javascript:location.href=this.value;">\
+                <option value="/zabbixmgr/chart/show/' + item_id + '/0/" >1小时</option>\
+                <option value="/zabbixmgr/chart/show/' + item_id + '/1/" selected="selected">2小时</option>\
+                <option value="/zabbixmgr/chart/show/' + item_id + '/2/" >1天</option>\
+                </select>';
+    } else if (timer === '1天') {
+        div ='<label>请选择时间段：</label>\
+                <select name="qq" onchange="javascript:location.href=this.value;">\
+                <option value="/zabbixmgr/chart/show/' + item_id + '/0/" >1小时</option>\
+                <option value="/zabbixmgr/chart/show/' + item_id + '/1/" >2小时</option>\
+                <option value="/zabbixmgr/chart/show/' + item_id + '/2/" selected="selected">1天</option>\
+                </select>';
+    }
+    $("#select").append(div)
+})
+
+</script>
+
+    {% endblock %}
+</head>
+<body class="no-skin">
+{% block content %}
+    <div class="main-content">
+        <div class="breadcrumbs" id="breadcrumbs">
+         <ul class="breadcrumb">
+                <li>
+                    <i class="ace-icon fa fa-home home-icon"></i>
+                    <a href="/zabbixmgr/outtrafficchartshow">首页</a>
+                </li>
+
+                <li>
+                    <a href="#">数据监控中心</a>
+                </li>
+                <li>
+                    <a href="#">项目数据</a>
+                </li>
+             <li class="active">项目图表</li>
+            </ul><!-- /.breadcrumb -->
+        </div>
+        <div class="page-content">
+{#            {% include "page_header.html" %}<!-- /.page-header -->#}
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="clearfix" style="padding-top: 10px">
+                        <div class="tableTools-container"></div>
+                    </div>
+                    <div id="select"> <!--table-header -->
+{#                        <select name="qq" onchange="javascript:location.href=this.value;">#}
+{#                        <option value="http://127.0.0.1:8000/zabbixmgr/chart/show/24243/" >1小时</option>#}
+{#                        <option value="http://127.0.0.1:8000/zabbixmgr/chart/show/24243/">2小时</option>#}
+{#                        <option value="http://js.bhcode.net" >1天</option>#}
+{#                        </select>#}
+{#                        <form class="form-horizontal" role="form" action="" method="post">#}
+{#                        {% csrf_token %}#}
+{#                        <div class="form-group">#}
+{#                            <label class="col-sm-1 control-label no-padding-left"> {{ form.role_id.label }} </label>#}
+{#                            <div class="col-sm-2">#}
+{#                                {{ form.role_id }}#}
+{#                                <div style="margin-top:5px;margin-left:5px;color:red">{{ form.role_id.errors }}</div>#}
+{#                            </div>#}
+{#                        </div>#}
+{#                        {% include "form_buttons.html" %}<!-- /.form_buttons -->#}
+{#                    </form>#}
+                    </div>
+
+                   <div id="container" style="min-width:1000px;height:400px"></div>
+                </div><!-- /.span -->
+            </div><!-- /.row -->
+        </div>
+    </div>
+    {% include "message.html" %}
+{% endblock %}
+
+<!-- /.main-content -->
+</body>
+</html>
+

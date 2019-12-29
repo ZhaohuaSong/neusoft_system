@@ -1,0 +1,18 @@
+/**
+ * Created by rich on 2016/12/30.
+ */
+jQuery(function ($) {
+
+    /*
+    $('.ip_address').mask('0ZZ.0ZZ.0ZZ.0ZZ',
+        {translation:
+            {'Z':
+                {pattern: /[0-9]/, optional: true}
+            }
+        }
+    );
+    */
+
+    $('.ip_address').mask('999.999.999.999');
+
+})

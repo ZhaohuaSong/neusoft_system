@@ -1,0 +1,22 @@
+# -*- coding: UTF-8 -*-
+from django.core.files.storage import FileSystemStorage
+class ImageStorage(FileSystemStorage):
+    from config.settings import common
+
+    def __init__(self, location=common.MEDIA_ROOT, base_url=common.MEDIA_URL):
+        # 初始化
+        super(ImageStorage, self).__init__(location, base_url)
+
+    # 重写 _save方法
+    def _save(self, name, content):
+        import os, time
+        # 文件扩展名
+        ext = os.path.splitext(name)[1]
+        # 文件目录
+        d = os.path.dirname(name)
+        # 定义文件名
+        fn = str(int(time.time()*1000))
+        # 重写合成文件名
+        name = os.path.join(d, fn + ext)
+        # 调用父类方法
+        return super(ImageStorage, self)._save(name, content)

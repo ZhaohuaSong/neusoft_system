@@ -1,0 +1,424 @@
+jQuery(function ($) {
+
+    /**********全局变量区域**************/
+    var g_datasrc_data; //数据源数据
+    var g_bFile;//是否文件数据源
+    var g_inParam;//输入参数名称
+    var g_outParam;//输出参数名称
+    var g_datasrc_name;//数据源名称
+    var g_datasrc_type;//数据源类型
+    var g_datasrc_type_name;
+
+    var g_db_datasrc_data_keys;//数据源下拉框真实的字段名，很shi
+
+    var g_in_k; //输入参数的key
+    var g_in_v; //输如参数的value
+    var g_out_k;//输出参数的key
+    var g_out_v;//输出参数的value
+    /************************************/
+
+    //数据源下拉框选择事件
+    jQuery("#sel-datasrc").change(function(){
+
+        var dsrc_id = jQuery("#sel-datasrc  option:selected").attr("value");
+        g_datasrc_type = jQuery("#sel-datasrc  option:selected").attr("value");
+        g_datasrc_type_name = jQuery("#sel-datasrc  option:selected").text();
+        if(0==dsrc_id){//数据源为文件
+            show_file_config()
+            g_bFile=true;
+        }
+        else if(1==dsrc_id){//数据源为DB
+            show_db_config()
+            g_bFile=false;
+        }
+        else{
+            hidden_step_1_all()//隐藏详细选项
+        }
+    })
+
+    function show_file_config(){
+
+        jQuery(".o-db").addClass("hidden")
+        jQuery(".o-file").removeClass("hidden")
+
+        var file_name = jQuery("#sel-file  option:selected").attr("value");
+        if("-1" != file_name)
+            jQuery(".o-1-next").removeClass("hidden");
+    }
+
+    function show_db_config(){
+
+        jQuery(".o-file").addClass("hidden")
+        jQuery(".o-db").removeClass("hidden")
+    }
+
+    function hidden_step_1_all(){
+        jQuery(".o-db").addClass("hidden")
+        jQuery(".o-file").addClass("hidden")
+        jQuery(".o-1-next").addClass("hidden");
+    }
+
+    function hidden_step_1(bHidden){
+        if(bHidden)
+            jQuery(".step_1").addClass("hidden")
+        else
+            jQuery(".step_1").removeClass("hidden")
+    }
+
+    function hidden_step_2(bHidden){
+        if(bHidden)
+            jQuery(".step_2").addClass("hidden")
+        else
+            jQuery(".step_2").removeClass("hidden")
+    }
+
+    function hidden_step_3(bHidden){
+        if(bHidden)
+            jQuery(".step_3").addClass("hidden")
+        else
+            jQuery(".step_3").removeClass("hidden")
+    }
+
+    jQuery("#sel-file").change(function(){
+
+        var file_name = jQuery("#sel-file  option:selected").attr("value");
+        g_datasrc_name = file_name;
+
+        if(file_name!="-1"){
+            var url = window.location.href + "&option=get_file_cols";
+            url += "&file_name="; url += file_name;
+
+            $.ajax({
+                type: "GET",
+                url: url,
+                success: function (data) {
+
+                    if (data["code"] == "00") {
+
+                        g_in_k = data['in_k'];
+                        g_in_v = data['in_v'];
+                        g_out_k = data['out_k'];
+                        g_out_v = data['out_v'];
+
+                        create_cols_file_table(data['data']);
+                        g_datasrc_data = data['data']
+                        jQuery(".o-1-next").removeClass("hidden");
+                    }
+                    else {
+                         alert(data["desc"])
+                    }
+                }
+            });
+        }
+        else{
+            jQuery(".o-1-next").addClass("hidden");
+            jQuery("#tb_file tbody").empty();
+        }
+    })
+
+    jQuery("#sel-db").change(function(){
+        var file_name_business = jQuery("#sel-db  option:selected").attr("value");
+        var file_name_business_attr = file_name_business.split("|");
+        var file_name = file_name_business_attr[0];
+        var datasrc_business = file_name_business_attr[1];
+        g_datasrc_name = file_name;
+
+        if(file_name!="-1"){
+            var url = window.location.href + "&option=get_db_cols";
+            url += "&file_name="; url += file_name;
+            url += "&datasrc_business="; url += datasrc_business;
+
+            $.ajax({
+                type: "GET",
+                url: url,
+                success: function (data) {
+
+                    if (data["code"] == "00") {
+
+                        g_in_k = data['in_k'];
+                        g_in_v = data['in_v'];
+                        g_out_k = data['out_k'];
+                        g_out_v = data['out_v'];
+
+                        var v = g_in_v;
+                        for(i=0; i<g_out_v.length; i++){
+                            v.push(g_out_v[i])
+                        }
+
+                        create_cols_file_table(v);
+                        g_datasrc_data = data['data']
+                        g_db_datasrc_data_keys = data['keys']
+
+                        
+                        jQuery(".o-1-next").removeClass("hidden");
+                    }
+                    else {
+                         alert(data["desc"])
+                    }
+                }
+            });
+        }
+        else{
+            jQuery(".o-1-next").addClass("hidden");
+            jQuery("#tb_file tbody").empty();
+        }
+    })
+
+
+
+    //生成表格
+    function create_cols_file_table(data){
+
+        var tb = jQuery("#tb_file tbody");
+        tb.empty()
+
+        for(i=0; i<data.length; i++){
+
+            var index = i+1;
+            var sFormat="<tr><td>"+index+"</td><td>"+ data[i] +"</td></tr>"
+
+            var tr = jQuery(sFormat);
+            tr.appendTo(tb)
+        }
+    }
+
+
+    function set_datasrc_sel(){
+        var arr_in_sel = jQuery(".in_sel");//输入参数下拉框
+        arr_in_sel.each(function(index, sel){
+
+            var sel = $(this);
+            sel.empty()
+            jQuery('<option selected value="-1">--------</option>').appendTo(sel)
+
+            for(i=0; i<g_in_k.length; i++){
+                var sFormat=''
+                if(g_bFile)
+                    sFormat = '<option value="' + i + '" >' + g_in_v[i] + '</option>';
+                else
+                    sFormat = '<option value="' + g_in_k[i] + '" >' + g_in_v[i] + '</option>';
+
+                var opt = jQuery(sFormat);
+                opt.appendTo(sel)
+            }
+        })
+
+        var arr_out_sel = jQuery("select.out_sel");//输出参数下拉框
+        arr_out_sel.each(function(){
+
+            var sel = $(this);
+            sel.empty()
+            jQuery('<option selected value="-1">--------</option>').appendTo(sel)
+
+            for(i=0; i<g_out_v.length; i++){
+                var sFormat=''
+                if(g_bFile)
+                    sFormat += '<option value="' + i + '" >' + g_out_v[i] + '</option>';
+                else
+                    sFormat += '<option value="' + g_out_k[i] + '" >' + g_out_v[i] + '</option>';
+
+                var opt = jQuery(sFormat);
+                opt.appendTo(sel)
+            }
+        })
+
+    }
+
+    //第一步完成
+    $("#btn-go-step2").bind("click", function(){
+        set_datasrc_sel();
+        jQuery("li[data-step=\"2\"]").addClass("active")
+
+        hidden_step_1(true);
+        hidden_step_2(false);
+    })
+
+
+    //第二步返回上一步
+    $("#btn-back-step1").bind("click", function(){
+        jQuery("li[data-step=\"2\"]").removeClass("active")
+        hidden_step_1(false);
+        hidden_step_2(true);
+    })
+
+    //进入第三步
+    $("#btn-go-step3").bind("click", function(){
+        jQuery("li[data-step=\"3\"]").addClass("active")
+
+        if(is_valid_step2_param())
+        {
+            hidden_step_2(true);
+            hidden_step_3(false);
+        }
+        else
+            alert_dialog("请完善数据源字段的选择")
+    })
+
+    //检测第二步的参数是否合法
+    function is_valid_step2_param(){
+        var arr_in_sel = jQuery(".in_sel");//输入参数下拉框
+        var bIn=true;
+        arr_in_sel.each(function(index, sel){
+
+            var sel = $(this);
+            var id = sel.find("option:selected").attr("value");
+
+            if(-1==id){
+                bIn = false
+                return false
+            }
+        })
+
+        if(!bIn){
+            return false
+        }
+
+        var bOut=true;
+        var arr_out_sel = jQuery("select.out_sel");//输出参数下拉框
+        arr_out_sel.each(function(){
+            var sel = $(this);
+            var id = sel.find("option:selected").attr("value");
+            if(-1==id){
+                bOut = false
+                return false
+            }
+        })
+
+        if(!bOut){
+            return false
+        }
+
+        return true
+    }
+
+    //返回第二步
+    $("#btn-back-step2").bind("click", function(){
+        jQuery("li[data-step=\"3\"]").removeClass("active")
+        hidden_step_2(false);
+        hidden_step_3(true);
+    })
+
+    //保存参数
+    $("#btn-save").bind("click", function(){
+
+        if(!is_valid_step2_param())
+        {
+            alert_dialog("请完善数据源字段的选择");
+            return;
+        }
+
+
+        var data;
+        var url = window.location.href;
+        if(g_bFile){//文件数据源配置
+            data = get_src_param();
+            url  = url+ "&datasrc_type=file";
+        }
+        else{//数据库数据源配置
+            data = get_src_param();
+            bFile = false;
+            url  = url+ "&datasrc_type=db";
+        }
+
+
+        $.post( url, data, function(data, status){
+            if(status=="success"){
+            //    var json = JSON.parse(data);//返回的json数据
+                if(data["code"]=="00"){
+                    go_step3()
+                }
+                else{
+                    alert_dialog(data["desc"])
+                }
+            }
+        })
+
+
+    })
+
+
+    //保存文件数据源参数，返回序列化后的数据
+    function get_src_param(){
+        //1、获取文件名称
+        var file_name = g_datasrc_name;//jQuery("#sel-file  option:selected").attr("value");
+
+        //2、获取输入参数
+        var json_data_in = {}
+        var arr_in_v = new Array();
+        var arr_in_sel = jQuery("select.in_sel");//输入参数下拉框
+        arr_in_sel.each(function(index, sel){
+            var sel = $(this);
+            var id = sel.find("option:selected").attr("value");
+            var v = sel.find("option:selected").text();
+            json_data_in[index] = id + '_' + v;
+            arr_in_v.push(json_data_in[index]);
+        })
+        g_inParam = arr_in_v;
+
+        //3、获取输出参数
+        var json_data_out = {}
+        var arr_out_v = new Array();
+        var arr_out_sel = jQuery("select.out_sel");//输出参数下拉框
+        arr_out_sel.each(function(index, sel){
+            var sel = $(this);
+            var id = sel.find("option:selected").attr("value");
+            var v = sel.find("option:selected").text();
+
+            json_data_out[index] = id+'_'+v;
+            arr_out_v.push(json_data_out[index]);
+        })
+        g_outParam = arr_out_v;
+
+        //4、
+        var json_data = {}
+        json_data["src_type"]  = g_datasrc_type;
+        json_data["src_name"]  = file_name;
+        json_data["param_in"]  = json_data_in;
+        json_data["param_out"] = json_data_out;
+        g_datasrc_name = file_name;
+
+
+        var postdata = JSON.stringify(json_data);
+        return postdata;
+    }
+
+    //跳转到第三步
+    function go_step3(){
+        jQuery("li[data-step=\"3\"]").addClass("active")
+
+        jQuery(".in_param_show").each(function(index, td){
+            var td = $(this);
+            td.text(g_inParam[index]);
+        })
+
+        jQuery(".out_param_show").each(function(index, td){
+            var td = $(this);
+            td.text(g_outParam[index]);
+        })
+
+        jQuery("#lb_datasrc_type").text(g_datasrc_type_name);
+        jQuery("#lb_datasrc_name").text(g_datasrc_name);
+
+        hidden_step_2(true);
+        hidden_step_3(false);
+    }
+
+
+    //重新配置
+    $("#btn_reconfig").bind("click", function(){
+        var url = window.location.href + "&option=reconfig";
+
+        $.get( url, function(data, status){
+            if(status=="success"){
+                if(data["code"]=="00"){
+                    //重新刷新当前页面
+                    window.location.reload();
+                }
+                else{
+                    alert_dialog(data["desc"])
+                }
+            }
+        })
+    })
+
+})

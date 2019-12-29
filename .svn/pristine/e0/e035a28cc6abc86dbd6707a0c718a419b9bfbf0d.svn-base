@@ -1,0 +1,257 @@
+{% extends "mainbase.html" %}
+{% load staticfiles %}
+{% load i18n staticfiles %}
+{% load url from future %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% block title %}
+        <title>恒鑫大数据云平台-数据交换中心</title>
+
+        <!-- page specific plugin scripts -->
+        <link rel="stylesheet" href="{% static "css/jquery-ui.min.css" %}"/>
+        <!-- jquery scripts -->
+        {#        <script src="{% static "js/jquery-ui.min.js" %}"></script>#}
+        {#        <script src="{% static "js/jquery.ui.touch-punch.min.js" %}"></script>#}
+        {#        <script src="{% static "js/jquery.dataTables.min.js" %}"></script>#}
+        {#        <script src="{% static "js/jquery.dataTables.bootstrap.min.js" %}"></script>#}
+        {#        <script src="{% static "js/dataTables.buttons.min.js" %}"></script>#}
+        {#        <!-- buttons scripts -->#}
+        {#        <script src="{% static "js/buttons.flash.min.js" %}"></script>#}
+        {#        <script src="{% static "js/buttons.html5.min.js" %}"></script>#}
+        {#        <script src="{% static "js/buttons.colVis.min.js" %}"></script>#}
+        {#        <!-- ace scripts -->#}
+        {#        <script src="{% static "js/ace-elements.min.js" %}"></script>#}
+        {#        <script src="{% static "js/ace.min.js" %}"></script>#}
+        <script src="{% static "js/message/ws4redis.js" %}"></script>
+        <script src="{% static "js/bootstrap-tag.min.js" %}"></script>
+        <script src="{% static "js/jquery.hotkeys.index.min.js" %}"></script>
+        <script src="{% static "js/bootstrap-wysiwyg.min.js" %}"></script>
+        <!-- page specific plugin scripts -->
+        <script src="{% static "js/jquery.bootstrap-duallistbox.min.js" %}"></script>
+        <script src="{% static "js/jquery.raty.min.js" %}"></script>
+        <script src="{% static "js/bootstrap-multiselect.min.js" %}"></script>
+        <script src="{% static "js/select2.min.js" %}"></script>
+        <script src="{% static "js/jquery-typeahead.js" %}"></script>
+        <script src="{% static "js/selectbox/selectbox.js" %}"></script>
+        <script src="{% static "js/markdown.min.js" %}"></script>
+        <script src="{% static "js/bootstrap-markdown.min.js" %}"></script>
+        <script src="{% static "js/jquery.hotkeys.index.min.js" %}"></script>
+        <script src="{% static "js/bootstrap-wysiwyg.min.js" %}"></script>
+        <script src="{% static "js/bootbox.js" %}"></script>
+        {#        <script src="assets/js/markdown.min.js"></script>#}
+        {#		<script src="assets/js/bootstrap-markdown.min.js"></script>#}
+        {#		<script src="assets/js/jquery.hotkeys.index.min.js"></script>#}
+        {#		<script src="assets/js/bootstrap-wysiwyg.min.js"></script>#}
+        {#        <script src="assets/js/bootbox.js"></script>#}
+
+        <!-- page specific plugin scripts -->
+        <link href="{% static 'css/bootstrap-duallistbox.min.css' %}" rel="stylesheet">
+        <link href="{% static 'css/bootstrap-multiselect.min.css' %}" rel="stylesheet">
+        <link href="{% static 'css/select2.min.css' %}" rel="stylesheet">
+        <link href="{% static 'css/ace-skins.min.css' %}" rel="stylesheet">
+        <link href="{% static 'css/ace-rtl.min.css' %}" rel="stylesheet">
+
+        <!-- page specific plugin scripts -->
+        <!-- inline scripts related to this page -->
+    {% endblock %}
+</head>
+<body class="no-skin">
+{% block content %}
+    <div class="main-content">
+        <div class="breadcrumbs" id="breadcrumbs">
+            <ul class="breadcrumb">
+                <li>
+                    <i class="ace-icon fa fa-home home-icon"></i>
+                    <a href="#">首页</a>
+                </li>
+                <li>
+                    <a href="#">消息中心</a>
+                </li>
+                <li>
+                    <a href="{% url 'message:message.list' %}">短消息管理</a>
+                </li>
+                <li class="active">阅读消息</li>
+            </ul><!-- /.breadcrumb -->
+        </div>
+        <input id="in-context" style="display: none" value="{{ message.data }}">
+        <input id="in-sender" style="display: none" value="{{ message.sender }}">
+        <div class="page-content">
+            <div id="inbox" class="tab-pane in active">
+                <div class="message-container">
+                    <div id="id-message-new-navbar" class="message-navbar clearfix">
+                        <div class="message-bar" style="visibility: visible">
+                            <div class="message-toolbar">
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="messagebar-item-left" >
+                                <a href="{% url 'message:message.list' %}" class="btn-back-message-list">
+                                    <i class="ace-icon fa fa-arrow-left bigger-110 middle blue"></i>
+                                    <b class="middle bigger-110">返回</b>
+                                </a>
+                            </div>
+                            <div class="messagebar-item-right" style="display:none;">
+																	<span class="inline btn-send-message">
+																		<button id="btn_send_message" type="button" class="btn btn-sm btn-primary no-border btn-white btn-round">
+                                                                            <span class="bigger-110">发送</span>
+
+                                                                            <i class="ace-icon fa fa-arrow-right icon-on-right"></i>
+                                                                        </button>
+																	</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="message-list-container">
+                        <form id="id-message-form" class="form-horizontal message-form col-xs-12">
+                            <div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label no-padding-right" for="form-field-recipient">发件人:</label>
+
+                                    <div class="col-sm-6 col-xs-12">
+                                        <div class="input-icon block col-xs-12 no-padding">
+                                            <input style="" maxlength="100" class="col-xs-12" value="{{ message.sender }}" name="subject" id="form-field-subject" placeholder="消息主题"
+                                                   type="text">
+                                            <i class="ace-icon fa fa-user"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="hr hr-18 dotted"></div>
+
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right" for="form-field-subject">主 题:</label>
+
+                                <div class="col-sm-6 col-xs-12">
+                                    <div class="input-icon block col-xs-12 no-padding">
+                                        <input maxlength="100" class="col-xs-12" value="{{ message.sub }}" name="subject" id="form-field-subject" placeholder="消息主题"
+                                               type="text">
+                                        <i class="ace-icon fa fa-comment-o"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="hr hr-18 dotted"></div>
+
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right">
+                                    <span class="inline space-24 hidden-480"></span>
+                                    消息内容:
+                                </label>
+
+                                <div class="col-sm-9">
+                                    <div id="editor1" class="wysiwyg-editor" contenteditable="true">{{ message.data }}</div>
+                                </div>
+                            </div>
+
+                            <div class="hr hr-18 dotted"></div>
+
+                            <div class="space"></div>
+                    </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+    {% include "message.html" %}
+    <script type="text/javascript">
+        jQuery(function ($) {
+
+            $('textarea[data-provide="markdown"]').each(function () {
+                var $this = $(this);
+
+                if ($this.data('markdown')) {
+                    $this.data('markdown').showEditor();
+                }
+                else $this.markdown()
+
+                $this.parent().find('.btn').addClass('btn-white');
+            })
+
+
+            function showErrorAlert(reason, detail) {
+                var msg = '';
+                if (reason === 'unsupported-file-type') {
+                    msg = "Unsupported format " + detail;
+                }
+                else {
+                    //console.log("error uploading file", reason, detail);
+                }
+                $('<div class="alert"> <button type="button" class="close" data-dismiss="alert">&times;</button>' +
+                        '<strong>File upload error</strong> ' + msg + ' </div>').prependTo('#alerts');
+            }
+
+            //$('#editor1').ace_wysiwyg();//this will create the default editor will all buttons
+
+            //but we want to change a few buttons colors for the third style
+            $('#editor1').ace_wysiwyg({
+                toolbar: [
+                    'font',
+                    null,
+                    'fontSize',
+                    null,
+                    {name: 'bold', className: 'btn-info'},
+                    {name: 'italic', className: 'btn-info'},
+                    {name: 'strikethrough', className: 'btn-info'},
+                    {name: 'underline', className: 'btn-info'},
+                    null,
+                    {name: 'insertunorderedlist', className: 'btn-success'},
+                    {name: 'insertorderedlist', className: 'btn-success'},
+                    {name: 'outdent', className: 'btn-purple'},
+                    {name: 'indent', className: 'btn-purple'},
+                    null,
+                    {name: 'justifyleft', className: 'btn-primary'},
+                    {name: 'justifycenter', className: 'btn-primary'},
+                    {name: 'justifyright', className: 'btn-primary'},
+                    {name: 'justifyfull', className: 'btn-inverse'},
+                    null,
+                    {name: 'createLink', className: 'btn-pink'},
+                    {name: 'unlink', className: 'btn-pink'},
+                    null,
+                    {name: 'insertImage', className: 'btn-success'},
+                    null,
+                    'foreColor',
+                    null,
+                    {name: 'undo', className: 'btn-grey'},
+                    {name: 'redo', className: 'btn-grey'}
+                ],
+                'wysiwyg': {
+                    fileUploadError: showErrorAlert
+                }
+            }).prev().addClass('wysiwyg-style2');
+
+
+            /**
+             //make the editor have all the available height
+             $(window).on('resize.editor', function() {
+		var offset = $('#editor1').parent().offset();
+		var winHeight =  $(this).height();
+
+		$('#editor1').css({'height':winHeight - offset.top - 10, 'max-height': 'none'});
+	}).triggerHandler('resize.editor');
+             */
+
+
+        });
+    </script>
+    <script type="text/javascript">
+        try {
+            ace.settings.check('breadcrumbs', 'fixed')
+        } catch (e) {
+        }
+        jQuery(document).ready(function ($) {
+            var sender = $("#in-sender").val();
+            var html = $("#in-context").val()
+            $("#select-user").val(sender);
+            $("#editor1").html(html)
+        });
+
+    </script>
+{% endblock %}
+<!-- /.main-content -->
+</body>
+</html>

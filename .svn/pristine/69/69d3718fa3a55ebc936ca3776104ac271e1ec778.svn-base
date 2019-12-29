@@ -1,0 +1,124 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
+from django.test import TestCase
+#from ..sysadmin.models import SysDict
+
+import json
+
+# Create your tests here.
+
+'''
+
+
+class SysDictTest(TestCase):
+
+    def setUp(self):
+        SysDict.objects.create(dict_name='Oralce',dict_id='1',dict_type="dbtype")
+        SysDict.objects.create(dict_name='MySQL', dict_id='2', dict_type="dbtype")
+        SysDict.objects.create(dict_name='MS SQLSERVER', dict_id='3', dict_type="dbtype")
+
+    def test_list(self):
+
+        l=SysDict.objects.filter(dict_type='dbtype')
+        print l
+
+        self.assertEquals(l.count(),3)
+'''
+
+class TreeData(object):
+    data = object
+
+    def __init__(self, data=None):
+        self.data = data
+
+    def set_data(self, parm):
+        self.data = parm
+
+
+def get_tree_data(sys_dict_list):
+
+    tree_list = []
+    for sys_dict in sys_dict_list:
+        item = Item();
+        item.set_text(sys_dict.dict_name);
+        adp = AdditionalParameters();
+        adp.setId(sys_dict.dict_id);
+        item.set_additional_parameters(adp);
+        item.set_type("item");
+        tree_list.append(item.dict())
+    return tree_list;
+
+class Item:
+
+    name = ''
+    type = ''
+    additionalParameters = None
+
+    def __init__(self):
+        self.name
+        self.type
+        self.additionalParameters
+
+    def dict(self):
+        return {'name': self.name, 'type': self.type, 'additionalParameters': self.additionalParameters.dict()}
+
+    def set_text(self, parm):
+        self.name = parm
+
+    def set_additional_parameters(self, parm=None):
+        self.additionalParameters = parm
+
+    def set_type(self, parm):
+        self.type = parm
+
+class AdditionalParameters:
+    children = False
+    id = ''
+
+    def __init__(self):
+        self.children
+        self.id
+
+    def dict(self):
+        return {'id': self.id, 'children': self.children}
+
+    def setId(self, parm):
+        self.id = parm
+
+    def set_children_item(self, parm):
+        self.children = parm
+
+
+class SysDict():
+    dict_name = ''
+    dict_id = ''
+    super_dict_id = ''
+
+if __name__ == '__main__':
+
+    vo = TreeData()
+    sys_list = []
+
+    '''
+
+    sys_list = [{'dict_name': "Oracle", 'dict_id': 1, 'dict_type': 'dbtype'},
+            {'dict_name': "MySQL", 'dict_id': 2, 'dict_type': 'dbtype'},
+            {'dict_name': "MSSQLSERVER", 'dict_id': 3, 'dict_type': 'dbtype'},]
+    '''
+
+
+    for i in range(3):
+        sys_dict = SysDict()
+        sys_dict.dict_id = i
+        sys_dict.dict_name = '菜单{0}'.format(i)
+        sys_list.append(sys_dict)
+
+
+    vo.set_data(get_tree_data(sys_list))
+    print json.dumps(vo.__dict__)
+
+
+
+
+

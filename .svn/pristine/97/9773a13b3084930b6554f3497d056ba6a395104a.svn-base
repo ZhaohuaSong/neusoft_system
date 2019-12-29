@@ -1,0 +1,35 @@
+CREATE TABLE `send_msg` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `content` varchar(500) DEFAULT NULL COMMENT '信息内容',
+  `msg_no` varchar(64) DEFAULT NULL COMMENT '发送信息编号',
+  `status` varchar(8) DEFAULT NULL COMMENT '0-未发送,1-已发送',
+  `code` varchar(16) DEFAULT '-1' COMMENT '00-响应成功,-1-未响应',
+  `result` varchar(500) DEFAULT NULL COMMENT '响应结果',
+  `create_time` timestamp NULL DEFAULT NULL COMMENT '创建时间',
+  `return_time` timestamp NULL DEFAULT NULL COMMENT '响应时间',
+  `ip_address` varchar(32) DEFAULT NULL COMMENT '发送ip',
+  `server_address` varchar(32) DEFAULT NULL COMMENT '目标ip',
+  `ip_port` varchar(16) DEFAULT NULL COMMENT '发送ip端口',
+  `server_port` varchar(16) DEFAULT NULL COMMENT '目标端口',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8
+
+CREATE TABLE `receive_msg` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `content` varchar(500) DEFAULT NULL COMMENT '收到报文信息',
+  `back_content` varchar(500) DEFAULT NULL COMMENT '回复报文信息',
+  `msg_no` varchar(64) DEFAULT NULL COMMENT '报文编号',
+  `status` varchar(16) DEFAULT NULL COMMENT '0-未回复;1-已回复',
+  `code` varchar(16) DEFAULT '-1' COMMENT '00-响应成功;-1:未响应',
+  `result` varchar(500) DEFAULT NULL COMMENT '响应结果',
+  `receive_time` timestamp NULL DEFAULT NULL COMMENT '接收报文时间',
+  `resp_time` timestamp NULL DEFAULT NULL COMMENT '响应报文时间',
+  `from_ip` varchar(32) DEFAULT NULL COMMENT 'ip来源',
+  `from_ip_port` varchar(16) DEFAULT NULL COMMENT 'ip来源端口',
+  `local_ip` varchar(32) DEFAULT NULL COMMENT '本机回应ip',
+  `local_ip_port` varchar(16) DEFAULT NULL COMMENT '梧桐回应ip端口',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8
+
+insert  into `sys_dict`(`id`,`dict_name`,`dict_id`,`dict_type`,`description`,`sort`,`create_by`,`create_date`,`update_by`,`update_date`,`remarks`,`del_flag`,`super_dict_id`) values
+(2840,'未发送','0','msgstatus','报文未发送',NULL,'zzm',NULL,NULL,NULL,NULL,'0',NULL),(2841,'已发送','1','msgstatus','报文已发送',NULL,'zzm',NULL,NULL,NULL,NULL,'0',NULL),(2842,'未回复','2','msgstatus','报文未回复',NULL,'zzm','2017-01-05 13:45:16.000000',NULL,NULL,NULL,'0',NULL),(2843,'已回复','3','msgstatus','报文已回复',NULL,'zzm','2017-01-05 13:45:19.000000',NULL,NULL,NULL,'0',NULL),(2844,'通讯成功','00','msgcode','报文通讯成功',NULL,'zzm','2017-01-05 13:45:19.000000',NULL,NULL,NULL,'0',NULL),(2845,'未通讯','-1','msgcode','报文通讯失败',NULL,'zzm','2017-01-05 13:45:19.000000',NULL,NULL,NULL,'0',NULL),(2846,'通讯失败','99','msgcode','报文通讯失败',NULL,'zzm','2017-01-05 13:45:19.000000',NULL,NULL,NULL,'0',NULL),(2847,'目标服务器已接收待处理','R1','msgdesc','报文结果描述',NULL,'zzm','2017-01-05 13:45:19.000000',NULL,NULL,NULL,'0',NULL),(2848,'目标服务器已处理并回复','R2','msgdesc','报文结果描述',NULL,'zzm','2017-01-05 13:45:19.000000',NULL,NULL,NULL,'0',NULL);

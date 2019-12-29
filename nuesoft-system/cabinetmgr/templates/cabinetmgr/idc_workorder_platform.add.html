@@ -1,0 +1,146 @@
+{% extends "mainbase.html" %}
+{% load staticfiles %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+</head>
+<body class="no-skin">
+{% block content %}
+    <div class="main-content">
+        <div class="breadcrumbs" id="breadcrumbs">
+            <script type="text/javascript">
+                try {
+                    ace.settings.check('breadcrumbs', 'fixed')
+                } catch (e) {
+                }
+                                                  jQuery(function ($) {
+                    $("#btn-back").bind("click",
+                            function () {
+                                window.location.href = "{% url 'cabinetmgr:industryparksource.list' %}"
+                            });
+                })
+            </script>
+
+
+            <ul class="breadcrumb">
+                <li>
+                    <i class="ace-icon fa fa-home home-icon"></i>
+                    <a href="#">首页</a>
+                </li>
+
+                <li><a href="#">机房管理模块</a></li>
+                <li><a href="{% url 'cabinetmgr:industryparksource.list' %}">一级空间机楼资源</a></li>
+                <li class="active">新增机楼</li>
+            </ul><!-- /.breadcrumb -->
+        </div>
+
+         <div class="page-content">
+            <div class="row">
+                <div class="col-xs-12" >
+                    <div class="widget-box col-xs-12">
+                        <div class="widget-header widget-header-blue widget-header-flat">
+                            <h4 class="widget-title lighter">新增机楼</h4>
+
+                        </div>
+                        <div class="space-20"></div>
+
+                    <form style="padding:2% " class="form-horizontal" role="form" action="" method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                                <label class="col-sm-4 control-label no-padding-right"> {{ form.workorder_name.label }} </label>
+                                <div class="col-sm-8">
+                                    {{ form.workorder_name }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.workorder_name.errors }} </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <div class="form-group">
+                                <label class="col-sm-4 control-label no-padding-right"> {{ form.client_name.label }} </label>
+                                <div class="col-sm-8">
+{#                                    {{ form.client_name }}#}
+                                    <tr><th></th><td><select class="col-xs-12 col-sm-5" id="id_client_name" name="client_name" placeholder="请选择" required>
+                                    <option value="" selected="selected">---------</option>
+                                    {% for key, value in client %}
+                                        <option value={{ key }} > {{ value }} </option>
+                                    {% endfor %}
+                                    </select></td></tr>
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.client_name.errors }} </div>
+                                    </div>
+                                </div>
+                            </div>
+                    <div class="form-group">
+                                <label class="col-sm-4 control-label no-padding-right"> {{ form.operate_ip.label }} </label>
+                                <div class="col-sm-8">
+                                    {{ form.operate_ip }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.operate_ip.errors }} </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <div class="form-group">
+                                <label class="col-sm-4 control-label no-padding-right"> {{ form.operate_elbox.label }} </label>
+                                <div class="col-sm-8">
+                                    {{ form.operate_elbox }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.operate_elbox.errors }} </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <div class="form-group">
+                                <label class="col-sm-4 control-label no-padding-right"> {{ form.operate_device.label }} </label>
+                                <div class="col-sm-8">
+                                    {{ form.operate_device }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.operate_device.errors }} </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <div class="form-group">
+                                <label class="col-sm-4 control-label no-padding-right"> {{ form.operate_interface.label }} </label>
+                                <div class="col-sm-8">
+                                    {{ form.operate_interface }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.operate_interface.errors }} </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <div class="form-group">
+                                <label class="col-sm-4 control-label no-padding-right"> {{ form.operate_record.label }} </label>
+                                <div class="col-sm-8">
+                                    {{ form.operate_record }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.operate_record.errors }} </div>
+                                    </div>
+                                </div>
+                            </div>
+                         <div class="space-20"></div>
+                            <hr>
+
+                          {% include "form_buttons.html" %}<!-- /.form_buttons -->
+                            <div class="space-10"></div>
+
+                    </form>
+
+              </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+{#    <script src="{% static 'js/jquery.bootstrap-duallistbox.min.js' %}" charset="utf-8"></script>#}
+{#    <script>#}
+{#        var demo1 = $('select[name="permission"]').bootstrapDualListbox({#}
+{#            nonSelectedListLabel: '可选择权限',#}
+{#            selectedListLabel: '已选择权限',#}
+{#            preserveSelectionOnMove: 'moved',#}
+{#            moveOnSelect: false,#}
+{#        });#}
+{##}
+{#    </script>#}
+{% endblock %}
+<!-- /.main-content -->
+</body>
+</html>

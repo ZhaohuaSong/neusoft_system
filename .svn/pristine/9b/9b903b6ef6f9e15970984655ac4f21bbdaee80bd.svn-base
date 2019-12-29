@@ -1,0 +1,107 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+from django.db import models
+
+
+class ResourceList(models.Model):
+    resource_id = models.CharField(max_length=64, blank=True, null=True)  # 资源id编号
+    resource_name = models.CharField(max_length=255, blank=True, null=True)  # 提供单位资源名称
+    field_id = models.CharField(max_length=64, blank=True, null=True)  # 领域分类资源id
+    field = models.CharField(max_length=64, blank=True, null=True)  # 领域名或资源名
+    category_name = models.CharField(max_length=255, blank=True, null=True)  # 数据领域
+    title_type = models.CharField(max_length=64, blank=True, null=True)  # 主题分类
+    power = models.CharField(max_length=64, blank=True, null=True)  # 开放属性
+    update = models.CharField(max_length=64, blank=True, null=True)  # 更新频率
+    resource_type = models.CharField(max_length=64, blank=True, null=True)  # 数据保存类型（0-数据库/1-文件）
+    post_status = models.CharField(max_length=255, blank=True, null=True)  # 发布状态（2-已发布/1-已停用）
+    registration_time = models.DateTimeField(blank=True, null=True)  # 发布时间
+    org_name = models.CharField(max_length=255, blank=True, null=True)  # 提供单位
+    org_address = models.CharField(max_length=255, blank=True, null=True)  # 提供单位地址
+    audit_status = models.CharField(max_length=64, blank=True, null=True)  # 审核状态（0-待审核/1-审核中/2-已审核）
+    parent_id = models.CharField(max_length=64, blank=True, null=True)  # 父节点（树状结构用,资源id或提供单位终端号）
+    field_parent_id = models.CharField(max_length=64, blank=True, null=True)  # 领域分类父节点（树状结构用,资源id或提供单位终端号）
+    create_by = models.CharField(max_length=255, blank=True, null=True)  # 创建者
+
+    class Meta:
+        managed = False
+        db_table = 'resource_list'
+
+
+class ResourceDetails(models.Model):
+    resource_id = models.CharField(max_length=64, blank=True, null=True)  # 资源id编号
+    field_name = models.CharField(max_length=64, blank=True, null=True)  # 字段名
+    field_name_resolution = models.CharField(max_length=64, blank=True, null=True)  # 字段名说明
+    field_name_attribute = models.CharField(max_length=64, blank=True, null=True)  # 字段属性
+    search = models.CharField(max_length=64, blank=True, null=True)  # 对应数据可作查找键
+    result = models.CharField(max_length=64, blank=True, null=True)  # 对应数据可作返回结果
+    modify = models.CharField(max_length=64, blank=True, null=True)  # 对应数据可修改
+    add = models.CharField(max_length=64, blank=True, null=True)  # 对应数据可添加
+    delete = models.CharField(max_length=64, blank=True, null=True)  # 对应数据可删除
+    post_time = models.DateTimeField(blank=True, null=True)  # 发布时间
+    org_name = models.CharField(max_length=255, blank=True, null=True)  # 提供单位
+
+    class Meta:
+        managed = False
+        db_table = 'resource_details'
+
+
+class OrgInfo(models.Model):
+    app_name = models.CharField(max_length=255, blank=True, null=True)  # 提供方终端名称
+    app_id = models.CharField(max_length=255, blank=True, null=True)  # 提供方适配器编号
+    local_ip = models.CharField(max_length=255, blank=True, null=True)  # 提供方适配器IP
+    local_port = models.IntegerField(blank=True, null=True)  # 提供方适配器端口号
+    org_name = models.CharField(max_length=255, blank=True, null=True)  # 提供方机构名称
+    org_address = models.CharField(max_length=255, blank=True, null=True)  # 提供方地址
+    org_phone = models.CharField(max_length=255, blank=True, null=True)  # 提供方电话
+    org_content = models.CharField(max_length=255, blank=True, null=True)  # 提供方描述
+    resource_id = models.CharField(max_length=64, blank=True, null=True)  # 资源ID编号(相关多表关联使用)
+    audit_status = models.CharField(max_length=64, blank=True, null=True)  # 审核状态（0-待审核/1-审核中/2-已审核）
+
+    class Meta:
+        managed = False
+        db_table = 'org_info'
+
+
+class TaskHistory(models.Model):
+    user_id = models.IntegerField(blank=True, null=True)  # 用户ID
+    flow_id = models.IntegerField(blank=True, null=True)  # 流程ID
+    user = models.CharField(max_length=100, blank=True, null=True)  # 用户名
+    content = models.CharField(max_length=255, blank=True, null=True)  # 审核详情
+    result = models.IntegerField(blank=True, null=True)  # 审核结果
+    create_time = models.DateTimeField(blank=True, null=True)  # 审核时间
+    node_id = models.IntegerField(blank=True, null=True)  # 节点ID
+    biz_id = models.CharField(max_length=255, blank=True, null=True)  # 标志ID(区分不同种类的审核)
+
+    class Meta:
+        managed = False
+        db_table = 'task_history'
+
+
+class ResourceMiddleWare(models.Model):
+    mid_name = models.CharField(max_length=64, blank=True, null=True)  # 名称
+    mid_id = models.CharField(max_length=64, blank=True, null=True)  # 编号
+    mid_type = models.CharField(max_length=64, blank=True, null=True)  # 字段名
+
+    class Meta:
+        managed = False
+        db_table = 'resource_middleware'
+
+
+class ResourceFieldList(models.Model):
+    field_id = models.CharField(max_length=64, blank=True, null=True)  # 领域分类资源id
+    field = models.CharField(max_length=64, blank=True, null=True)  # 领域名或资源名
+    post_status = models.CharField(max_length=255, blank=True, null=True)  # 发布状态
+    field_parent_id = models.CharField(max_length=64, blank=True, null=True)  # 领域分类父节点（树状结构用,资源id或提供单位终端号）
+
+    class Meta:
+        managed = False
+        db_table = 'resource_field_list'
+
+class CentralNodeIPPort(models.Model):
+
+    central_node_ip = models.CharField(max_length=64, blank=True, null=True)  # 中心节点ip
+    central_node_port = models.CharField(max_length=64, blank=True, null=True)  # 中心节点端口
+
+    class Meta:
+        managed = False
+        db_table = 'central_node_ip_port'

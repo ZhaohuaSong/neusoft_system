@@ -1,0 +1,241 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2016/12/23 下午6:06
+# @Author  : czw@rich-f.com
+# @Site    : www.rich-f.com
+# @File    : views.py
+# @Software: PyCharm
+# @Function: 视图模型
+import logging
+from django.shortcuts import redirect,reverse
+from django.http import JsonResponse
+from django.views.generic import TemplateView
+from django.db.models.query_utils import Q
+from models import SysDict,DbConfig
+from forms import DBConfigForm
+from ..common.datatables.views import BaseDatatableView
+from ..vanilla import CreateView,UpdateView
+import json
+
+# Create your views here.
+
+_logger = logging.getLogger('loggers')
+
+class DBConfigListView(TemplateView):
+    """
+     ===============================================================================
+     function：    显示数据链接列表
+     developer:    Rich.Chen
+     add-time      2016/12/23
+     ===============================================================================
+    """
+
+    template_name = 'dbadmin/dbconfig.list.html'
+
+    def get(self, request, *args, **kwargs):
+
+        sys_dict_list = SysDict.objects.filter(dict_type='dbtype')
+        nodelist=[]
+        #从数据字典组成JSON数据给树形控件
+        for l in sys_dict_list:
+            dict_obj = {}
+            dict_obj['text']=l.dict_name
+            dict_obj['id']=l.dict_id
+            dict_obj['tags']=['0']
+            nodelist.append(dict_obj)
+
+        context = self.get_context_data()
+        context['request'] = request
+        context['treedata'] = json.dumps(nodelist)
+
+        return self.render_to_response(context)
+
+class DBConfigtListJson(BaseDatatableView):
+    """
+    ===============================================================================
+    function：    显示数据链接列表数据
+    developer:    Rich.Chen
+    add-time      2016/12/23
+    Note:         通用的操作类
+    ===============================================================================
+    """
+
+    model=DbConfig
+
+    columns = ['id','id', 'appname', 'dbtype','dbname', 'dbhost', 'dbport','id',]
+    order_columns = ['id', 'appname', 'dbtype','dbname', 'dbhost', 'dbport','id',]
+    def filter_queryset(self, qs):
+
+        id  = self._querydict.get('id')
+
+        if id is None:
+            return super(DBConfigtListJson, self).filter_queryset(qs).all()
+        else:
+            # 注意DB树没有上级节点，所以没有parent_id这个参数
+            # return super(DBConfigtListJson, self).filter_queryset(qs).filter(Q(parent_id=id) | Q(id=id))
+            return super(DBConfigtListJson, self).filter_queryset(qs).filter(Q(dbtype=id))
+
+        '''
+        if 0==len(id):#默认
+            return super(DBConfigtListJson, self).filter_queryset(qs).all()
+        elif id == '-11':
+            return super(DBConfigtListJson, self).filter_queryset(qs)
+        elif (id == '0'):#也是默认
+            return super(DBConfigtListJson, self).filter_queryset(qs).all()
+        else:
+            return super(DBConfigtListJson, self).filter_queryset(qs).filter(Q(parent_id=id) | Q(id=id))
+        '''
+
+
+class CreateDBConfig(CreateView):
+    """
+    ===============================================================================
+    function：    创建数据链接
+    developer:    Rich.Chen
+    add-time      2016/12/29
+    Note:
+    ===============================================================================
+    """
+
+    form_class =DBConfigForm
+    template_name='dbadmin/dbconfig.form.html'
+
+    def get(self, request, *args, **kwargs):
+
+        return super(CreateDBConfig, self).get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+
+        return super(CreateDBConfig, self).post(request, *args, **kwargs)
+
+    #成功后跳转
+    def form_valid(self, form):
+        self.save(form)
+        return redirect(reverse('dbadmin:dbconfig.list'))
+
+    #保存
+    def save(self, form):
+
+        dbconfig=DbConfig()
+
+        dbconfig.appname=form.cleaned_data['appname']
+        dbconfig.dbtype=form.cleaned_data['dbtype']
+        dbconfig.dbname=form.cleaned_data['dbname']
+        dbconfig.dbhost=form.cleaned_data['dbhost']
+        dbconfig.dbport=form.cleaned_data['dbport']
+        dbconfig.dbusername=form.cleaned_data['dbusername']
+        dbconfig.set_dbpassword(form.cleaned_data['dbpassword'])
+        dbconfig.save()
+
+class EditDBConfig(UpdateView):
+    """
+    ===============================================================================
+    function：    编辑数据链接
+    developer:    Rich.Chen
+    add-time      2016/12/29
+    Note:
+    ======
+    """
+    model = DbConfig
+    form_class = DBConfigForm
+    template_name = 'dbadmin/dbconfig.form.html'
+
+    def get(self, request, *args, **kwargs):
+
+        dbconfig = self.get_object()
+
+        form = DBConfigForm(initial={
+            'appname':dbconfig.appname,
+            'dbtype':dbconfig.dbtype,
+            'dbname':dbconfig.dbname,
+            'dbhost':dbconfig.dbhost,
+            'dbport':dbconfig.dbport,
+            'dbusername':dbconfig.dbusername,
+            'dbpassword':dbconfig.dbpassword
+        })
+
+        context = self.get_context_data(form=form)
+        return self.render_to_response(context)
+
+    def form_valid(self, form):
+        self.save(form)
+        return redirect(reverse('dbadmin:dbconfig.list'))
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        form = self.get_form(data=request.POST, files=request.FILES)
+        # 初始化一下，防止重复
+        form.fields['appname'].initial = self.object.appname
+        if form.is_valid():
+            return self.form_valid(form)
+        return self.form_invalid(form)
+
+        # 保存
+        def save(self, form):
+
+            dbconfig = DbConfig()
+            dbconfig.appname = form.cleaned_data['appname']
+            dbconfig.dbtype = form.cleaned_data['dbtype']
+            dbconfig.dbname = form.cleaned_data['dbname']
+            dbconfig.dbhost = form.cleaned_data['dbhost']
+            dbconfig.dbport = form.cleaned_data['dbport']
+            dbconfig.dbusername = form.cleaned_data['dbusername']
+            dbconfig.set_dbpassword(form.cleaned_data['dbpassword'])
+            dbconfig.save()
+
+
+def dbconfig_delete(request):
+    '''
+        批量删除
+        :param request:
+        :return:
+        '''
+    json_data = json.loads(request.GET.get('ids'))
+    list_id_del = json_data['ids']
+
+    sql = Q()
+
+    for id in list_id_del:
+        sql = sql | Q(id=id)
+
+    qs = DbConfig.objects.filter(sql)
+    if 0 != len(qs):
+        qs.delete()
+
+    name_dict = {'code': '00', 'desc': '删除成功!'}
+    return JsonResponse(name_dict)
+
+#检测数据库端口IP地址
+
+def check_dbserver(ip,port):
+
+    print "test"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

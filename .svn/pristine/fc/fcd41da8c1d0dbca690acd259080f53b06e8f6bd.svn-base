@@ -1,0 +1,119 @@
+{% extends "mainbase.html" %}
+{% load staticfiles %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- bootstrap & fontawesome -->
+
+
+    <style type="text/css">
+
+        .custom-date-style {
+            background-color: red !important;
+        }
+
+        .input {
+        }
+
+        .input-wide {
+            width: 500px;
+        }
+
+    </style>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/datatables/jquery.datetimepicker.css' %}"/>
+    <link rel="stylesheet" href="{% static 'css/bootstrap-datetimepicker.min.css' %}"/>
+    <link rel="stylesheet" href="{% static 'css/ace-skins.min.css' %}"/>
+    <link rel="stylesheet" href="{% static 'css/ace-rtl.min.css' %}"/>
+    <script src="{% static 'js/html5shiv.min.js' %}"></script>
+    <script src="{% static 'js/respond.min.js' %}"></script>
+    <![endif]-->
+</head>
+
+<body class="no-skin">
+{% block leftmenu %}
+{% endblock %}
+{% block content %}
+    <div class="main-content">
+        <div class="breadcrumbs" id="breadcrumbs">
+            <script type="text/javascript">
+                try {
+                    ace.settings.check('breadcrumbs', 'fixed')
+                } catch (e) {
+                }
+            </script>
+
+            <ul class="breadcrumb" >
+                <li>
+                    <i class="fa fa-reply" aria-hidden="true"></i>
+                    <a  href="javascript:history.go(-1)">返回上一页</a>
+                </li>
+                <li>
+                    温馨提示:您暂无该权限。如需申请权限，请联系管理员
+                </li>
+
+            </ul><!-- /.breadcrumb -->
+        </div>
+
+
+        <div class="row">
+            <div class="col-xs-12">
+
+                <div id="accordion" class="accordion-style2">
+                    <div class="group">
+                        <h3 class="accordion-header">请扫描微信二维码联系管理员开通权限</h3>
+
+                        <div>
+
+                            <img src=" {% static 'images/lsh_qrcode.jpg' %}">
+                        </div>
+                    </div>
+
+                    <div class="group">
+                        <h3 class="accordion-header">请用邮件联系管理员开通权限</h3>
+
+                        <div>
+                            <a href="mailto:service@mtaiyi.com">service@mtaiyi.com</a>
+                        </div>
+                    </div>
+
+                    <div class="group">
+                        <h3 class="accordion-header">请用电话联系管理员开通权限</h3>
+
+                        <div>
+                            <p class="header blue lighter smaller">
+                                服务热线：020-38986502<br/>
+                                服务手机：18565342192
+                            </p>
+
+                        </div>
+                    </div>
+                </div><!-- #accordion -->
+            </div><!-- ./span -->
+        </div><!-- /.page-content -->
+    </div><!-- /.main-content -->
+
+
+    <script type="text/javascript">
+        jQuery(function ($) {
+
+            //jquery accordion
+            $("#accordion").accordion({
+                collapsible: true,
+                heightStyle: "content",
+                animate: 250,
+                header: ".accordion-header"
+            }).sortable({
+                axis: "y",
+                handle: ".accordion-header",
+                stop: function (event, ui) {
+                    // IE doesn't register the blur when sorting
+                    // so trigger focusout handlers to remove .ui-state-focus
+                    ui.item.children(".accordion-header").triggerHandler("focusout");
+                }
+            });
+
+        });
+    </script>
+{% endblock %}
+</body>
+</html>

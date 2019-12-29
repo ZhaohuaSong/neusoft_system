@@ -1,0 +1,196 @@
+/**
+ * Created by rich on 2017/1/6.
+ */
+
+jQuery(function ($) {
+
+    /*
+     树形菜单+检索
+     */
+    $('#treeview1').treeview({
+        data: defaultData,
+        //levels: 1,
+        //showTags: true,
+        onNodeSelected: function (event, node) {
+            $.ajax({
+                url: FILE_CONTENTS_LIST_URL,
+                type: "POST",
+                "data": {"id": node.id, "table_name": node.text},
+                success: function (result) {
+                    //console.info(node)
+                    //console.info(result)
+                    $("#dbcontent").html('')
+                    var jsonObj=eval(result);
+                        //console.info(jsonObj)
+
+                    var kobe = 0;
+
+                    $.each(jsonObj, function (i, item) {
+                        //console.info(item)
+                        for(var key in item){
+                            //console.info(key);
+                            kobe = key;
+                        }
+                        if (kobe == "page_num") {
+                                return false
+                        }
+                        var tds= ''
+                        var j = 0;
+                        for (j = 0; j <= kobe; j++) {
+                            tds=tds+('<td align="center"  valign="middle">'+item[j]+'</td>')
+                        }
+                        //console.info(tds)
+
+                        $("#dbcontent").append(
+                            '<tr>' +
+                            '<td><input type="checkbox"></td>' +
+                            tds+
+                            '</tr>'
+                        )
+                    });
+                    $("#page_num").html('')
+                    $.each(jsonObj, function (i, item) {
+                        for(var key in item){
+                            kobe = key;
+                        }
+
+                        if (kobe!= "page_num") {
+                            return true
+                        }
+                        //console.info(item[kobe])
+                        $("#page_num").append(
+                            '<tr>' +
+                            '<td align="center"  valign="middle">'+item[kobe]+'</td>'+
+                            '</tr>'
+                        )
+                    });
+                    $("#all_page").html('')
+                    $.each(jsonObj, function (i, item) {
+                        for(var key in item){
+                            kobe = key;
+                        }
+
+                        if (kobe!= "all_page") {
+                            return true
+                        }
+                        //console.info(item[kobe])
+                        $("#all_page").append(
+                            '<tr>' +
+                            '<td align="center"  valign="middle">'+item[kobe]+'</td>'+
+                            '</tr>'
+                        )
+                    });
+
+                }
+            });
+
+        },
+    });
+
+    $("#btn-nextpage").bind("click",
+        function () {
+              $.ajax({
+                    type: "GET",
+                    url: NEXT_PAGE,
+                    data:{},
+                    dataType: "json",
+                    success: function (data) {
+                        //console.info(data)
+                        $("#dbcontent").html('')
+                        var jsonObj=eval(data);
+                        var kobe = 0;
+                        $.each(jsonObj, function (i, item) {
+                            for(var key in item){
+                                kobe = key;
+                            }
+                            //console.info(kobe)
+                            if (kobe == "page_num") {
+                                return false
+                            }
+                            var tds= ''
+                            var j = 0;
+                            for (j = 0; j <= kobe; j++) {
+                                tds=tds+('<td align="center"  valign="middle">'+item[j]+'</td>')
+                            }
+                            $("#dbcontent").append(
+                                '<tr>' +
+                                '<td><input type="checkbox"></td>' +
+                                tds+
+                                '</tr>'
+                            )
+                        });
+                        $("#page_num").html('')
+                        $.each(jsonObj, function (i, item) {
+                            for(var key in item){
+                                kobe = key;
+                            }
+
+                            if (kobe!= "page_num") {
+                                return true
+                            }
+                            //console.info(item[kobe])
+                            $("#page_num").append(
+                                '<tr>' +
+                                '<td align="center"  valign="middle">'+item[kobe]+'</td>'+
+                                '</tr>'
+                            )
+                        });
+
+                    }
+                });
+        }
+    );
+
+    $("#btn-lastpage").bind("click",
+        function () {
+              $.ajax({
+                    type: "GET",
+                    url: LAST_PAGE,
+                    data:{},
+                    dataType: "json",
+                    success: function (data) {
+                        //console.info(data)
+                        $("#dbcontent").html('')
+                        var jsonObj=eval(data);
+                        var kobe = 0;
+                        $.each(jsonObj, function (i, item) {
+                            for(var key in item){
+                                kobe = key;
+                            }
+                            if (kobe == "page_num") {
+                                return false
+                            }
+                            var tds= ''
+                            var j = 0;
+                            for (j = 0; j <= kobe; j++) {
+                                tds=tds+('<td align="center"  valign="middle">'+item[j]+'</td>')
+                            }
+                            $("#dbcontent").append(
+                                '<tr>' +
+                                '<td><input type="checkbox"></td>' +
+                                tds+
+                                '</tr>'
+                            )
+                        });
+                        $("#page_num").html('')
+                        $.each(jsonObj, function (i, item) {
+                            for(var key in item){
+                                kobe = key;
+                            }
+
+                            if (kobe!= "page_num") {
+                                return true
+                            }
+                            //console.info(item[kobe])
+                            $("#page_num").append(
+                                '<tr>' +
+                                '<td align="center"  valign="middle">'+item[kobe]+'</td>'+
+                                '</tr>'
+                            )
+                        });
+                    }
+                });
+        }
+    );
+
+});

@@ -1,0 +1,132 @@
+{% extends "mainbase.html" %}
+{% load staticfiles %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+</head>
+<body class="no-skin">
+{% block content %}
+    <div class="main-content">
+        <div class="breadcrumbs" id="breadcrumbs">
+            <script type="text/javascript">
+                try {
+                    ace.settings.check('breadcrumbs', 'fixed')
+                } catch (e) {
+                }
+                                                  jQuery(function ($) {
+                    $("#btn-back").bind("click",
+                            function () {
+                                window.location.href = "{% url 'filemanage:IndustryParkSource.list' %}"
+                            });
+                })
+            </script>
+
+
+            <ul class="breadcrumb">
+                <li>
+                    <i class="ace-icon fa fa-home home-icon"></i>
+                    <a href="#">首页</a>
+                </li>
+
+                <li><a href="#">机房管理模块</a></li>
+                <li><a href="{% url 'filemanage:IndustryParkSource.list' %}">一级空间机楼资源</a></li>
+                <li class="active">新增机楼</li>
+            </ul><!-- /.breadcrumb -->
+        </div>
+
+         <div class="page-content">
+            <div class="row">
+                <div class="col-xs-12" >
+                    <div class="widget-box col-xs-12">
+                        <div class="widget-header widget-header-blue widget-header-flat">
+                            <h4 class="widget-title lighter">新增机楼</h4>
+
+                        </div>
+                        <div class="space-20"></div>
+
+                    <form style="padding:2% " class="form-horizontal" role="form" action="" method="post">
+                        {% csrf_token %}
+                    <div class="form-group">
+                                <label class="col-sm-4 control-label no-padding-right"> {{ form.building.label }} </label>
+                                <div class="col-sm-8">
+                                    {{ form.building }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.building.errors }} </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <div class="form-group">
+                                <label class="col-sm-4 control-label no-padding-right"> {{ form.type.label }} </label>
+                                <div class="col-sm-8">
+                                    {{ form.type }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.type.errors }} </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <div class="form-group">
+                                <label class="col-sm-4 control-label no-padding-right"> {{ form.attribute.label }} </label>
+                                <div class="col-sm-8">
+                                    {{ form.attribute }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.attribute.errors }} </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <div class="form-group">
+                                <label class="col-sm-4 control-label no-padding-right"> {{ form.electric_cap.label }} </label>
+                                <div class="col-sm-8">
+                                    {{ form.electric_cap }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.electric_cap.errors }} </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <div class="form-group">
+                                <label class="col-sm-4 control-label no-padding-right"> {{ form.power.label }} </label>
+                                <div class="col-sm-8">
+                                    {{ form.power }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.power.errors }} </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <div class="form-group">
+                                <label class="col-sm-4 control-label no-padding-right"> {{ form.total_box.label }} </label>
+                                <div class="col-sm-8">
+                                    {{ form.total_box }}
+                                    <div class="form-group has-error">
+                                        <div class="help-block col-xs-12 col-sm-reset inline">{{ form.total_box.errors }} </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                         <div class="space-20"></div>
+                            <hr>
+
+                          {% include "form_buttons.html" %}<!-- /.form_buttons -->
+                            <div class="space-10"></div>
+
+                    </form>
+
+              </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+{#    <script src="{% static 'js/jquery.bootstrap-duallistbox.min.js' %}" charset="utf-8"></script>#}
+{#    <script>#}
+{#        var demo1 = $('select[name="permission"]').bootstrapDualListbox({#}
+{#            nonSelectedListLabel: '可选择权限',#}
+{#            selectedListLabel: '已选择权限',#}
+{#            preserveSelectionOnMove: 'moved',#}
+{#            moveOnSelect: false,#}
+{#        });#}
+{##}
+{#    </script>#}
+{% endblock %}
+<!-- /.main-content -->
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!-- -->
+
+<div  id="ace-settings-box">
+    <div class="pull-left width-100">
+        <div style="width:100%; border-bottom:1px #dedede dashed; float:left;" >
+
+                        <span class="am-icon-md am-icon-clock-o"></span>
+            <div class="col-sm-9">
+                <div style="margin: 10px 0px 10px 0px;" class="col-sm-6">
+                        <label for="min_datetime" style="padding-top: 7px; float:left;">开始时间：</label></th>
+                            <input id="datetimepicker" class="am-btn am-margin-right am-btn-default col-sm-7"
+                                       name="min_datetime"
+                                       value="{{ search_context }}" placeholder="开始时间"
+                                       required="" type="text" value="2016-09-29 00:00:00"/>
+                    </div>
+                <div style="margin: 10px 0px 10px 0px;" class="col-sm-6">
+                        <label for="max_datetime"  style="padding-top: 7px; float:left;">结束时间：</label></th>
+                            <input id="datetimepicker1" class="am-btn am-margin-right am-btn-default col-sm-7"
+                                       name="max_datetime"
+                                       value="{{ search_context }}" placeholder="结束时间"
+                                       required="" type="text" value="2016-09-29 14:23:55"/>
+                    </div>
+                </div>
+
+
+
+            <div class="input-group col-sm-3" style="margin-top: 10px; float: right;">
+
+                <input class="form-control" id="in-search" name="keywords" placeholder="输入要查询的内容" type="text">
+                <div class="input-group-btn" style="padding-left: 10px">
+                    <button class="btn btn-info btn-sm tooltip-info" id="btn-search">
+                        查询
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div><!-- /.pull-left -->
+    <!-- /.pull-left -->
+</div><!-- /.ace-settings-box -->

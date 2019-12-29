@@ -1,0 +1,17 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
+from django.conf.urls import url
+from views import DBConfigListView, DBConfigtListJson, CreateDBConfig, EditDBConfig, dbconfig_delete
+
+urlpatterns = [
+
+    url(r'^dbadmin/dbconfig/list$', DBConfigListView.as_view(), name='dbconfig.list'),  # 数据库配置列表
+    url(r'^dbadmin/dbconfig/data$', DBConfigtListJson.as_view(), name='dbconfig.data'),  # 数据库配置列表列表数据
+    url(r'^dbadmin/dbconfig/add', CreateDBConfig.as_view(), name='dbconfig.add'),  # 数据库配置列表添加
+    url(r'^dbadmin/dbconfig/delete$', dbconfig_delete, name='dbconfig.delete'),  # 删除
+    url(r'^dbadmin/dbconfig/edit/(?P<pk>\d+)/$', EditDBConfig.as_view(), name='dbconfig.edit'),  # 数据库配置列表编辑
+
+    # url(r'^dbadmin/dbconfig/dbtreeview',DBDictTypeTreeView, name='dbconfig.treeview'),  # 数据库类型树形
+
+]

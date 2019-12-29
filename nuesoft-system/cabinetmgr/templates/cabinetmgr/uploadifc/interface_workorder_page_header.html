@@ -1,0 +1,43 @@
+<!-- -->
+
+<div  id="ace-settings-box">
+    <div class="pull-left width-100">
+        <div style="width:100%; border-bottom:1px #dedede dashed; float:left">
+            <div class="input-group col-sm-3" style="margin-top: 10px; float: right;">
+                <input class="form-control" id="in-search" name="keywords" placeholder="输入要查询的内容" type="text" >
+                <div class="input-group-btn" style="padding-left: 10px">
+                    <button class="btn btn-info btn-sm tooltip-info" id="btn-search">
+                        查询
+                    </button>
+                </div>
+            </div>
+            {% if operate_interface == 1 and submit == 0%}
+                <button class="btn btn-info btn-sm tooltip-info" id="btn-distribute-interface" style="float:left; margin:10px 3px 10px 3px;">
+                    批量添加或回收端口
+                </button>
+                <button class="btn btn-info btn-sm tooltip-info" id="btn-delete" style="float:left; margin:10px 3px 10px 3px;">
+                    删除
+                </button>
+            {% elif operate_interface == 3 %}
+                <button class="btn btn-info btn-sm tooltip-info" id="btn-retry" style="float:left; margin:10px 3px 10px 3px;">
+                    重新操作
+                </button>
+                <button class="btn btn-info btn-sm tooltip-info" id="btn-disvertify"  style="float:left; margin:10px 3px 10px 3px;">
+                    审核不通过
+                </button>
+                <button class="btn btn-info btn-sm tooltip-info" id="btn-vertify-detail"  style="float:left; margin:10px 3px 10px 3px;">
+                    审核详情
+                </button>
+            {% elif operate_interface == 2 %}
+                <button class="btn btn-info btn-sm tooltip-info" id="btn-vertify"  style="float:left; margin:10px 3px 10px 3px;">
+                    审核通过
+                </button>
+                <button class="btn btn-info btn-sm tooltip-info" id="btn-vertify-detail"  style="float:left; margin:10px 3px 10px 3px;">
+                    审核详情
+                </button>
+            {% endif %}
+        </div>
+    </div><!-- /.pull-left -->
+
+    <!-- /.pull-left -->
+</div><!-- /.ace-settings-box -->

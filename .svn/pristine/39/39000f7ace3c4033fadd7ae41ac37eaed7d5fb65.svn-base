@@ -1,0 +1,161 @@
+{% extends "mainbase.html" %}
+{% load staticfiles %}
+{% load i18n staticfiles %}
+{% load url from future %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% block title %}
+
+        <script src="{% static "js/jquery.bootstrap-duallistbox.min.js" %}"></script>
+        <script src="{% static "js/jquery.raty.min.js" %}"></script>
+        <script src="{% static "js/bootstrap-multiselect.min.js" %}"></script>
+        <script src="{% static "js/select2.min.js" %}"></script>
+        <script src="{% static "js/jquery-typeahead.js" %}"></script>
+        <!--加入js输入格式处理，例如ip地址-->
+        <script src="{% static "js/jquery.maskedinput.min.js" %}"></script>
+
+
+        <!--IP-->
+        <script src="{% static "js/selectbox/selectbox.js" %}"></script>
+        <link href="{% static 'css/bootstrap-duallistbox.min.css' %}" rel="stylesheet">
+        <link href="{% static 'css/select2.min.css' %}" rel="stylesheet">
+
+
+        <script src="{% static "js/dbadmin/dbconfig.form.js" %}"></script>
+         <script src="{% static "js/jquery-latest.js" %}"></script>
+
+
+    {% endblock %}
+</head>
+<body class="no-skin">
+{% block content %}
+    <div class="main-content">
+        <!-- breadcrumb开始 -->
+        <div class="breadcrumbs" id="breadcrumbs">
+            <script type="text/javascript">
+                try {
+                    ace.settings.check('breadcrumbs', 'fixed')
+                } catch (e) {
+                }
+                jQuery(function ($) {
+                    $("#btn-back").bind("click",
+                        function () {
+                            window.location.href = "{% url 'dbadmin:dbconfig.list' %}"
+                        });
+                })
+            </script>
+            <ul class="breadcrumb">
+                <li>
+                    <i class="ace-icon fa fa-home home-icon"></i>
+                    <a href="#">首页</a>
+                </li>
+
+                <li><a href="#">数据库链接管理</a></li>
+                <li><a href="{% url 'dbadmin:dbconfig.list' %}">数据库链接管理</a></li>
+                <li class="active">编辑</li>
+            </ul><!-- /.breadcrumb -->
+
+        </div>
+        <!-- breadcrumb结束 -->
+
+        <div class="page-content">
+
+            <button class="btn btn-info btn-sm tooltip-info" id="btn-check-ip"
+                    style="float:left; margin:10px 3px 10px 0px;">
+                <strong>数据库链接测试</strong>
+            </button>
+            <div id="myAlert" class="alert alert-warning" style="padding-left:100px;display:none">
+                <strong></strong>
+            </div>
+
+
+            <!--row开始-->
+            <div class="row">
+                <div class="col-xs-12" style="margin-bottom:80px;">
+                    <div class="widget-box col-xs-12">
+                        <div class="widget-header widget-header-blue widget-header-flat">
+                            <h4 class="widget-title lighter">数据库链接</h4>
+                        </div>
+                        <div class="space-20"></div>
+
+                        <form class="form-horizontal" role="form" action="" method="post">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right"> 应用名称 </label>
+                                <div class="col-sm-9">
+                                    {{ form.appname }}
+                                    <div style="margin-top:5px;margin-left:5px;color:red">{{ form.appname.errors }}</div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right"> 数据库类型 </label>
+                                <div class="col-sm-3">
+                                    {{ form.dbtype }}
+                                    <div style="margin-top:5px;margin-left:5px;color:red">{{ form.dbtype.errors }}</div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right"> 数据库名 </label>
+                                <div class="col-sm-9">
+                                    {{ form.dbname }}
+                                    <div style="margin-top:5px;margin-left:5px;color:red">{{ form.dbname.errors }}</div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right"> 数据库服务器IP </label>
+                                <div class="col-sm-9">
+                                    {{ form.dbhost }}
+                                    <div style="margin-top:5px;margin-left:5px;color:red">{{ form.dbhost.errors }}</div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right"> 数据库服务器端口 </label>
+                                <div class="col-sm-9">
+                                    {{ form.dbport }}
+                                    <div style="margin-top:5px;margin-left:5px;color:red">{{ form.dbport.errors }}</div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right"> 用户名 </label>
+                                <div class="col-sm-9">
+                                    {{ form.dbusername }}
+                                    <div style="margin-top:5px;margin-left:5px;color:red">{{ form.dbusername.errors }}</div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label no-padding-right"> 密码 </label>
+                                <div class="col-sm-9">
+                                    {{ form.dbpassword }}
+                                    <div style="margin-top:5px;margin-left:5px;color:red">{{ form.dbpassword.errors }}</div>
+                                </div>
+                            </div>
+
+
+                            <hr/>
+                            <div class="space-10"></div>
+                            {% include "form_buttons.html" %}<!-- /.form_buttons -->
+                            <div class="space-30"></div>
+
+
+                        </form>
+
+
+                    </div>
+                </div>
+            </div>
+            <!--row结束-->
+        </div>
+
+    </div>
+    {% include "message.html" %}
+{% endblock %}
+
+</body>
+</html>

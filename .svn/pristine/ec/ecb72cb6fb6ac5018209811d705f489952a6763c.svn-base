@@ -1,0 +1,82 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2017/1/12 下午17:41
+# @Author  : qiujunli
+# @Site    :
+# @File    : remote_protocol_request.py
+# @Software: PyCharm
+# @Function: 适配器与协议规则之间的对应关系
+
+#from ..common.iso.iso_8583 import *
+from api.iso_interface import *
+from api.iso_msg_type import *
+from ..common.iso.iso_response_code import *
+from ..richdataserver.PackData import PackData
+from ..richdataserver.ExchangeData import ExchangeData
+from models import LocalApp
+#远程适配器发送协议规则配置请求
+class RemoteProtoclRequest:
+    def request(self, app, protocol):
+        '''
+        发送报文规则请求接口
+        :param app: 远程适配器信息
+        :param protocol: #要发送的报文规则信息
+        :return: 失败后抛出异常处理
+        '''
+        ip = app.app_ip
+        port = int(app.app_port)
+        iso_net  = self.__format_content(app, protocol)
+        iso_net = self.__send_to(ip, port, iso_net)
+        #iso_net = iso_net[0]
+        code = ISOInterface(iso_net=iso_net).get_response_code()
+        print code, '----------------------------------------'
+        if CODE_SUCCESS != code:
+            raise Exception("发送错误，error=" + code)
+        print '++++++++++++++++++++++++++++++++++'
+
+    def __send_to(self, ip, port, iso_net):
+        '''
+        向远程适配器发送协议配置内容
+        :param ip:
+        :param port:
+        :param iso_net:
+        :return:
+        '''
+
+        if isinstance(ip, unicode): ip = ip.encode("utf-8")
+        try:
+            client = ExchangeData(ip, port)
+            client.create_connenct()
+            return client.send_and_recv(iso_net)
+
+            # p = PackData()
+            # p.address = (ip, port)
+            # p.message = iso_net
+            # return p.send_roule()
+        except Exception as e:
+            raise Exception('远程适配器无响应：'+str(e))
+
+
+    def __format_content(self, app, protocol):
+        '''
+        格式化网络传输内容
+        :param app:
+        :param protocol:
+        :return: 返回要发送的内容
+        '''
+        iso = ISO8583()
+        iIso = ISOInterface(iso_8583=iso)
+        iIso.set_msg_type(MSG_PROTOCOL_CONFIG_REQUEST)# 报文规则配置请求
+        loacl_app = LocalApp.objects.all()[0]
+        iIso.set_app_id(loacl_app.app_id)#当前发送请求的适配器编号
+
+        iIso.set_protocol_id(protocol.protocol_id)
+        iIso.set_protocol_name(protocol.protocol_name)
+        iIso.set_protocol_content(protocol.protocol_content)
+        #iso.showBitsAndValues()
+
+        return iso.getNetworkISO()
+
+
+
+

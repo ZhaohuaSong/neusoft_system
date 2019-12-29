@@ -1,0 +1,73 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+from django.views.generic import TemplateView
+from ..common.datatables.views import BaseDatatableView
+from django.db.models import Q
+from django.http import JsonResponse
+import json
+from models import FieldList
+from ..vanilla import CreateView, UpdateView
+from forms import DBListForm
+from django.http import HttpResponseRedirect
+
+class ListDB(TemplateView):
+    template_name = 'source_catalog/database.list.html'
+
+class DBJson(BaseDatatableView):
+    '''
+    Json 数据格式
+    '''
+    model = FieldList
+    columns = ['id', 'id', 'name','column', ]
+    order_columns = ['id', 'id',  'name', ]
+
+    def get_initial_queryset(self):
+        return self.model.objects.filter(type=0)
+
+    def prepare_results(self, qs):
+        json_data = []
+        for item in qs:
+            json_data.append([
+                item.id,
+                item.id,
+                item.name,
+                item.column,
+            ])
+        return json_data
+
+
+class CreateDBView(CreateView):
+    """
+    ===============================================================================
+    function： 创建视图
+    developer:    wangyingqi
+    add-time      2017/3/23
+    ===============================================================================
+    """
+    form_class = DBListForm
+    template_name = 'source_catalog/database.add.html'
+
+    def get(self, request, *args, **kwargs):
+        form = DBListForm
+        # form.fields['column'].choices = get_column()
+        context = self.get_context_data(form=form)
+        return self.render_to_response(context)
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form(data=request.POST, files=request.FILES)
+        # form.fields['column'].choices = get_column()
+        if form.is_valid():
+            name = request.POST.get('name', '')
+            column = request.POST.getlist('column', '')
+            FieldList.objects.create(name=name, column =column,
+                                                status='0')
+            FieldList.save()
+            return HttpResponseRedirect(self.get_success_url())
+        return self.form_invalid(form)
+
+# def get_column():
+#        r=[]
+#        for obj in  PermissionList.objects.all().filter(type=0).exclude(url=''):
+#              obj_value_str= obj.name+'('+obj.url+')'
+#              r = r + [(obj.id,obj_value_str)]
+#        return r

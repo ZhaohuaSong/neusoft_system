@@ -1,0 +1,56 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+import json
+from django.db.models import Q
+from ..models import ProtocolType
+
+#QiuJL 2017.1.4
+#报文协议内容格式化
+class Protocol:
+    #初始化
+    def init(self, protocol_content):
+        dict_protocol = json.loads(protocol_content)#转换为字典形式
+        list_protocol = list(dict_protocol.values())#将数据报文规则存储为list
+
+        #src_field_to_dest = {}#数据源位置信息
+        bit_index_list = []
+        bit_info_list = []
+        for dic in list_protocol:
+            #src_field_to_dest[dic['field_name']] = dic['bit_index']
+            bit_index_list.append(dic['bit_index'])
+            bit_info_list.append([dic['bit_index'], dic['field_name']])
+        return bit_index_list, bit_info_list
+
+#业务报文内容
+class ProtocoFactory:
+    def init(self, protocol_id, msg_ype):
+        '''
+        :msg_ype 报文类型 请求或者响应
+        :param protocol_id: 协议ID
+        '''
+        try:
+            proto = ProtocolType.objects.get(Q(protocol_id=protocol_id)&Q(protocol_msgtype=msg_ype))
+        except Exception as e:
+            raise Exception('报文协议ID:' + protocol_id + '不存在，请查证。')
+
+        self.bit_index_list, self.bit_info_list = Protocol().init(proto.protocol_content)
+        self.msg_type = proto.protocol_msgtype
+        return self
+
+    #获取列表
+    def get_bit_index(self):
+        return self.bit_index_list
+
+    #获取消息类型，是请求还是应答报文 00=请求 01=应答
+    def get_msg_type(self):
+        return self.msg_type
+
+    #获取数据源类型
+    #报文来源CSV、DB。 0 == DB、1 == CSV
+    def get_src_type(self):
+        return self.srctype
+
+    #获取域具体信息
+    def get_bit_info(self):
+        return self.bit_info_list
+

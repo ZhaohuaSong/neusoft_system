@@ -1,0 +1,13 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2016/1/13 14:18
+# @Author  : qiujunli
+# @Site    :
+# @File    : iso_msg_type.py
+# @Software: PyCharm
+# @Function: 定义消息类型
+
+MSG_PROTOCOL_CONFIG_REQUEST  = '\x01\x00'  #报文协议配置请求
+MSG_PROTOCOL_CONFIG_RESPONSE = '\x01\x01'  #报文协议配置响应
+
+MSG_DATAEXCHANGE             = '\x02\x00'  #数据交换

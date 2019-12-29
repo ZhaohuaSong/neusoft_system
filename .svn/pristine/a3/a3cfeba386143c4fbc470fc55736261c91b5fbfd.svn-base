@@ -1,0 +1,366 @@
+/*************************************************
+
+2016-9-22
+QiuJL
+太乙、机构商户终端映射页面控制
+
+*************************************************/ 
+
+//太乙商户终端生成页面入口响应函数
+jQuery("#box_ty_mid_tid").on('click', 'button#btn_check', function(){
+
+    show_waite();
+    try{
+        var var_obj = $(this);
+        set_flag(var_obj, 0);
+        show_page(var_obj, 1);  
+    }
+    catch(e){}
+
+    hide_waite();    
+});
+
+//机构商户终端生成页面入口响应函数
+jQuery("#box_org_mid_tid").on('click', 'button#btn_check', function(){
+
+    show_waite();
+    try{
+        var var_obj = $(this);
+        set_flag(var_obj, 1);
+        show_page(var_obj, 1); 
+    }
+    catch(e){}
+    hide_waite();    
+});
+
+
+function set_flag(var_obj, bOrg){
+    var box = var_obj.closest('.widget-box');
+    box.attr('org', bOrg);
+}
+
+function show_page(var_obj, page){
+
+        var box = var_obj.closest('.widget-box');
+
+        var bOrg = box.attr('org');
+                    
+        var url = format_url(box, "mid_search", bOrg, page); 
+                    
+        $.get( url, function(data, status){
+            if(status=="success"){
+
+                var tb = box.find("#table_data");
+
+                             
+                var json = JSON.parse(data); //后台发送过来的数据包
+                            
+                create_table(json.page_objects, tb, bOrg); //生成table       
+
+
+
+                create_page_ctrl(
+                                tb,
+                                json.max_page,
+                                json.data_nums,
+                                json.first_page,
+                                json.last_page,
+                                json.page_range,
+                                json.current_page,
+                                json.has_next,
+                                json.has_previous
+                                );      
+                                         
+                        }  
+            });
+
+};
+
+
+function create_page_ctrl(table, max_page, data_nums, first_page, last_page, page_range, current_page, has_next, has_previous){
+
+
+    var box           = table.closest('div');
+    var div           = box.find('div.page_ctrl');
+
+    if(div.size() ==0 ){ 
+        div = jQuery('<div class="page_ctrl" style="widht:100%" />');
+        div.appendTo( table.parent().parent() );
+    }
+    
+    div.empty();
+
+    var str='<text>'; str+=data_nums; str+='条数据, 共'; str+=max_page; str+='页</text>';
+    var page_data = jQuery(str);
+    page_data.appendTo( div );
+
+    if(max_page==1)return;
+        
+    
+    var ul            = jQuery('<ul  class="pagination pull-right no-margin " />');
+    var li_previous   = jQuery('<li  class="prev" title="首页" > <a href="#" <i class="ace-icon fa fa-angle-double-left"></i></a></li>');
+    var li_prev       = jQuery('<li class="prev" title="上一页"><a href="#" <i class="ace-icon fa fa-angle-left"></i></a></li>');
+    
+    
+    if(!has_previous){ 
+        li_previous.addClass('disabled');
+        li_prev.addClass('disabled');
+    }
+    else{
+        li_previous.attr('page', first_page);
+        li_prev.attr('page', current_page-1);
+        li_previous.on("click", function(){ show_page($(this), $(this).attr('page'));});
+        li_prev.on("click", function(){ show_page($(this), $(this).attr('page'));});
+    }
+
+    li_previous.appendTo(ul);
+    li_prev.appendTo(ul);
+
+    
+
+
+
+    for (var i = 0 ; i < page_range.length; i++) {
+        var li_page       = jQuery('<li> <a/></li>');
+        li_page.find('a').text(page_range[i]); 
+        li_page.attr('page', page_range[i]);
+
+        if(current_page == page_range[i]){
+            li_page.addClass('active');
+        }
+        /////////////////////////绑定点击事件
+        li_page.on("click", function(){ show_page($(this), $(this).attr('page'));});
+        /////////////////////////
+        li_page.appendTo(ul);
+    };
+    
+
+    var li_next      = jQuery('<li  class="prev" title="上一页"  ><a  href="#" <i class="ace-icon fa fa-angle-right"></i></a></li>');
+    
+    var li_last      = jQuery('<li class="prev" title="尾页"><a href="#" <i class="ace-icon fa fa-angle-double-right"></i></a></li>');
+    
+
+    if(!has_next){ 
+        li_next.addClass('disabled');
+        li_last.addClass('disabled');
+    }
+    else{
+        li_next.attr('page', current_page+1);
+        li_last.attr('page', last_page);
+        li_next.on("click", function(){ show_page($(this), $(this).attr('page'));});
+        li_last.on("click", function(){ show_page($(this), $(this).attr('page'));});
+    }
+
+
+    li_next.appendTo(ul);
+    li_last.appendTo(ul);
+    
+    ul.appendTo(div);
+};
+
+
+
+
+
+//格式化生成url 附带参数 box是当前面板元素 option表示操作类型 与后台结合使用
+//option：
+//mid_search=商户下的终端搜索
+//mid_map=商户映射
+//is_org=0表示操作太乙  is_org=1表示操作机构
+//page当前分页索引
+function format_url(box, option, is_org, page){
+	var mid_text = box.find('input#input_mid').val();
+	var org_name = '汇卡'; 					
+	var param='org_name='; param+=org_name;
+	param += '&mid='; 
+	param+=mid_text;
+	param += '&is_org_mid='; //是太乙商户面板还是机构商户面板
+	param+= is_org;
+
+    //var page = box.find('li.active').attr('page');
+   
+    param+= '&page=';
+    param+= page;
+
+	var addr = "?option="; addr+=option; addr+="&";
+	addr += param;
+
+	return addr;
+};
+
+//生成表格
+function create_table(json, tb, bOrg){
+	try{    					
+		tb.empty();		
+    	for(var i=0;i<json.length;i++){ 
+            var data = json[i];
+            tr = create_tr(data, bOrg);
+            tr.appendTo(tb);
+        }  
+    }
+    catch(e){
+    	alert(e)
+    } 				
+};
+
+//生成tr元素
+function create_tr(data, bOrg){
+
+	var tr = ctrate_tr();
+    tr.attr("id", data.id);  
+    
+    if(bOrg==1)
+    {
+    	var td = ctrate_td();
+        if(0==data.map_state){ 
+    	   jQuery('<label ><input type="radio" class="ace"   /><span class="lbl"></span></label>').appendTo(td);
+    	   td.find("input").attr("name", bOrg);
+        }
+    	td.appendTo(tr);
+
+    	var td = ctrate_td();
+   	 	td.text(data.tid)
+    	td.appendTo(tr);
+
+    	var td = ctrate_td();
+    	td.appendTo(tr);
+        if(0==data.map_state){            
+            jQuery("<span class='label label-sm label-success'>未映射</span>").appendTo(td)
+        }
+        else{ 
+            jQuery("<span class='label label-sm label-default'>已映射</span>").appendTo(td)
+        }
+
+        var td = ctrate_td();
+        td.text(data.index);
+        td.appendTo(tr);
+    }
+      
+
+    if(bOrg==0)
+    {
+        var td = ctrate_td();
+        td.text(data.index);
+        td.appendTo(tr);
+
+    	var td = ctrate_td();
+    	td.appendTo(tr); 
+        if(0==data.map_state){            
+            jQuery("<span class='label label-sm label-success'>未映射</span>").appendTo(td)
+        }
+        else{ 
+            jQuery("<span class='label label-sm label-default'>已映射</span>").appendTo(td)
+        }
+        
+
+    	var td = ctrate_td();
+    	td.text(data.tid)
+    	td.css("text-align","right");
+    	td.appendTo(tr);
+
+
+
+    	var td = ctrate_td();
+        if(0==data.map_state){ 
+    	   jQuery('<label ><input type="radio" class="ace"   /><span class="lbl"></span></label>').appendTo(td);
+           td.find("input").attr("name", bOrg)
+        }
+
+    	td.appendTo(tr);
+
+        
+    	
+    	td.appendTo(tr);
+    }
+    
+       
+    return tr;
+} 
+
+function ctrate_tr(){
+	return jQuery("<tr/>");
+}
+
+function ctrate_td(){
+	return jQuery("<td/>");
+}
+
+
+/*************************************************
+商户终端映射接口
+*************************************************/
+jQuery("#btn_create_map").on('click', function(){
+
+    var json_data = {};
+    try{
+        var tr_ty = get_check_tr("#box_ty_mid_tid");
+        var tr_org = get_check_tr("#box_org_mid_tid");
+
+        
+        if(tr_ty==-1){
+      
+            show_dialog('商户终端映射','请选择需要映射太乙终端。');
+            return;
+        }
+        if(tr_org==-1){
+            show_dialog('商户终端映射','请选择需要映射的机构终端。');
+            return;
+        }
+
+        show_waite();
+
+        var check_id_ty = tr_ty.attr("id");
+        var check_id_org = tr_org.attr("id");
+
+
+        json_data["org_tid_id"] = check_id_org;
+        json_data["ty_tid_id"]  = check_id_ty;
+
+
+        var postdata = JSON.stringify(json_data);
+                 
+        var addr = "";
+        $.post( addr, postdata, function(context, status){
+            if(status=="success"){   
+                var json = JSON.parse(context); 
+                if(json.ret==1){
+                    set_map_state(tr_ty, tr_org);
+                }
+                show_dialog('商户终端映射', json.msg);
+            }
+        });
+    }
+    catch(e){
+        alert(e);
+    }
+});
+
+//设置映射状态
+function set_map_state(tr_ty, tr_org){
+    tr_ty.children().eq(1).empty();
+     jQuery("<span class='label label-sm label-default'>已映射</span>").appendTo(tr_ty.children().eq(1));
+     tr_ty.children().eq(3).empty();
+
+     tr_org.children().eq(2).empty();
+     jQuery("<span class='label label-sm label-default'>已映射</span>").appendTo(tr_org.children().eq(2));
+     tr_org.children().eq(0).empty();
+}
+
+//获取选中状态的终端ID
+function get_check_tr(box_id){
+
+	var box  = jQuery(box_id);
+	var tb   = box.find("tbody#table_data");
+ 
+	var input=tb.find("input:checked");
+    if(input.size()==0){
+        return -1;
+    }
+
+	var tr = input.closest("tr");
+    return tr;
+
+	//return tr.attr("id");
+
+	//input.removeAttr("checked");
+}

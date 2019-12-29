@@ -1,0 +1,27 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
+import os
+import sys
+
+from multiprocessing import Pool
+
+def open_django(port):
+    os.system("python manage.py runserver 0.0.0.0:"+str(port))
+
+def open_socketserver(port):
+    os.system("python richDataX-system/richdataserver/receiveserver.py "+str(port))
+
+if __name__ == '__main__':
+    print 'Parent process %s.' % os.getpid()
+    a = sys.argv[1:][0]
+    b = sys.argv[1:][1]
+    if str(a)==str(b):
+        print 'port must not same!!'
+    else:
+        p = Pool()
+        p.apply_async(open_django,args=(sys.argv[1:][0],))
+        p.apply_async(open_socketserver,args=(sys.argv[1:][1],))
+        p.close();
+        p.join()
+

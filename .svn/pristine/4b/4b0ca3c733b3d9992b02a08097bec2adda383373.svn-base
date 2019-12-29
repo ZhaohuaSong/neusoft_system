@@ -1,0 +1,21 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+from django.test import TestCase
+
+# Create your tests here.
+
+from pack.pack_ctrl import *
+from api.handle.handle_data_exchange_request import *
+
+
+if __name__ == '__main__':
+    #1、根据协议规则ID获取要的数据
+    iso = PackCtrl().get_test_dataexchange_data('6000010001')
+
+    #2、通过网络发送到远程适配器
+    #其实收到的内容还是iso
+
+    #3、远程客户端收到iso内容，并接卸
+    iso_8583 = ISO8583()
+    iso_8583.setNetworkISO(iso)
+    DataExchangeRequest().handle(iso_8583)

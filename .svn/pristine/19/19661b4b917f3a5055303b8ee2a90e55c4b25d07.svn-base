@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# update:2017-3-24 by ljh
+
+from django.views.generic import TemplateView
+from ..common.datatables.views import BaseDatatableView
+from models_resource_catalog import ResourceList, ResourceDetails, ResourceMiddleWare
+
+class ResourceCatalogListconfig(TemplateView):
+    template_name = 'source_catalog/resource_details.list.html'
+
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data(**kwargs)
+        resource_id = self.request.GET.get("resource_id", None)
+        context["RESOURCE_ID"] = str(resource_id)
+
+        resource_name = ResourceList.objects.get(resource_id=resource_id).resource_name
+        context['RESOURCE_NAME'] = resource_name
+        return self.render_to_response(context)
+
+class ResourceCatalogListconfigjson(BaseDatatableView):
+
+    model = ResourceDetails
+    columns = ['id', 'id', 'field_name', 'field_name_attribute', 'field_name_resolution', 'search', 'result', 'modify', 'add', 'delete', 'org_name']
+    order_columns = ['id', 'id', 'field_name', 'field_name_attribute', 'field_name_resolution', 'search', 'result', 'modify', 'add', 'delete', 'org_name']
+    def filter_queryset(self, qs,):
+        resource_id = self._querydict.get("resource_id", None)
+        return super(ResourceCatalogListconfigjson, self).filter_queryset(qs).filter(resource_id=resource_id)
+
+    def get_json(self, response):
+        data_list = response['data']
+        for data in data_list:
+            try:
+                data[5] = ResourceMiddleWare.objects.get(mid_id=data[5]).mid_name
+                data[6] = ResourceMiddleWare.objects.get(mid_id=data[6]).mid_name
+                data[7] = ResourceMiddleWare.objects.get(mid_id=data[7]).mid_name
+                data[8] = ResourceMiddleWare.objects.get(mid_id=data[8]).mid_name
+                data[9] = ResourceMiddleWare.objects.get(mid_id=data[9]).mid_name
+            except:
+                pass
+        return super(ResourceCatalogListconfigjson, self).get_json(response)

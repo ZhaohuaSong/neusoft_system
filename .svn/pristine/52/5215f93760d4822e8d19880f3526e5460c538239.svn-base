@@ -1,0 +1,78 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2016/12/30 下午3:36
+# @Author  : czw@rich-f.com
+# @Site    :
+# @File    : test3.py
+# @Software: PyCharm
+# @Function:
+
+import base64
+import hashlib
+import re
+import sys
+reload(sys)
+import base64
+from Crypto.Cipher import AES
+from Crypto import Random
+
+sys.setdefaultencoding('utf8')
+
+def set_db_password(i_password):
+		raw = pad(i_password)
+		iv = Random.new().read( AES.block_size )
+		cipher = AES.new( aes_key, AES.MODE_CBC, iv )
+		db_password = base64.b64encode( iv + cipher.encrypt( raw ) )
+
+def get_db_password(db_password):
+		enc = base64.b64decode(db_password)
+		iv = enc[:16]
+		cipher = AES.new(aes_key, AES.MODE_CBC, iv )
+		return unpad(cipher.decrypt( enc[16:] ))
+
+pad=lambda s: s + (BS - len(s) % BS) * chr(BS - len(s) % BS)
+
+unpad = lambda s : s[:-ord(s[len(s)-1:])]
+
+
+def check_contain_chinese(check_str):
+      for ch in check_str.decode('utf-8'):
+          if u'\u4e00' <= ch <= u'\u9fff':
+             return True
+      return False
+
+
+if __name__ == '__main__':
+    BS = 16
+    aes_key = 'This is a key123'
+    pad = lambda s: s + (BS - len(s) % BS) * chr(BS - len(s) % BS)
+    print pad
+    unpad = lambda s : s[:-ord(s[len(s)-1:])]
+    print unpad
+
+    password = hashlib.sha1("123456").hexdigest()  # 对数据进行sha1加密
+
+    print password
+
+    str="kksksk"
+    encoded = base64.b64encode(str)
+    print encoded
+    decoded = base64.b64decode(encoded)
+    print decoded
+
+    print check_contain_chinese('美丽')
+
+    print check_contain_chinese('xxx美丽')
+
+    print check_contain_chinese('xxsss')
+
+    zhPattern = re.compile(u'[\u4e00-\u9fff]+')
+    print zhPattern.match("测试")
+    print zhPattern.match("ssss")
+
+
+
+
+
+
+

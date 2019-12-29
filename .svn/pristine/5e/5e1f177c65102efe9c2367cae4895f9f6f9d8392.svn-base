@@ -1,0 +1,142 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2017/2/21 13:39
+# @Author  : qiujunli
+# @Site    :
+# @File    : data_src_interface.py
+# @Software: PyCharm
+# @Function: 数据源接口
+
+from ....common.iso.iso_response_code import *
+from ...api.system_enum import *
+from ..data_src.data_src_interface import *
+from time import sleep
+from django.apps import apps
+ProtocolType = apps.get_model(app_label='packmanage', model_name='ProtocolType')
+
+class DataSRCInterface:
+    '''
+    数据源统一处理接口
+    '''
+
+    def __init__(self):
+        self.i_data_src = IDataSrc(DATA_SRC_TYPE_FILE)
+
+    def get_data_src(self, operation, list_in_param_value, list_out_param_value, data_src_in_index, data_src_out_index, data_src_type, data_src_name, is_over):
+        '''
+        调用数据源接口，提供数据
+        :param operation: 报文操作类型 详见api.system_enum.py
+        :param list_in_param_value: 输入参数内容
+        :param list_out_param_value:
+        :param data_src_in_index:
+        :param data_src_out_index:
+        :param data_src_type:
+        :param data_src_name:
+        :param is_over:
+        :return:
+        '''
+        # print '---operation----', operation, '---data_src_type---', data_src_type
+        if OPERATOR_TYPE_ADD == operation:# 增加
+            return self.__do_add(list_in_param_value, data_src_in_index, data_src_type, data_src_name, is_over)
+        elif OPERATOR_TYPE_DEL == operation:# 删除
+            return self.__do_del(list_in_param_value, data_src_in_index, data_src_type, data_src_name)
+        elif OPERATOR_TYPE_SEARCH == operation:  # 查询
+            return self.__do_search(list_in_param_value, data_src_in_index, data_src_out_index, data_src_type, data_src_name)
+        elif OPERATOR_TYPE_UPDATA == operation:  # 修改
+            return self.__do_updata(list_in_param_value, list_out_param_value, data_src_in_index, data_src_out_index, data_src_type, data_src_name)
+
+        return [], '00'
+
+    def __do_add(self, list_in_param_value, data_src_in_index, data_src_type, data_src_name, is_over):
+        '''
+        新增操作
+        :param list_in_param_value:
+        :param data_src_in_index:
+        :param data_src_type:
+        :param data_src_name:
+        :param is_over
+        :return:
+        '''
+
+        # 1.格式化输入参数
+        in_param = {}
+        for i in range(0, len(data_src_in_index)):
+            in_param[str(data_src_in_index[i])] = list_in_param_value[i]
+
+        # 4.调用接口
+
+        IDataSrc(data_src_type).add(data_src_name, in_param, is_over)
+        return [], CODE_SUCCESS
+
+    def __do_del(self, list_in_param_value, data_src_in_index, data_src_type, data_src_name):
+        '''
+        删除操作
+        :param list_in_param_value:
+        :param data_src_in_index:
+        :param data_src_type:
+        :param data_src_name:
+        :return:
+        '''
+
+        # 1.格式化输入参数
+        in_param = {}
+        for i in range(0, len(data_src_in_index)):
+            in_param[str(data_src_in_index[i])] = list_in_param_value[i]
+
+        # 4.调用接口
+
+        IDataSrc(data_src_type).delete(data_src_name, in_param)
+        return [], CODE_SUCCESS
+
+
+    def __do_search(self, list_in_param_value, data_src_in_index, data_src_out_index, data_src_type,  data_src_name):
+        '''
+        查询操作
+        :param list_in_param_value:
+        :param list_out_param_index:
+        :param data_src_in_index:
+        :param data_src_out_index:
+        :param data_src_type:
+        :return:
+        '''
+        # 1.格式化输入参数
+        in_param = {}
+        for i in range(0, len(data_src_in_index)):
+            in_param[str(data_src_in_index[i])] = list_in_param_value[i]
+
+        # 2.数据源名称
+        # data_src_name
+
+        # 3.数据源出参
+        # data_src_out_index
+
+        # 4.调用接口
+
+        self.i_data_src.init(data_src_type)
+        v, ret = self.i_data_src.query(data_src_name, in_param, data_src_out_index)
+        return v, CODE_SUCCESS, ret
+
+    def __do_updata(self, list_in_param_value, list_out_param_value, data_src_in_index, data_src_out_index, data_src_type, data_src_name):
+        '''
+        修改操作
+        :param list_in_param_value:
+        :param list_out_param_value:
+        :param data_src_in_index:
+        :param data_src_type:
+        :param data_src_name:
+        :return:
+        '''
+
+        # 1.格式化输入参数
+        in_param = {}
+        for i in range(0, len(data_src_in_index)):
+            in_param[str(data_src_in_index[i])] = list_in_param_value[i]
+
+        out_param = {}
+        for i in range(0, len(data_src_out_index)):
+            out_param[str(data_src_out_index[i])] = list_out_param_value[i]
+
+        # 4.调用接口
+
+        IDataSrc(data_src_type).updata(data_src_name, in_param, out_param)
+        return [], CODE_SUCCESS

@@ -1,0 +1,1 @@
+insert into `sys_dict` ( `dict_name`, `dict_id`, `dict_type`, `description`, `sort`, `create_by`, `create_date`, `update_by`, `update_date`, `remarks`, `del_flag`, `super_dict_id`) values('本地通讯端口','7490','port','本地通讯端口',NULL,'zzm',NULL,NULL,NULL,NULL,'0',NULL);

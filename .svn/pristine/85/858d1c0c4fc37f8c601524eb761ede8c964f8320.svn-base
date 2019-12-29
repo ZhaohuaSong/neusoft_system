@@ -1,0 +1,8 @@
+<!--  buttons -->
+<div class="clearfix " style="text-align:center;">
+    <button id="btn-back" class="btn btn-info sumbmit_input" type="reset" style="margin-right: 10px;">
+        <i class="ace-icon fa fa-check bigger-110"></i>
+        确 定
+    </button>
+
+</div>

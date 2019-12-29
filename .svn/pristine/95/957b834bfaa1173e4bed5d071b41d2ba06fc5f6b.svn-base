@@ -1,0 +1,59 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2017/1/4 上午11:16
+# @Author  : czw@rich-f.com
+# @Site    : www.rich-f.com
+# @File    : dbconfig.py
+# @Software: PyCharm
+# @Function: 数据库通用类
+
+from sqlalchemy.engine import create_engine
+from sqlalchemy.exc import OperationalError
+
+class dbengine(object):
+
+    def __init__(self,config):
+
+        self.host = config['host']
+        self.port = config['port']
+        self.user = config['user']
+        self.password = config['password']
+        self.dbtype = config['dbtype']
+        self.dbname = config['dbname']
+
+    def connect(self):
+        if self.dbtype is 'MySQL':
+            scheme = 'mysql+pymysql://' + self.user + ':' + self.password + '@' + self.host + ':' + self.port + '/' + self.dbname + '?charset=utf8'
+        elif self.dbtype is 'Oracle':
+            scheme='oracle://'+self.user+':'+self.password+'@'+self.host+':'+self.port+'/'+self.dbname
+        elif self.dbtype is 'MSSQL':
+            scheme = 'mssql+pymssql://' + self.user + ':' + self.password + '@' + self.host + ':' + self.port + '/' + self.dbname
+
+        engine = create_engine(scheme, pool_size=10, max_overflow=-1, pool_recycle=1200)
+        connection = engine.connect()
+
+        return connection
+
+    def ping(self):
+
+        try:
+         conn = self.connect()
+         return 0
+        except OperationalError,e:
+         return e
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

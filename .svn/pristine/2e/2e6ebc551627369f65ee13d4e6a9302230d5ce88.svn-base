@@ -1,0 +1,81 @@
+#!/usr/bin/env python
+#-*- coding: utf-8 -*-
+from django import forms
+from django.forms import ModelForm
+from models import SendMsg,ReceiveMsg
+from django.db.models import Q
+import re
+
+class SendMsgForm(forms.Form):
+    '''
+    ============================================================================
+    class:SendMsgForm
+    developer:  zzm
+    add-time:  2017.01.04
+    note:发送报文
+    ============================================================================
+    '''
+
+
+    content    = forms.CharField(label='报文内容',
+                              widget=forms.TextInput(
+                                  attrs={'class': 'col-xs-10 col-sm-5', 'placeholder': u'报文内容', 'name': 'content',
+                                         }
+                              ),
+                              )
+
+    server_address    = forms.CharField(label='目标ip',
+                              widget=forms.TextInput(
+                                  attrs={'class': 'col-xs-10 col-sm-5', 'placeholder': u'目标ip', 'name': 'server_address',
+                                         }
+                              ),
+                              )
+
+    server_port    = forms.CharField(label='目标ip端口',
+                              widget=forms.TextInput(
+                                  attrs={'class': 'col-xs-10 col-sm-5', 'placeholder': u'目标ip端口', 'name': 'server_port',
+                                         }
+                              ),
+                              )
+
+
+
+class EditSendMsgForm(ModelForm):
+    '''
+    ============================================================================
+    class:EditSendMsgForm
+    developer:  zzm
+    add-time:  2017.01.04
+    note:编辑发送报文
+    ============================================================================
+    '''
+    class Meta:
+        model = SendMsg
+        fields = ['content', 'server_address', 'server_port']
+
+    content    = forms.CharField(label='报文内容',
+                              widget=forms.TextInput(
+                                  attrs={'class': 'col-xs-10 col-sm-5', 'placeholder': u'报文内容', 'name': 'content',
+                                         }
+                              ),
+                              )
+
+    server_address    = forms.CharField(label='目标ip',
+                              widget=forms.TextInput(
+                                  attrs={'class': 'col-xs-10 col-sm-5', 'placeholder': u'目标ip', 'name': 'server_address',
+                                         }
+                              ),
+                              )
+
+    server_port    = forms.CharField(label='目标ip端口',
+                              widget=forms.TextInput(
+                                  attrs={'class': 'col-xs-10 col-sm-5', 'placeholder': u'目标ip端口', 'name': 'server_port',
+                                         }
+                              ),
+                              )
+
+
+
+
+
+

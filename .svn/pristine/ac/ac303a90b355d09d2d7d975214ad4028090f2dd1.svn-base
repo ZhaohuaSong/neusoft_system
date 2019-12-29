@@ -1,0 +1,349 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Time    : 2017/2/16 10:55
+# @Author  : qiujunli
+# @Site    :
+# @File    : external_interface.py
+# @Software: PyCharm
+# @Function: 包含其他app接口总汇 适配器模式
+from ....filemanage.views_filemanage import printPath, GetColumnName
+from ....filemanage.views_filemanage import  UniqueInterface
+from ....dbadmin.dbutils import  *
+from ....richdataserver.ExchangeData import *
+from ..system_enum import *
+from ....common.iso.iso_response_code import *
+import socket
+class FileSrc:
+    '''
+    接口说明：文件数据源
+    接口提供者：filemanage app
+    '''
+    def __init__(self):
+        self.iFile = UniqueInterface()
+
+    def get_file_list(self):
+        '''
+        获取文件系统中的所有文件列表
+        :return:
+        '''
+        v_list = printPath()
+        v_new = []
+        for v in v_list:
+            v_new.append((v, v))
+
+        return v_new
+
+    def get_cols_name_list(self, file_name):
+        '''
+        在文件系统中获取文件列名
+        :param file_name: 文件名称
+        :return:(field_value_lsit, field_note_lsit)例如:([name, addr], [姓名, 地址])
+        '''
+
+        v_dict = GetColumnName(file_name)[0]
+        v_dict_new = {}
+        for k in v_dict.keys():
+            v_dict_new[int(k)] = v_dict[k]
+
+        v_k = v_dict_new.keys()
+        v_v = v_dict_new.values()
+
+        return (v_k, v_v), (v_k, v_v)
+
+    def search(self, file_name, in_param_dic, out_param_index):
+        '''
+        获取数据
+        :param file_name: 文件名称
+        :param in_param_dic: 条件参数{'1':'李四', '2':'男'}
+        :param out_param_index: 返回的哪些位置的数据，[2,3,4,5] 表示返回该行数据的第2、3、4、5列内容
+        :return: []list类型，依据out_param_index索引信息整理数据
+        '''
+        # print 'file search........'
+        # print file_name, in_param_dic, out_param_index
+        # print 'file search........'
+        v = self.iFile.SearchColumn(file_name, in_param_dic, out_param_index)
+        if len(v[0]) == 0:
+            raise Exception(CODE_ERROR_NO_SEARCH)
+
+        return v[0], v[1] == '1'  # 1表示读完了
+
+    def add(self, file_name, in_param_dic):
+        '''
+        新增一条数据
+        :param file_name:
+        :param in_param_dic:
+        :return:
+        '''
+        # print '----do add file----'
+        # print file_name, in_param_dic
+        return self.iFile.AddColumn(file_name, in_param_dic)
+
+    def delete(self, file_name, in_param_dic):
+        '''
+        删除一条记录
+        :param file_name:
+        :param in_param_dic:
+        :return:
+        '''
+
+
+        print '-----------del--------------'
+        print file_name, in_param_dic
+        #unicode(in_param_dic['0'])
+
+        print '----------------------------'
+        try:
+            self.iFile.DeleteColumn(file_name, in_param_dic)
+        except Exception as e:
+            print '-del error-:', e
+
+    def updata(self, file_name, in_param_dic, out_param_dic):
+        '''
+
+        :param self:
+        :param file_name:
+        :param in_param_dic:
+        :param out_param_index:
+        :return:
+        '''
+
+        print'---updata----'
+        print file_name, in_param_dic, out_param_dic
+        return self.iFile.ModifyColumn(file_name, in_param_dic, out_param_dic)
+
+class DBSrc:
+    '''
+    接口说明：文件数据源
+    接口提供者：filemanage app
+    '''
+
+    def __init__(self):
+        self.page_size = 100# 每页的最大数量
+        self.page_index = 1# 当前页的索引
+
+        self.n_current_count = 0# 当前insert计数器 用来控制事物的提交与否
+        self.n_max_count = 10000 #当计数器等于该值的时候提交事物，并重启事物再
+
+    def get_db_src_list(self, bChange=False):
+        '''
+        获取db数据源名称列表 [('55', '测试人员数据表')]或者[('qqq.text', 测试人员文件)]
+        :return:
+        '''
+        if bChange is True:
+            v_list = query_data_mul_source()
+            v_new = []
+            for data in v_list:
+                v_new.append((data['service_id'], data['service_name'], DATA_SRC_DB_CUD_MULTI))
+
+            v_list = query_data_source()
+            for data in v_list:
+                v_new.append((data['sqlnameid'], data['sqlname'], DATA_SRC_DB_SINGLE))
+            return v_new
+        elif bChange is False:
+            v_list = query_data_source()
+            v_new = []
+            for data in v_list:
+                v_new.append( (data['sqlnameid'], data['sqlname'], DATA_SRC_DB_SINGLE))
+            return v_new
+        elif bChange is 2:
+            v_list = query_data_mul_source()
+            v_new = []
+            for data in v_list:
+                v_new.append((data['service_id'], data['service_name'], DATA_SRC_DB_CUD_MULTI))
+            return v_new
+
+    def get_cols_name_list(self, src_name, datasrc_business):
+        '''
+        获取DB数据源字段列表
+        :param src_name: 数据库数据源名称
+        :return:
+        '''
+        if datasrc_business == DATA_SRC_DB_SINGLE:
+            v = query_data_field(src_name)
+        else:
+            v = query_data_mul_field(src_name)
+        print '-----db get_cols_name_list---'
+        print src_name, v
+        print '-----db get_cols_name_list---'
+
+        if datasrc_business == DATA_SRC_DB_SINGLE:
+            in_dic = v['params_in']
+            out_dic = v['params_out']
+            return (in_dic.keys(), in_dic.values()), (out_dic.keys(), out_dic.values())
+        else:
+            in_dic_k = []
+            in_dic_v = []
+            out_dic_k = []
+            out_dic_v = []
+            for param_dic in v:
+                param_in = param_dic['params_in']
+                param_out = param_dic['params_out']
+
+                in_dic_k = in_dic_k + param_in.keys()
+                in_dic_v = in_dic_v + param_in.values()
+                out_dic_k = out_dic_k + param_out.keys()
+                out_dic_v = out_dic_v + param_out.values()
+
+            # print in_dic_k, in_dic_v, out_dic_k, out_dic_v
+            return (in_dic_k, in_dic_v), (out_dic_k, out_dic_v)
+
+    def search(self, src_name, in_param_dic, out_param_index):
+        '''
+        获取数据
+        :param src_name: 文件名称
+        :param in_param_dic: 条件参数{'carid':''}
+        :param out_param_index: 返回的哪些位置的数据，'name', 'age'] 表示返回该行数据的第2、3、4、5列内容
+        :return: []list类型，依据out_param_index索引信息整理数据
+        '''
+        st = ''
+        for data in out_param_index:
+            st+=data
+            st+=","
+        st=st[0:len(st)-1]
+
+        out_param = st
+        # print 'api ==db search=================='
+        # print src_name, in_param_dic, out_param
+        # print 'api===db search================='
+        try:
+            dict_data = query_data_result(src_name, in_param_dic, out_param, str(self.page_index), str(self.page_size))
+        except:
+            raise Exception(CODE_ERROR_NO_SEARCH)
+        # print dict_data
+        code = dict_data["code"]
+
+        if '00'!= code:
+            raise Exception(CODE_DB_ERROR)
+
+        total = int(dict_data["total"])
+        bOver = False
+        if total <= self.page_index * self.page_size:
+            bOver = True
+            self.page_index = 1
+        else:
+            self.page_index = self.page_index + 1
+
+        if 0 == len(dict_data):
+            #return [], True
+            raise Exception(CODE_ERROR_NO_SEARCH)
+
+        dict_data_list = dict_data["result"]
+        list_r_new = []
+        for dict_data in dict_data_list:
+            list_r = []
+            for col_name in out_param_index:
+                v = dict_data[col_name]
+                list_r.append(v)
+            list_r_new.append(list_r)
+
+        if len(list_r_new) == 0:
+            raise Exception(CODE_ERROR_NO_SEARCH)
+
+        return list_r_new, bOver
+
+    def add(self, src_name, in_param_dic, is_over):
+        '''
+        新增一条数据
+        :param src_name:数据源名称
+        :param in_param_dic:添加内容
+        :param is_over: 是否完成
+        :return:
+        '''
+        # print 'api ----do add db----'
+        # print src_name, in_param_dic
+
+
+        try:
+            insert_table(src_name, in_param_dic, is_over)
+        except Exception as e:
+            print '---insert_table---error:', e
+            raise  Exception(CODE_DB_ERROR)
+
+    def delete(self, src_name, in_param_dic):
+        '''
+        删除一条记录
+        :param src_name:
+        :param in_param_dic:
+        :return:
+        '''
+        # print 'api db delete------'
+        # print src_name, in_param_dic
+        # print 'api db delete------'
+
+        delete_table(src_name, in_param_dic)
+
+    def updata(self, src_name, in_param_dic, out_param_dic):
+        '''
+        :param self:
+        :param src_name:
+        :param in_param_dic:
+        :param out_param_index:
+        :return:
+        '''
+        # print 'api db updata------'
+        # print src_name, in_param_dic, out_param_dic
+        # print 'api db updata------'
+        update_table(src_name, in_param_dic, out_param_dic)
+
+class Client:
+    '''
+    报文发送网络接口
+    接口提供者：richdataserver
+    '''
+    def __init__(self, ip, port):
+        # if isinstance(ip, unicode): ip = ip.encode("utf-8")
+        # if isinstance(port, unicode): port = port.encode("utf-8")
+        # self.ip = ip
+        # self.port = int(port)
+        # self.address = (ip, port)
+
+        self.ed = ExchangeData(ip, port)
+
+    def send_and_recv(self, iso_net):
+        '''
+        发送接受报文接口
+        :param iso_net:
+        :return:
+        '''
+        # p = PackData()
+        # p.address = (self.ip, self.port)
+        # p.message = iso_net
+        # data, addr = p.send_roule()
+        # return data
+
+        # self.sock.send(iso_net)
+        # data, address = self.sock.recvfrom(8192)
+        # return data
+
+        return self.ed.send_and_recv(iso_net)
+
+    def create_connenct(self):
+        '''
+        创建链接
+        :return:
+        '''
+        # self.sock = socket.socket(type=socket.SOCK_DGRAM)
+        # self.sock.settimeout(20)
+        # self.sock.connect(self.address)
+        self.ed.create_connenct()
+
+    def send(self, iso_net):
+        # self.sock.send(iso_net)
+        self.ed.send(iso_net)
+
+    def recv(self):
+        '''
+        接收
+        :return:
+        '''
+        # data, address = self.sock.recvfrom(8192)
+        # return data
+        return self.ed.recv()
+
+    def close_connect(self):
+        '''
+        关闭链接
+        :return:
+        '''
+        # self.sock.close()
+        self.ed.close_connect()
