@@ -16,7 +16,7 @@ cffi==1.12.2
 chardet==3.0.4
 configparser==4.0.2
 contextlib2==0.6.0.post1
-cryptography==2.6.1
+cryptography==3.2
 Django==1.11.20
 django-auth-ldap==1.7.0
 django-celery-beat==1.1.1
