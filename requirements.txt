@@ -20,7 +20,7 @@ cryptography==2.6.1
 Django==1.11.20
 django-auth-ldap==1.7.0
 django-celery-beat==1.1.1
-django-celery-results==1.1.2
+django-celery-results==2.4.0
 docker==4.1.0
 ecdsa==0.14.1
 enum34==1.1.6
